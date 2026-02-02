@@ -1,0 +1,51 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
+  "elements": [
+    {
+      "id": "4QyzreYGpEafqce4DcfhX",
+      "type": "text",
+      "x": 392,
+      "y": 89.33333995607137,
+      "width": 972.2156982421875,
+      "height": 585,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a0",
+      "roundness": null,
+      "seed": 1963054092,
+      "version": 370,
+      "versionNonce": 1739520524,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1770053888307,
+      "link": null,
+      "locked": false,
+      "text": "PAGES:\n    - HOME\n    - PROFILE PAGE \n        - EMAIL ID\n        - CHANGE PASSWORD OPTION \n        - ALL OTHER DETAILS OF USER \n    - SUBJECT ADDITION PAGE\n    - TIMETABLE ADDITION PAGE\n    - TIMETABLE PAGE FOR MARKING ATTENDANCE\n    - REGISTER \n    - LOGIN\n    - VERIFY OTP\n",
+      "fontSize": 36,
+      "fontFamily": 5,
+      "textAlign": "left",
+      "verticalAlign": "top",
+      "containerId": null,
+      "originalText": "PAGES:\n    - HOME\n    - PROFILE PAGE \n        - EMAIL ID\n        - CHANGE PASSWORD OPTION \n        - ALL OTHER DETAILS OF USER \n    - SUBJECT ADDITION PAGE\n    - TIMETABLE ADDITION PAGE\n    - TIMETABLE PAGE FOR MARKING ATTENDANCE\n    - REGISTER \n    - LOGIN\n    - VERIFY OTP\n",
+      "autoResize": true,
+      "lineHeight": 1.25
+    }
+  ],
+  "appState": {
+    "gridSize": 20,
+    "gridStep": 5,
+    "gridModeEnabled": false,
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {}
+}
