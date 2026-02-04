@@ -2,6 +2,7 @@ import { View, Text, ActivityIndicator } from "react-native";
 import React, { useEffect } from "react";
 import { useMe } from "@/hooks/useMe";
 import { router } from "expo-router";
+import LoadingScreen from "./Loading";
 
 const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   const { data, isLoading, isError } = useMe();
@@ -14,10 +15,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-        <Text>Loading...</Text>
-      </View>
+      <LoadingScreen />
     );
   }
 

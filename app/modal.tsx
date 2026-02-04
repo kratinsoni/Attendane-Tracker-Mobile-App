@@ -1,10 +1,15 @@
 import AuthLayout from "@/components/AuthLayout";
-import VerifyOTPScreen from "@/components/VerifyOtp";
+import { Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ModalScreen() {
   return (
     <AuthLayout>
-      <VerifyOTPScreen />
+      <SafeAreaView className="flex-1 bg-white">
+        <View>
+          <Text> HOME </Text>
+        </View>
+      </SafeAreaView>
     </AuthLayout>
   );
 }
