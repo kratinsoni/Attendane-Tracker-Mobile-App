@@ -1,0 +1,47 @@
+import { getToken } from "@/utils/token";
+import axios, { AxiosInstance } from "axios";
+
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL || "http://10.145.69.20:8000/api/v1";
+
+export const createApiClient = (): AxiosInstance => {
+  const api = axios.create({
+    baseURL: API_BASE_URL,
+  });
+
+  api.interceptors.request.use(
+    async (config) => {
+      const token = await getToken();
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      return config;
+    },
+    (error) => Promise.reject(error),
+  );
+
+  return api;
+};
+
+export const api = createApiClient();
+
+export const userApi = {
+  login: async (
+    api: AxiosInstance,
+    instituteId: string,
+    password: string,
+  ): Promise<{ accessToken: string }> => {
+    const res = await api.post("/users/login", {
+      instituteId,
+      password,
+    });
+    
+    // Debug log
+    return res.data.data; // ✅ IMPORTANT
+  },
+  me: (api: AxiosInstance) => {
+    return api.get("/users/me");
+  },
+};

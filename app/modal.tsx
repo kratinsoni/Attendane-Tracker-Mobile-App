@@ -1,6 +1,10 @@
-import VerifyEmail from "@/components/VerifyEmail";
+import AuthLayout from "@/components/AuthLayout";
 import VerifyOTPScreen from "@/components/VerifyOtp";
 
 export default function ModalScreen() {
-  return <VerifyOTPScreen />;
+  return (
+    <AuthLayout>
+      <VerifyOTPScreen />
+    </AuthLayout>
+  );
 }
