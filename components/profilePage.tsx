@@ -1,16 +1,28 @@
-import React from "react";
-import { View, Text, Image, ScrollView, TouchableOpacity, StatusBar } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React from "react";
+import {
+  Image,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function UserProfile() {
+  const { data } = useMe();
+
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
       <StatusBar barStyle="dark-content" />
 
       {/* Top App Bar - Sticky Effect by placing outside ScrollView */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-[#f6f6f8]/90 dark:bg-[#101622]/90 border-b border-transparent z-50">
-        <TouchableOpacity className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+        <TouchableOpacity className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+        onPress = {() => router.back()}>
           <MaterialIcons
             name="arrow-back"
             size={24}
@@ -49,11 +61,11 @@ export default function UserProfile() {
 
           <View className="mt-4 flex-col items-center gap-2">
             <Text className="text-2xl font-bold text-[#111318] dark:text-white text-center">
-              Alex Johnson
+              {data.firstName + " " + data.lastName}
             </Text>
             <View className="rounded-full bg-[#135bec]/10 px-3 py-1 border border-[#135bec]/20">
               <Text className="text-sm font-medium text-[#135bec]">
-                Student
+                {data.role === "normal" ? "Student" : "admin"}
               </Text>
             </View>
           </View>
@@ -76,7 +88,7 @@ export default function UserProfile() {
                   </Text>
                 </View>
                 <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  2023-CS-042
+                  {data.instituteId}
                 </Text>
               </View>
 
@@ -89,7 +101,7 @@ export default function UserProfile() {
                   </Text>
                 </View>
                 <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  42
+                  {data.rollNo}
                 </Text>
               </View>
 
@@ -102,7 +114,7 @@ export default function UserProfile() {
                   </Text>
                 </View>
                 <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  CSE
+                  {data.department}
                 </Text>
               </View>
 
@@ -115,7 +127,7 @@ export default function UserProfile() {
                   </Text>
                 </View>
                 <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  2025
+                  {20 + data.rollNo[0] + (Number(data.rollNo[1]) + 4)}
                 </Text>
               </View>
             </View>
@@ -129,7 +141,10 @@ export default function UserProfile() {
           </Text>
           <View className="bg-white dark:bg-[#1a2230] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             {/* List Item 1 */}
-            <TouchableOpacity className="flex-row items-center w-full p-4 border-b border-gray-100 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800">
+            <TouchableOpacity
+              className="flex-row items-center w-full p-4 border-b border-gray-100 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800"
+              onPress={() => router.push("/timetable/TimetableHomePage")}
+            >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#135bec]/10 mr-4">
                 <MaterialIcons
                   name="calendar-today"

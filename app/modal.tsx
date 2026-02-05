@@ -27,6 +27,13 @@ export default function ModalScreen() {
           >
             <Text className="text-xl text-white">Timetable Home</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/profile/profile")}
+            className="px-4 py-2 bg-blue-500 rounded-md"
+          >
+            <Text className="text-xl text-white">Profile Page</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </AuthLayout>

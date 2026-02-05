@@ -54,6 +54,13 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="profile/profile"
+          options={{
+            title: "Profile page",
+            headerShown: false,
+          }}
+        />
       </Stack>
       <Toast/>
     </QueryClientProvider>
