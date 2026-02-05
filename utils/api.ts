@@ -59,7 +59,11 @@ export const timetableApi = {
     return res.data.data;
   },
   getUserTimetables: async (api: AxiosInstance) => {
-    const res = await api.get("/timetable/user-timetables");
+    const res = await api.get("/timetable/user");
+    return res.data.data;
+  },
+  getTimetableById: async (api: AxiosInstance, id: string) => {
+    const res = await api.get(`/timetable/${id}`);
     return res.data.data;
   }
 };

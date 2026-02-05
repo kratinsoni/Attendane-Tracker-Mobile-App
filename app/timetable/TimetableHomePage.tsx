@@ -1,29 +1,64 @@
-import React from "react";
+import LoadingScreen from "@/components/Loading";
+import { TimetableCard } from "@/components/TimetableCard";
+import { useGetUserTimetables } from "@/hooks/useGetUserTimetables";
+import { TimetableCardType } from "@/types/timetableTypes";
+import { router } from "expo-router";
+import { Menu, Plus, Search, UserCircle } from "lucide-react-native";
+import React, { useState, useCallback } from "react";
 import {
-  View,
-  Text,
   ScrollView,
+  StatusBar,
+  Text,
   TextInput,
   TouchableOpacity,
-  StatusBar,
+  View,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Menu,
-  UserCircle,
-  Search,
-  Calendar,
-  Edit2,
-  Archive,
-  Plus,
-} from "lucide-react-native";
-import { TimetableCard } from "@/components/TimetableCard";
-import { router } from "expo-router";
+import { useColorScheme } from "nativewind";
+import ErrorScreen from "@/components/ErrorPage";
 
 export default function TimetableScreen() {
+  // Destructure refetch from your custom hook
+  const { data, isLoading, isError, refetch } = useGetUserTimetables();
+  const { colorScheme } = useColorScheme();
+  const [searchQuery, setSearchQuery] = useState("");
+  const filteredData = data?.filter((timetable: TimetableCardType) =>
+    timetable.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // State for the pull-to-refresh spinner
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Function to handle the pull-down action
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } catch (error) {
+      console.error("Refresh failed:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  // Only show the full-screen loading if we aren't already doing a pull-to-refresh
+  if (isLoading && !refreshing) {
+    return <LoadingScreen />;
+  }
+
+  if(isError){
+    return <ErrorScreen/>
+  }
+
+  const isDark = colorScheme === "dark";
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
-      <StatusBar barStyle="dark-content" />
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#101622" : "#f6f6f8"}
+      />
 
       {/* Header */}
       <View className="bg-white/80 dark:bg-slate-900/80 px-4 pt-4 pb-2">
@@ -46,40 +81,39 @@ export default function TimetableScreen() {
             placeholder="Search timetables"
             placeholderTextColor="#616f89"
             className="flex-1 ml-3 text-base text-slate-900 dark:text-white"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
       </View>
 
       {/* Main Scrollable Content */}
       <ScrollView
-        className="p-4"
-        contentContainerStyle={{ paddingBottom: 100 }}
+        className="flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#135bec" // iOS spinner color
+            colors={["#135bec"]} // Android spinner color
+            progressBackgroundColor={isDark ? "#1e293b" : "#ffffff"}
+          />
+        }
       >
-        <TimetableCard
-          title="Fall Semester 2023"
-          date="Oct 24, 2023"
-          semester="Fall 2023"
-          gradientColor="bg-blue-500"
-        />
-        <TimetableCard
-          title="Spring Semester 2024"
-          date="Jan 15, 2024"
-          semester="Spring 2024"
-          gradientColor="bg-emerald-500"
-        />
-        <TimetableCard
-          title="Summer Short Course"
-          date="May 02, 2024"
-          semester="Summer 2024"
-          gradientColor="bg-amber-500"
-        />
-        <TimetableCard
-          title="Archived: 2022 Academic Year"
-          date="Dec 12, 2022"
-          isArchived={true}
-          gradientColor="bg-slate-400"
-          semester={"Summer 2025"}
-        />
+        {filteredData && filteredData.length > 0 ? (
+          filteredData.map((timetable: TimetableCardType) => (
+            <TimetableCard key={timetable._id} {...timetable} />
+          ))
+        ) : (
+          <View className="mt-20 items-center">
+            <Text className="text-slate-500 dark:text-slate-400 text-center">
+              {isError
+                ? "Failed to load timetables. Pull down to try again."
+                : "No timetables found. Create your first timetable!"}
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Floating Action Button */}

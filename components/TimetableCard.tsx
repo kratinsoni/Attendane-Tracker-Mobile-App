@@ -1,59 +1,88 @@
 import { Archive, Calendar, Edit2 } from "lucide-react-native";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ImageBackground, Text, TouchableOpacity, View } from "react-native";
+import { TimetableCardType } from "@/types/timetableTypes";
+import React, { useMemo } from "react";
+import { router } from "expo-router";
+
+// const getRandomGradient = () => {
+//   const gradients = [
+//     "bg-blue-500",
+//     "bg-emerald-500",
+//     "bg-amber-500",
+//     "bg-rose-500",
+//     "bg-violet-500",
+//     "bg-cyan-500",
+//     "bg-fuchsia-500",
+//   ];
+//   return gradients[Math.floor(Math.random() * gradients.length)];
+// };
 
 export const TimetableCard = ({
-  title,
-  date,
+  _id,
+  name,
   semester,
-  gradientColor,
-  isArchived = false,
-}) => (
-  <TouchableOpacity
-    activeOpacity={0.7}
-    className={`mb-4 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm ${isArchived ? "opacity-80" : ""}`}
-  >
-    {/* Decorative Header Area */}
-    <View className={`h-32 w-full ${gradientColor} opacity-20`} />
+  student: { _id: studentId, firstName, lastName },
+  createdAt,
+  updatedAt,
+}: TimetableCardType) => {
 
-    <View className="p-4">
-      <View className="flex-row justify-between items-start">
-        <View>
-          <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Last Modified: {date}
-          </Text>
-          <Text
-            className={`mt-1 text-lg font-bold ${isArchived ? "text-slate-500" : "text-slate-900 dark:text-white"}`}
-          >
-            {title}
-          </Text>
+    // const randomColor = React.useMemo(() => getRandomGradient(), []);
+    
+    const imageUrl = useMemo(() => {
+      return `https://picsum.photos/seed/${_id}/400/200`;
+    }, [_id]);
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      className={`mb-4 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm`}
+      onPress={() =>
+        router.push({
+          pathname: "/timetable/[id]",
+          params: { id: _id },
+        })
+      }
+    >
+      <ImageBackground
+        source={{ uri: imageUrl }}
+        className="h-32 w-full justify-end"
+        resizeMode="cover"
+      >
+        {/* Optional: Add a subtle overlay to make text/icons pop if needed */}
+        <View className="absolute inset-0 bg-black/10" />
+      </ImageBackground>
+
+      <View className="p-4">
+        <View className="flex-row justify-between items-start">
+          <View>
+            <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Last Modified: {updatedAt}
+            </Text>
+            <Text className="mt-1 text-lg font-bold text-white ">{name}</Text>
+          </View>
+          <TouchableOpacity className="p-1">
+            <Edit2 size={18} color="#616f89" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity className="p-1">
-          <Edit2 size={18} color="#616f89" />
-        </TouchableOpacity>
-      </View>
 
-      <View className="mt-4 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          {isArchived ? (
-            <Archive size={16} color="#616f89" />
-          ) : (
+        <View className="mt-4 flex-row items-center justify-between">
+          {/* Left Side: Semester Info */}
+          <View className="flex-row items-center">
             <Calendar size={16} color="#616f89" />
-          )}
-          <Text className="ml-2 text-sm text-slate-500 dark:text-slate-400">
-            {isArchived ? "Archived" : `Semester: ${semester}`}
-          </Text>
-        </View>
+            <Text className="ml-2 text-sm text-slate-500 dark:text-slate-400">
+              Semester: {semester}
+            </Text>
+          </View>
 
-        <View
-          className={`rounded-lg px-5 py-2 ${isArchived ? "bg-slate-200 dark:bg-slate-700" : "bg-blue-600"}`}
-        >
-          <Text
-            className={`text-sm font-semibold ${isArchived ? "text-slate-600 dark:text-slate-300" : "text-white"}`}
+          {/* Right Side: View Button */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
           >
-            View
-          </Text>
+            <Text className="text-sm font-semibold text-white">View</Text>
+          </TouchableOpacity>
         </View>
       </View>
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};

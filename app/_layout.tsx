@@ -40,6 +40,13 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="timetable/[id]"
+          options={{
+            title: "Timetable Details",
+            headerShown: false,
+          }}
+        />
       </Stack>
       <Toast/>
     </QueryClientProvider>

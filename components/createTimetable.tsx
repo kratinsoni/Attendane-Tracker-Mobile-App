@@ -15,6 +15,7 @@ import { ChevronLeft, Camera, Info, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useCreateTimetable } from "@/hooks/useCreateTimetable";
+import { useColorScheme } from "nativewind";
 
 export default function CreateTimetable() {
   const [name, setName] = useState("");
@@ -54,11 +55,16 @@ export default function CreateTimetable() {
     }
   }
 
+   const { colorScheme } = useColorScheme();
+
+    const isDark = colorScheme === "dark";
+
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
       <StatusBar
-        barStyle={Platform.OS === "ios" ? "dark-content" : "light-content"}
-      />
+              barStyle={isDark ? "light-content" : "dark-content"}
+              backgroundColor={isDark ? "#101622" : "#f6f6f8"}
+            />
 
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-4 bg-white dark:bg-[#101622] border-b border-[#dbdfe6] dark:border-white/10">
