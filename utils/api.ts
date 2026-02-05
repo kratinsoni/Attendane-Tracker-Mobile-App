@@ -1,5 +1,6 @@
 import { getToken } from "@/utils/token";
 import axios, { AxiosInstance } from "axios";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL || "http://10.145.69.20:8000/api/v1";
@@ -65,5 +66,9 @@ export const timetableApi = {
   getTimetableById: async (api: AxiosInstance, id: string) => {
     const res = await api.get(`/timetable/${id}`);
     return res.data.data;
-  }
+  },
+  getSubjectsByTimetableId: async (api: AxiosInstance, id: string) => {
+    const res = await api.get(`/timetable/subjects/${id}`);
+    return res.data.data;
+  },
 };
