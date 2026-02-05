@@ -9,3 +9,13 @@ export const useGetTimetableById = (id: string) => {
         },
     });
 }
+
+export const useGetSubjectsByTimetableId = (id: string) => {
+    return useQuery({
+        queryKey: ['timetable', id, 'subjects'],
+        queryFn: async () => {
+            const timetable = await timetableApi.getSubjectsByTimetableId(api, id);
+            return timetable.subjects;
+        },
+    });
+}

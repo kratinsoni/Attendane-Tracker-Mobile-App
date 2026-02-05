@@ -47,6 +47,13 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="timetable/attendanceMarkingPage"
+          options={{
+            title: "Attendance Marking",
+            headerShown: false,
+          }}
+        />
       </Stack>
       <Toast/>
     </QueryClientProvider>
