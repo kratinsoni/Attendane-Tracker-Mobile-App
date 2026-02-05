@@ -37,11 +37,29 @@ export const userApi = {
       instituteId,
       password,
     });
-    
+
     // Debug log
     return res.data.data; // ✅ IMPORTANT
   },
   me: (api: AxiosInstance) => {
     return api.get("/users/me");
   },
+};
+
+export const timetableApi = {
+  createTimetable: async (
+    api: AxiosInstance,
+    name: string,
+    semester: string,
+  ) => {
+    const res = await api.post("/timetable/create", {
+      name,
+      semester,
+    });
+    return res.data.data;
+  },
+  getUserTimetables: async (api: AxiosInstance) => {
+    const res = await api.get("/timetable/user-timetables");
+    return res.data.data;
+  }
 };

@@ -26,6 +26,20 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="timetable/createTimetablePage"
+          options={{
+            title: "Create Timetable",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="timetable/TimetableHomePage"
+          options={{
+            title: "Timetable Home",
+            headerShown: false,
+          }}
+        />
       </Stack>
       <Toast/>
     </QueryClientProvider>

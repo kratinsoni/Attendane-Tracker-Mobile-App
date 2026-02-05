@@ -1,35 +1,29 @@
-import { api, userApi } from "@/utils/api";
-import { saveToken } from "@/utils/token";
+import { api, timetableApi } from "@/utils/api";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 
-export const useLogin = () => {
+export const useCreateTimetable = () => {
   return useMutation({
     mutationFn: async ({
-      instituteId,
-      password,
+      name,
+      semester,
     }: {
-      instituteId: string;
-      password: string;
+      name: string;
+      semester: string;
     }) => {
-      return userApi.login(api, instituteId, password);
+      return timetableApi.createTimetable(api, name, semester);
     },
-
-    onSuccess: async (data) => {
-      const accessToken = data.accessToken;
-
-      await saveToken(accessToken);
-      console.log("JWT saved successfully");
+    onSuccess: (data) => {
+      console.log("Timetable created successfully:", data);
       Toast.show({
         type: "success",
-        text1: "Login Successful",
+        text1: "Timetable Created",
         position: "bottom",
       });
-      router.replace("/modal");
+      router.push("/timetable/TimetableHomePage");
     },
-
     onError: (error) => {
       let message = "Login failed";
 
