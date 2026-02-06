@@ -78,6 +78,12 @@ export const TimetableCard = ({
           <TouchableOpacity
             activeOpacity={0.8}
             className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
+            onPress={() =>
+              router.push({
+                pathname: "/timetable/attendanceMarkingPage/[id]",
+                params: { id: _id },
+              })
+            }
           >
             <Text className="text-sm font-semibold text-white">View</Text>
           </TouchableOpacity>

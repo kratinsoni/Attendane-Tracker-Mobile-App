@@ -1,71 +1,49 @@
 import {
-    Activity,
-    Ban,
-    Bell,
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
-    Code,
-    MapPin,
-    MoreVertical,
-    Plus,
-    XCircle,
+  Activity,
+  Ban,
+  Bell,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Code,
+  MapPin,
+  MoreVertical,
+  Plus,
+  XCircle,
 } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import React, { useMemo, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Import logic (Removed getCurrentWeek as we will implement dynamic logic)
-import { ClassSession, Subject, useDailyClasses } from "@/hooks/scheduleLogic";
-import { useGetSubjectsByTimetableId } from "@/hooks/useGetTimetableById";
-
-// --- MOCK DATA ---
-const BACKEND_SUBJECTS: Subject[] = [
-  {
-    name: "Algorithms-II",
-    code: "CS21003",
-    slots: ["A2", "C3"],
-    location: "NR322",
-  },
-  {
-    name: "Software Eng Lab",
-    code: "CS29003",
-    slots: ["Q"],
-    location: "CIC Lab",
-  },
-  {
-    name: "Economics",
-    code: "HS3001",
-    slots: ["S3", "B3"],
-    location: "Nalanda",
-  },
-  { name: "Mechanics", code: "ME1001", slots: ["D3", "H3"], location: "NR421" },
-];
+// Import logic
+import { ClassSession, useDailyClasses } from "@/hooks/scheduleLogic";
+import { useGetAttendanceForDateByTimetable } from "@/hooks/useGetAttendanceForDateByTimetable";
+import { useLocalSearchParams } from "expo-router";
 
 const ScheduleScreen = () => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+  const id = useLocalSearchParams().id as string;
 
-  const { data, isLoading, error } = useGetSubjectsByTimetableId("12345");
-
-  // STATE: The specific date selected by the user
+  // STATE
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
-  // STATE: The "Anchor" date determines which week is currently visible in the strip
-  // We initialize this to today.
   const [anchorDate, setAnchorDate] = useState<Date>(new Date());
 
-  // --- DATE LOGIC ---
+  // DATA FETCHING
+  const { data } = useGetAttendanceForDateByTimetable({
+    timetableId: id,
+    date: selectedDate.toISOString().split("T")[0],
+  });
 
-  // Helper to get the start (Sunday) of the week for any given date
+  // --- DATE LOGIC ---
   const getStartOfWeek = (date: Date) => {
     const d = new Date(date);
     const day = d.getDay(); // 0 (Sun) to 6 (Sat)
@@ -73,7 +51,9 @@ const ScheduleScreen = () => {
     return new Date(d.setDate(diff));
   };
 
-  // Generate the 7 days for the currently visible week
+  console.log("Selected Date:", selectedDate.toDateString());
+  console.log("Fetched Classes:", data?.classes);
+
   const weekDates = useMemo(() => {
     const startOfWeek = getStartOfWeek(anchorDate);
     const days = [];
@@ -85,7 +65,6 @@ const ScheduleScreen = () => {
     return days;
   }, [anchorDate]);
 
-  // Handler to switch weeks
   const changeWeek = (direction: "prev" | "next") => {
     const newAnchor = new Date(anchorDate);
     const dayCount = direction === "next" ? 7 : -7;
@@ -93,21 +72,23 @@ const ScheduleScreen = () => {
     setAnchorDate(newAnchor);
   };
 
-  // Hook handles the complex mapping logic for the SELECTED date
+  // --- CLASS DATA PROCESSING ---
   const todaysClasses: ClassSession[] = useDailyClasses(
-    BACKEND_SUBJECTS,
+    data?.classes || [],
     selectedDate,
   );
+
+  // SPLIT CLASSES: Morning (< 12:00) vs Afternoon (>= 12:00)
+  // 1200 represents 12:00 PM in the sortTime integer format
+  const morningClasses = todaysClasses.filter((c) => c.sortTime < 1200);
+  const afternoonClasses = todaysClasses.filter((c) => c.sortTime >= 1200);
 
   // Formatting Helpers
   const formatDay = (date: Date): string =>
     ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][date.getDay()];
-
   const formatDateNum = (date: Date): string => date.getDate().toString();
-
   const formatMonthYear = (date: Date): string =>
     date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-
   const isSameDate = (d1: Date, d2: Date) =>
     d1.toDateString() === d2.toDateString();
 
@@ -139,12 +120,9 @@ const ScheduleScreen = () => {
           <TouchableOpacity onPress={() => changeWeek("prev")} className="p-1">
             <ChevronLeft size={24} color="#64748b" />
           </TouchableOpacity>
-
           <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            {/* Display Month and Year of the visible week */}
             {formatMonthYear(anchorDate)}
           </Text>
-
           <TouchableOpacity onPress={() => changeWeek("next")} className="p-1">
             <ChevronRight size={24} color="#64748b" />
           </TouchableOpacity>
@@ -158,9 +136,7 @@ const ScheduleScreen = () => {
         >
           {weekDates.map((date, index) => {
             const isActive = isSameDate(date, selectedDate);
-            // Check if this date is "Today" (real time)
             const isToday = isSameDate(date, new Date());
-
             return (
               <TouchableOpacity
                 key={index}
@@ -169,7 +145,7 @@ const ScheduleScreen = () => {
                   isActive
                     ? "bg-blue-500 border-blue-500"
                     : isToday
-                      ? "bg-white dark:bg-slate-800 border-blue-400" // Highlight for today if not selected
+                      ? "bg-white dark:bg-slate-800 border-blue-400"
                       : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700"
                 }`}
               >
@@ -183,7 +159,6 @@ const ScheduleScreen = () => {
                 >
                   {formatDateNum(date)}
                 </Text>
-                {/* Dot indicator for Today if not selected */}
                 {!isActive && isToday && (
                   <View className="w-1 h-1 bg-blue-400 rounded-full mt-1" />
                 )}
@@ -216,103 +191,36 @@ const ScheduleScreen = () => {
 
         {/* TIMELINE LIST */}
         <View className="border-l-2 border-slate-200 dark:border-slate-800 ml-3 pl-6 space-y-8 pb-24">
-          {todaysClasses.length === 0 ? (
+          {/* EMPTY STATE */}
+          {todaysClasses.length === 0 && (
             <View className="py-10">
               <Text className="text-slate-400 text-center">
                 No classes for {formatDay(selectedDate)}.
               </Text>
             </View>
-          ) : (
-            todaysClasses.map((item, index) => (
-              <View key={index} className="relative">
-                {/* TIMELINE DOT */}
-                <View className="absolute -left-[33px] top-1 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-50 dark:border-slate-900" />
-
-                <View className="flex-row justify-between mb-2 items-center">
-                  <Text className="text-sm font-bold text-blue-500">
-                    {item.time}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    SLOT {item.slot}
-                  </Text>
-                </View>
-
-                {/* CARD BODY */}
-                <View className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
-                  <View className="flex-row justify-between items-start">
-                    <View className="flex-1">
-                      <View className="bg-blue-50 dark:bg-blue-900/30 self-start px-2 py-0.5 rounded mb-2">
-                        <Text className="text-blue-600 dark:text-blue-300 text-[10px] font-bold uppercase">
-                          Lecture • Slot {item.slot}
-                        </Text>
-                      </View>
-                      <Text className="text-lg font-bold text-slate-800 dark:text-white">
-                        {item.subjectName}
-                      </Text>
-                      <View className="flex-row items-center mt-2 space-x-4">
-                        <View className="flex-row items-center">
-                          <Code size={14} color="#94a3b8" />
-                          <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">
-                            {item.subjectCode}
-                          </Text>
-                        </View>
-                        <View className="flex-row items-center ml-3">
-                          <MapPin size={14} color="#94a3b8" />
-                          <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">
-                            {item.location}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                    <TouchableOpacity>
-                      <MoreVertical size={20} color="#94a3b8" />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* ACTION BUTTONS */}
-                  <View className="flex-row justify-between mt-5 pt-4 border-t border-slate-50 dark:border-slate-700">
-                    <StatusButton
-                      icon={CheckCircle}
-                      color="#16a34a"
-                      bg="bg-green-50 dark:bg-green-900/20"
-                      text="PRESENT"
-                      textColor="text-green-700"
-                    />
-                    <StatusButton
-                      icon={XCircle}
-                      color="#dc2626"
-                      bg="bg-red-50 dark:bg-red-900/20"
-                      text="ABSENT"
-                      textColor="text-red-700"
-                    />
-                    <StatusButton
-                      icon={Activity}
-                      color="#ca8a04"
-                      bg="bg-yellow-50 dark:bg-yellow-900/20"
-                      text="MEDICAL"
-                      textColor="text-yellow-700"
-                    />
-                    <StatusButton
-                      icon={Ban}
-                      color="#64748b"
-                      bg="bg-slate-100 dark:bg-slate-700"
-                      text="CANCEL"
-                      textColor="text-slate-600 dark:text-slate-300"
-                    />
-                  </View>
-                </View>
-              </View>
-            ))
           )}
 
-          <View className="relative mt-4">
-            <View className="absolute -left-[30px] top-4 w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700" />
-            <View className="bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 p-3 rounded-xl items-center">
-              <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Lunch Break • 12:00 - 02:00 PM
-              </Text>
+          {/* 1. MORNING CLASSES */}
+          {morningClasses.map((item, index) => (
+            <ClassCard key={`morning-${index}`} item={item} />
+          ))}
+
+          {/* 2. LUNCH BREAK (Only show if there are actually classes today) */}
+          {todaysClasses.length > 0 && (
+            <View className="relative my-2">
+              <View className="absolute -left-[30px] top-4 w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700" />
+              <View className="bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 p-3 rounded-xl items-center">
+                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Lunch Break • 12:00 - 02:00 PM
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
+
+          {/* 3. AFTERNOON CLASSES */}
+          {afternoonClasses.map((item, index) => (
+            <ClassCard key={`afternoon-${index}`} item={item} />
+          ))}
         </View>
       </ScrollView>
 
@@ -323,7 +231,100 @@ const ScheduleScreen = () => {
   );
 };
 
-// Extracted Sub-component
+// --- EXTRACTED CLASS CARD COMPONENT ---
+// This handles the display of individual classes and the conditional button logic
+const ClassCard = ({ item }: { item: ClassSession }) => {
+  return (
+    <View className="relative">
+      {/* TIMELINE DOT */}
+      <View className="absolute -left-[33px] top-1 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-50 dark:border-slate-900" />
+
+      <View className="flex-row justify-between mb-2 items-center">
+        <Text className="text-sm font-bold text-blue-500">{item.time}</Text>
+        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          SLOT {item.slot}
+        </Text>
+      </View>
+
+      {/* CARD BODY */}
+      <View className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
+        <View className="flex-row justify-between items-start">
+          <View className="flex-1">
+            <View className="bg-blue-50 dark:bg-blue-900/30 self-start px-2 py-0.5 rounded mb-2">
+              <Text className="text-blue-600 dark:text-blue-300 text-[10px] font-bold uppercase">
+                Lecture • Slot {item.slot}
+              </Text>
+            </View>
+            <Text className="text-lg font-bold text-slate-800 dark:text-white">
+              {item.subjectName}
+            </Text>
+            <View className="flex-row items-center mt-2 space-x-4">
+              <View className="flex-row items-center">
+                <Code size={14} color="#94a3b8" />
+                <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">
+                  {item.subjectCode}
+                </Text>
+              </View>
+              <View className="flex-row items-center ml-3">
+                <MapPin size={14} color="#94a3b8" />
+                <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">
+                  {item.location}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity>
+            <MoreVertical size={20} color="#94a3b8" />
+          </TouchableOpacity>
+        </View>
+
+        {/* CONDITIONAL ACTION BUTTONS */}
+        {/* Only show if status is explicitly UNMARKED */}
+        {item.status === "UNMARKED" ? (
+          <View className="flex-row justify-between mt-5 pt-4 border-t border-slate-50 dark:border-slate-700">
+            <StatusButton
+              icon={CheckCircle}
+              color="#16a34a"
+              bg="bg-green-50 dark:bg-green-900/20"
+              text="PRESENT"
+              textColor="text-green-700"
+            />
+            <StatusButton
+              icon={XCircle}
+              color="#dc2626"
+              bg="bg-red-50 dark:bg-red-900/20"
+              text="ABSENT"
+              textColor="text-red-700"
+            />
+            <StatusButton
+              icon={Activity}
+              color="#ca8a04"
+              bg="bg-yellow-50 dark:bg-yellow-900/20"
+              text="MEDICAL"
+              textColor="text-yellow-700"
+            />
+            <StatusButton
+              icon={Ban}
+              color="#64748b"
+              bg="bg-slate-100 dark:bg-slate-700"
+              text="CANCEL"
+              textColor="text-slate-600 dark:text-slate-300"
+            />
+          </View>
+        ) : (
+          // Optional: Display the status if it IS marked (e.g., "Status: Present")
+          <View className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-700">
+            <Text className="text-slate-400 text-xs font-bold">
+              STATUS: <Text className="text-blue-500">{item.status}</Text>
+            </Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+};
+
+// Extracted Sub-component for Buttons
 interface StatusButtonProps {
   icon: React.ElementType;
   color: string;

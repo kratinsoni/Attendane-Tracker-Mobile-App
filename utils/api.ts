@@ -4,7 +4,7 @@ import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { CreateSubjectPayload } from "../types/subjectTypes";
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://10.145.69.20:8000/api/v1";
+  process.env.EXPO_PUBLIC_API_URL;
 
 export const createApiClient = (): AxiosInstance => {
   const api = axios.create({
@@ -74,6 +74,18 @@ export const timetableApi = {
   },
 };
 
+export const attendanceApi = {
+  getAttendanceForDateByTimetable: async (
+    api: AxiosInstance,
+    timetableId: string,
+    date: string,
+  ) => {
+    const res = await api.get(
+      `/attendance/timetable/${timetableId}/date/${date}`,
+    );
+    return res.data.data;
+  }
+}
 export const subjectApi = {
   createSubject: async (
     api: AxiosInstance,
