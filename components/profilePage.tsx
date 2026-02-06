@@ -11,10 +11,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useGetAllSubjects } from "@/hooks/useGetAllSubjects";
 
 export default function UserProfile() {
   const { data } = useMe();
-
+  const { data: subjects } = useGetAllSubjects();
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
       <StatusBar barStyle="dark-content" />
@@ -88,7 +89,7 @@ export default function UserProfile() {
                   </Text>
                 </View>
                 <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  {data.instituteId}
+                  { data.instituteId}
                 </Text>
               </View>
 
@@ -163,7 +164,9 @@ export default function UserProfile() {
             {/* List Item 2 */}
             <TouchableOpacity className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800">
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#135bec]/10 mr-4">
-                <MaterialIcons name="book" size={20} color="#135bec" />
+                <MaterialIcons name="book" size={20} color="#135bec"
+                onPress={() => router.push("/subject/getAllSubjects")}
+                 />
               </View>
               <View className="flex-1">
                 <Text className="text-[#111318] dark:text-white text-base font-medium">

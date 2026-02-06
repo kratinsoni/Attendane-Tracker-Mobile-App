@@ -61,6 +61,13 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="subject/getAllSubjects"
+          options={{
+            title: "Subject page",
+            headerShown: false,
+          }}
+        />
       </Stack>
       <Toast/>
     </QueryClientProvider>
