@@ -48,7 +48,7 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="timetable/attendanceMarkingPage"
+          name="timetable/attendanceMarkingPage/[id]"
           options={{
             title: "Attendance Marking",
             headerShown: false,
