@@ -84,6 +84,17 @@ export const attendanceApi = {
       `/attendance/timetable/${timetableId}/date/${date}`,
     );
     return res.data.data;
+  },
+  createAttendance: async (api: AxiosInstance, subjectId: string, day: string, type: string, timeSlot: string, date: string, semester: number) => {
+    const res = await api.post("/attendance", {
+      subjectId,
+      day,
+      type,
+      timeSlot,
+      date,
+      semester,
+    });
+    return res.data.data;
   }
 }
 export const subjectApi = {

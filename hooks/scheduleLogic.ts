@@ -11,17 +11,22 @@ export interface Subject {
   timeSlot: string;
   type: string;
   slots: string[];
+  day: string;
+  semester: number;
 }
 
 export interface ClassSession {
+  subjectId: string;
   subjectName: string;
   subjectCode: string;
   time: string;
-  timeSlot: string; // <--- This is required
-  slot: string;
+  timeSlot: string;
+  slots: string[];
   location: string;
   sortTime: number;
-  status: string;   // <--- Added this as per previous step
+  status: string; 
+  day: string;
+  semester: number;
 }
 
 // --- HELPER TO PARSE TIME ---
@@ -42,26 +47,26 @@ const getSortTime = (timeStr: string): number => {
 };
 
 // --- HOOK ---
-export const useDailyClasses = (subjects: Subject[], dateObj: Date): ClassSession[] => {
+export const useDailyClasses = (subjects: Subject[]): ClassSession[] => {
   return useMemo(() => {
     if (!subjects || subjects.length === 0) return [];
 
     const classesToday: ClassSession[] = subjects.map((subject) => {
       const displayTime = subject.timeSlot || "N/A";
       
-      const displaySlot = subject.slots && subject.slots.length > 0 
-        ? subject.slots[0] 
-        : "VAR"; 
 
       return {
+        subjectId: subject.subjectId,
         subjectName: subject.subjectName,
         subjectCode: subject.subjectCode,
         time: displayTime,
-        timeSlot: displayTime, // <--- FIXED: Added this missing property
-        slot: displaySlot,
+        timeSlot: displayTime, 
+        slots: subject.slots || [],
         location: "Nalanda",
         sortTime: getSortTime(displayTime),
         status: subject.status, 
+        day: subject.day,
+        semester: subject.semester,
       };
     });
 

@@ -1,8 +1,8 @@
-import { Archive, Calendar, Edit2 } from "lucide-react-native";
-import { ImageBackground, Text, TouchableOpacity, View } from "react-native";
 import { TimetableCardType } from "@/types/timetableTypes";
-import React, { useMemo } from "react";
 import { router } from "expo-router";
+import { Calendar, Edit2 } from "lucide-react-native";
+import React, { useMemo } from "react";
+import { ImageBackground, Text, TouchableOpacity, View } from "react-native";
 
 // const getRandomGradient = () => {
 //   const gradients = [
@@ -25,12 +25,11 @@ export const TimetableCard = ({
   createdAt,
   updatedAt,
 }: TimetableCardType) => {
+  // const randomColor = React.useMemo(() => getRandomGradient(), []);
 
-    // const randomColor = React.useMemo(() => getRandomGradient(), []);
-    
-    const imageUrl = useMemo(() => {
-      return `https://picsum.photos/seed/${_id}/400/200`;
-    }, [_id]);
+  const imageUrl = useMemo(() => {
+    return `https://picsum.photos/seed/${_id}/400/200`;
+  }, [_id]);
 
   return (
     <TouchableOpacity
@@ -38,7 +37,7 @@ export const TimetableCard = ({
       className={`mb-4 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm`}
       onPress={() =>
         router.push({
-          pathname: "/timetable/[id]",
+          pathname: "/timetable/attendanceMarkingPage/[id]",
           params: { id: _id },
         })
       }
@@ -80,7 +79,7 @@ export const TimetableCard = ({
             className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
             onPress={() =>
               router.push({
-                pathname: "/timetable/attendanceMarkingPage/[id]",
+                pathname: "/timetable/[id]",
                 params: { id: _id },
               })
             }

@@ -22,6 +22,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ClassCard } from "@/components/ClassCard";
 
 // Import logic
 import { ClassSession, useDailyClasses } from "@/hooks/scheduleLogic";
@@ -75,7 +76,6 @@ const ScheduleScreen = () => {
   // --- CLASS DATA PROCESSING ---
   const todaysClasses: ClassSession[] = useDailyClasses(
     data?.classes || [],
-    selectedDate,
   );
 
   // SPLIT CLASSES: Morning (< 12:00) vs Afternoon (>= 12:00)
@@ -202,7 +202,7 @@ const ScheduleScreen = () => {
 
           {/* 1. MORNING CLASSES */}
           {morningClasses.map((item, index) => (
-            <ClassCard key={`morning-${index}`} item={item} />
+            <ClassCard key={`morning-${index}`} item={item} timetableId={id} selectedDate={selectedDate.toISOString().split("T")[0]}/>
           ))}
 
           {/* 2. LUNCH BREAK (Only show if there are actually classes today) */}
@@ -219,7 +219,7 @@ const ScheduleScreen = () => {
 
           {/* 3. AFTERNOON CLASSES */}
           {afternoonClasses.map((item, index) => (
-            <ClassCard key={`afternoon-${index}`} item={item} />
+            <ClassCard key={`afternoon-${index}`} item={item} timetableId={id} selectedDate={selectedDate.toISOString().split("T")[0]} />
           ))}
         </View>
       </ScrollView>
@@ -231,119 +231,7 @@ const ScheduleScreen = () => {
   );
 };
 
-// --- EXTRACTED CLASS CARD COMPONENT ---
-// This handles the display of individual classes and the conditional button logic
-const ClassCard = ({ item }: { item: ClassSession }) => {
-  return (
-    <View className="relative">
-      {/* TIMELINE DOT */}
-      <View className="absolute -left-[33px] top-1 w-4 h-4 rounded-full bg-blue-500 border-4 border-slate-50 dark:border-slate-900" />
 
-      <View className="flex-row justify-between mb-2 items-center">
-        <Text className="text-sm font-bold text-blue-500">{item.time}</Text>
-        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          SLOT {item.slot}
-        </Text>
-      </View>
 
-      {/* CARD BODY */}
-      <View className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
-        <View className="flex-row justify-between items-start">
-          <View className="flex-1">
-            <View className="bg-blue-50 dark:bg-blue-900/30 self-start px-2 py-0.5 rounded mb-2">
-              <Text className="text-blue-600 dark:text-blue-300 text-[10px] font-bold uppercase">
-                Lecture • Slot {item.slot}
-              </Text>
-            </View>
-            <Text className="text-lg font-bold text-slate-800 dark:text-white">
-              {item.subjectName}
-            </Text>
-            <View className="flex-row items-center mt-2 space-x-4">
-              <View className="flex-row items-center">
-                <Code size={14} color="#94a3b8" />
-                <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">
-                  {item.subjectCode}
-                </Text>
-              </View>
-              <View className="flex-row items-center ml-3">
-                <MapPin size={14} color="#94a3b8" />
-                <Text className="text-slate-500 dark:text-slate-400 text-xs ml-1">
-                  {item.location}
-                </Text>
-              </View>
-            </View>
-          </View>
-          <TouchableOpacity>
-            <MoreVertical size={20} color="#94a3b8" />
-          </TouchableOpacity>
-        </View>
-
-        {/* CONDITIONAL ACTION BUTTONS */}
-        {/* Only show if status is explicitly UNMARKED */}
-        {item.status === "UNMARKED" ? (
-          <View className="flex-row justify-between mt-5 pt-4 border-t border-slate-50 dark:border-slate-700">
-            <StatusButton
-              icon={CheckCircle}
-              color="#16a34a"
-              bg="bg-green-50 dark:bg-green-900/20"
-              text="PRESENT"
-              textColor="text-green-700"
-            />
-            <StatusButton
-              icon={XCircle}
-              color="#dc2626"
-              bg="bg-red-50 dark:bg-red-900/20"
-              text="ABSENT"
-              textColor="text-red-700"
-            />
-            <StatusButton
-              icon={Activity}
-              color="#ca8a04"
-              bg="bg-yellow-50 dark:bg-yellow-900/20"
-              text="MEDICAL"
-              textColor="text-yellow-700"
-            />
-            <StatusButton
-              icon={Ban}
-              color="#64748b"
-              bg="bg-slate-100 dark:bg-slate-700"
-              text="CANCEL"
-              textColor="text-slate-600 dark:text-slate-300"
-            />
-          </View>
-        ) : (
-          // Optional: Display the status if it IS marked (e.g., "Status: Present")
-          <View className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-700">
-            <Text className="text-slate-400 text-xs font-bold">
-              STATUS: <Text className="text-blue-500">{item.status}</Text>
-            </Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-};
-
-// Extracted Sub-component for Buttons
-interface StatusButtonProps {
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-  text: string;
-  textColor: string;
-}
-
-const StatusButton = ({
-  icon: Icon,
-  color,
-  bg,
-  text,
-  textColor,
-}: StatusButtonProps) => (
-  <TouchableOpacity className={`items-center p-2 rounded-xl w-[22%] ${bg}`}>
-    <Icon size={18} color={color} />
-    <Text className={`text-[8px] font-bold mt-1 ${textColor}`}>{text}</Text>
-  </TouchableOpacity>
-);
 
 export default ScheduleScreen;
