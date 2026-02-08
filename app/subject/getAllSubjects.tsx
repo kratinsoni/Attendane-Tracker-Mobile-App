@@ -1,80 +1,105 @@
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import {
   Bell,
-  Book,
   ChevronLeft,
   Filter,
-  FlaskConical,
+  LucideIcon,
   Plus,
-  RefreshCcw,
   Search,
 } from "lucide-react-native";
-import React,{ useCallback, useState} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
+  FlatList,
   ScrollView,
   Text,
-  StatusBar,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import LoadingScreen from "@/components/Loading";
-import ErrorScreen from "@/components/ErrorPage";
-import { useColorScheme } from "nativewind";
-import { CreateSubjectPayload } from "@/types/subjectTypes";
-import { SubjectCard } from "@/components/SubjectCard";
+
 import { useGetAllSubjects } from "@/hooks/useGetAllSubjects";
+import { BookOpenText, FlaskConical } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function AllSubjectsScreen() {
-  const router = useRouter();
+import ErrorScreen from "@/components/ErrorPage";
+import LoadingScreen from "@/components/Loading";
 
-  // TanStack Query Hook
-  const { data: subjects, isLoading, error } = useQuery<CreateSubjectPayload[]>({
-  queryKey: ['subjects'],
-  queryFn: useGetAllSubjects, // Ensure this function returns Promise<SubjectCardType[]>
-});
+// AuthLayout is imported but not used in your snippet; kept it to preserve imports
+import { SubjectCard } from "@/components/SubjectCard";
+import { CreateSubjectPayload } from "@/types/subjectTypes";
+import { router } from "expo-router";
 
-  console.log( "subject data is:", subjects)
-  const { colorScheme } = useColorScheme();
-  
+interface SubjectCardProps extends CreateSubjectPayload {
+  createdAt: string;
+  updatedAt: string;
+  colorClass: string;
+  barColor: string;
+  IconComponent: LucideIcon;
+}
 
-  // State for the pull-to-refresh spinner
-    const [refreshing, setRefreshing] = useState(false);
-  
-    // Function to handle the pull-down action
-    const onRefresh = useCallback(async () => {
-      setRefreshing(true);
-      try {
-        await refetch();
-      } catch (error) {
-        console.error("Refresh failed:", error);
-      } finally {
-        setRefreshing(false);
-      }
-    }, [refetch]);
-  
-    // Only show the full-screen loading if we aren't already doing a pull-to-refresh
-    if (isLoading && !refreshing) {
-      return <LoadingScreen />;
+const getAllSubjects = () => {
+  const CHIPS = ["All Subjects", "Theory", "Lab"];
+
+  const [tab, setTab] = useState<string>("All Subjects");
+
+  const { data: subjects, isLoading, isError, refetch } = useGetAllSubjects();
+
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [activeFilter, setActiveFilter] = useState<string>("All Subjects");
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  // Function to handle the pull-down action
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
     }
-  
-    if(error){
-      return <ErrorScreen/>
-    }
+  }, [refetch]);
 
-    const isDark = colorScheme === "dark";
+  const filteredSubjects = useMemo<CreateSubjectPayload[]>(() => {
+    if (!subjects) return [];
+    return subjects.filter((subject) => {
+      const matchesSearch =
+        subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        subject.code.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter =
+        activeFilter === "All Subjects" ||
+        subject.type === activeFilter.toUpperCase();
+      return matchesSearch && matchesFilter;
+    });
+  }, [subjects, searchQuery, activeFilter]);
 
+  const mapSubjectToCard = (
+    subject: CreateSubjectPayload,
+  ): SubjectCardProps => {
+    return {
+      ...subject,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+
+      colorClass: subject.type === "THEORY" ? "bg-blue-500" : "bg-green-500",
+      barColor: subject.type === "THEORY" ? "#3b82f6" : "#22c55e",
+      IconComponent: subject.type === "THEORY" ? BookOpenText : FlaskConical,
+
+      classesAttended: subject.classesAttended,
+      totalClasses: subject.totalClasses,
+    };
+  };
+
+  if (isLoading && !refreshing) {
+    return <LoadingScreen />;
+  }
+
+  if (isError) {
+    return <ErrorScreen />;
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
-      <StatusBar
-              barStyle={isDark ? "light-content" : "dark-content"}
-              backgroundColor={isDark ? "#101622" : "#f6f6f8"}
-      />
-      {/* Header (Same as before) */}
+    // FIX 1: Added style={{ flex: 1 }} so SafeAreaView fills the screen.
+    // This ensures 'absolute bottom-10' refers to the screen bottom, not the list bottom.
+    <SafeAreaView style={{ flex: 1 }}>
+      {/* Header Section */}
       <View className="bg-white dark:bg-gray-950 px-4 pt-2 pb-4 border-b border-gray-100 dark:border-gray-800">
         <View className="flex-row justify-between items-center mb-4">
           <TouchableOpacity
@@ -91,88 +116,88 @@ export default function AllSubjectsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View className="flex-row gap-2">
+        {/* Search & Filter */}
+        <View className="flex-row gap-2 mb-4">
           <View className="flex-1 flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-xl px-3 h-11">
             <Search size={18} color="#9ca3af" />
             <TextInput
-              placeholder="Search subjects..."
+              placeholder="Search subjects or codes..."
               placeholderTextColor="#9ca3af"
               className="flex-1 ml-2 text-sm dark:text-white"
+              // FIX 2: Connected the input to state so searching works
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
           </View>
           <TouchableOpacity className="w-11 h-11 bg-primary/10 items-center justify-center rounded-xl">
             <Filter size={20} color="#1152d4" />
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Logic for Loading, Error, and List */}
-      <View className="flex-1">
-        {isLoading ? (
-          <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#1152d4" />
-            <Text className="mt-2 text-gray-500">Loading courses...</Text>
-          </View>
-        ) : error ? (
-          <View className="flex-1 items-center justify-center p-6">
-            <Text className="text-red-500 text-center mb-4">
-              Failed to load subjects. Please check your connection.
-            </Text>
+        {/* Horizontal Filter Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="flex-row"
+        >
+          {CHIPS.map((chip, index) => (
             <TouchableOpacity
-              // onPress={() => refetch()}
-              className="flex-row items-center bg-primary px-4 py-2 rounded-lg"
+              key={chip}
+              onPress={() => (setActiveFilter(chip), setTab(chip))}
+              className={`px-4 py-2 rounded-full mr-2 ${
+                tab == chip
+                  ? "bg-primary text-white"
+                  : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-black"
+              }`}
             >
-              <RefreshCcw size={16} color="white" className="mr-2" />
-              <Text className="text-white font-bold">Retry</Text>
+              <Text
+                className={`text-xs font-semibold ${
+                  tab === chip
+                    ? "text-white"
+                    : "text-gray-600 dark:text-gray-300"
+                }`}
+              >
+                {chip}
+              </Text>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <ScrollView
-            className="flex-1 p-4"
-            showsVerticalScrollIndicator={false}
-          >
-            {subjects?.map((item: any, index : number) => {
-              // 1. Determine UI logic based on the subject type
-              const isLab = item.type === "LAB";
-
-              return (
-                <SubjectCard
-                  key={item._id || `${item.code}-${index}`}
-                  _id={item._id || String(index)}
-                  name={item.name}
-                  code={item.code}
-                  credits={item.credits}
-                  type={item.type}
-                  Grading={item.Grading}
-                  professor={item.professor}
-                  slots={item.slots} // Pass the array directly as your card handles the join
-                  // 2. Map attendance props to match SubjectCardProps exactly
-                  totalClasses={item.totalClasses || 30}
-                  attendedClasses={item.attendedClasses || 0}
-                  // 3. Pass the missing required UI props
-                  // colorClass={
-                  //   isLab
-                  //     ? "bg-emerald-100 dark:bg-emerald-900/30"
-                  //     : "bg-blue-100 dark:bg-blue-900/30"
-                  // }
-                  // barColor={isLab ? "#10b981" : "#1152d4"}
-                  // IconComponent={isLab ? FlaskConical : Book}
-                />
-              );
-            })}
-            <View className="h-24" />
-          </ScrollView>
-        )}
+          ))}
+        </ScrollView>
       </View>
 
-      {/* FAB - Navigates to a Create Screen */}
+      <FlatList
+        data={filteredSubjects}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => <SubjectCard {...mapSubjectToCard(item)} />}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        ListEmptyComponent={
+          <Text className="text-center text-gray-500 mt-10">
+            No subjects found
+          </Text>
+        }
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
+
+      {/* Floating Action Button */}
+      {/* Since the parent SafeAreaView now has flex: 1, this absolute positioning
+         will correctly place the button at the bottom right of the SCREEN.
+      */}
       <TouchableOpacity
-        // onPress={() => router.push('/create-subject')}
-        className="absolute bottom-6 right-6 w-14 h-14 bg-primary rounded-full items-center justify-center shadow-lg"
-        style={{ elevation: 5 }}
+        activeOpacity={0.8}
+        onPress={() => router.push("/subject/create")}
+        className="absolute bottom-10 right-6 w-16 h-16 bg-blue-600 rounded-full items-center justify-center z-50 shadow-2xl"
+        style={{
+          elevation: 10,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4.65,
+        }}
       >
-        <Plus size={28} color="white" />
+        <Plus size={32} color="white" />
       </TouchableOpacity>
     </SafeAreaView>
   );
-}
+};
+
+export default getAllSubjects;
