@@ -26,6 +26,20 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen 
+          name="(auth)/register-init"
+          options={{
+            title: "Register Init",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="(auth)/register"
+          options={{
+            title: "Register Main",
+            headerShown: false,
+          }}
+        />
         <Stack.Screen
           name="timetable/createTimetablePage"
           options={{
