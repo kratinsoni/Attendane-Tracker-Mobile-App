@@ -135,9 +135,9 @@ export default function LoginScreen() {
           <View className="mt-auto py-10 items-center">
             <View className="flex-row">
               <Text className="text-[#616f89] text-sm">
-                Don't have an account?{" "}
+                Don{`'`}t have an account?{" "}
               </Text>
-              <TouchableOpacity onPress={() => router.push('/register')}>
+              <TouchableOpacity onPress={() => router.push('/register-init')}>
                 <Text className="text-[#135bec] text-sm font-bold">
                   Sign Up
                 </Text>

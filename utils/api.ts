@@ -1,7 +1,10 @@
 import { getToken } from "@/utils/token";
 import axios, { AxiosInstance } from "axios";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { CreateSubjectPayload } from "../types/subjectTypes";
 import { UserInterface } from "@/types/userTypes";
-import { SubjectFormData } from "@/types/subjectFormType";
+import { RegisterPayload } from "@/hooks/useRegister";
+
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL;
 
@@ -42,8 +45,8 @@ export const userApi = {
     // Debug log
     return res.data.data; // ✅ IMPORTANT
   },
-  me: (api: AxiosInstance) => {
-    return api.get("/users/me");
+  me: async (api: AxiosInstance) => {
+    return await api.get("/users/me");
   },
   register: async (
     {
@@ -54,7 +57,7 @@ export const userApi = {
       rollNo,
       password,
       confirmPassword,    
-    }: UserInterface & { api: AxiosInstance; confirmPassword: string }
+    }: RegisterPayload & { api: AxiosInstance }
   ): Promise<{ user: UserInterface }> => {
     const res = await api.post("/users/register", {
       instituteId,
@@ -66,6 +69,15 @@ export const userApi = {
     });
 
     return res.data.data;
+  },
+  registerInit: async (api: AxiosInstance, instituteId: string) => {
+    return await api.post("/users/register-init", { instituteId });
+  },
+  verifyOtp: async (api: AxiosInstance, instituteId: string, otp: string) => {
+    return await api.post("/users/verify", { instituteId, otp });
+  },
+  logout: async (api: AxiosInstance) => {
+    await api.post("/users/logout");
   }
 };
 

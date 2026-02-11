@@ -26,9 +26,16 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen 
+          name="(auth)/register-init"
+          options={{
+            title: "Register Init",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
           name="(auth)/register"
           options={{
-            title: "Register",
+            title: "Register Main",
             headerShown: false,
           }}
         />
