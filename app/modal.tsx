@@ -4,10 +4,17 @@ import { Text, TouchableOpacity,StatusBar, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
 import { removeToken } from "@/utils/token";
+import { useLogout } from "@/hooks/useLogout";
 
 export default function ModalScreen() {
 
   const { colorScheme } = useColorScheme();
+
+  const { mutate: logout } = useLogout();
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const isDark = colorScheme === "dark";
 
@@ -53,7 +60,7 @@ export default function ModalScreen() {
             <Text className="text-xl text-white">Subject Page</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => removeToken().then(() => router.replace("/(auth)/login"))}
+            onPress={handleLogout}
             className="px-4 py-2 bg-blue-500 rounded-md"
           >
             <Text className="text-xl text-white">Logout</Text>

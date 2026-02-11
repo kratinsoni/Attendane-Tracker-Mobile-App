@@ -76,6 +76,9 @@ export const userApi = {
   verifyOtp: async (api: AxiosInstance, instituteId: string, otp: string) => {
     return await api.post("/users/verify", { instituteId, otp });
   },
+  logout: async (api: AxiosInstance) => {
+    await api.post("/users/logout");
+  }
 };
 
 export const timetableApi = {
