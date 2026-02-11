@@ -130,16 +130,29 @@ export const attendanceApi = {
     return res.data.data;
   }
 }
+
 export const subjectApi = {
   createSubject: async (
     api: AxiosInstance,
-    data: CreateSubjectPayload,
+    formData: SubjectFormData
   ) => {
-    const res = await api.post("/subjects/", data);
+    
+    const flatSlots: string[] = Object.values(formData.schedules).flat();
+
+    const res = await api.post("/subjects/", {
+    name: formData.name,
+    code: formData.code,
+    type: formData.type,
+    professor: formData.professor,
+    credits: Number(formData.credits), // Convert to number
+    slots: flatSlots,
+    Grading: formData.Grading, 
+    labLength: formData.labLength ? Number(formData.labLength) : undefined, // Optional
+    });
     return res.data.data;
   },
   getAllSubjects: async (api: AxiosInstance) => {
     const res = await api.get("/subjects/");
-    return res.data.data;
+    return res;
   },
 };

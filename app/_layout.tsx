@@ -3,7 +3,6 @@ import "../global.css"
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
 
-
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
@@ -76,9 +75,16 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="subject/getAllSubjects"
+          name="subject/GetAllSubjects"
           options={{
             title: "Subject page",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="subject/create"
+          options={{
+            title: "Subject Addition",
             headerShown: false,
           }}
         />
