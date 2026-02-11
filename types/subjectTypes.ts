@@ -9,4 +9,6 @@ export interface CreateSubjectPayload {
   slots: string[];
   Grading: "ABSOLUTE" | "RELATIVE";
   labLength?: number; // <--- The '?' makes this field OPTIONAL
+  totalClasses: number; // Add totalClasses to the payload
+  classesAttended: number; // Add classesAttended to the payload
 }

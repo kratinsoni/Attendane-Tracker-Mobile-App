@@ -1,8 +1,7 @@
 import { getToken } from "@/utils/token";
 import axios, { AxiosInstance } from "axios";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-import { CreateSubjectPayload } from "../types/subjectTypes";
-
+import { UserInterface } from "@/types/userTypes";
+import { SubjectFormData } from "@/types/subjectFormType";
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL;
 
@@ -46,6 +45,28 @@ export const userApi = {
   me: (api: AxiosInstance) => {
     return api.get("/users/me");
   },
+  register: async (
+    {
+      api,
+      instituteId,
+      firstName,
+      lastName,
+      rollNo,
+      password,
+      confirmPassword,    
+    }: UserInterface & { api: AxiosInstance; confirmPassword: string }
+  ): Promise<{ user: UserInterface }> => {
+    const res = await api.post("/users/register", {
+      instituteId,
+      firstName,
+      lastName,
+      rollNo,
+      password,
+      confirmPassword,
+    });
+
+    return res.data.data;
+  }
 };
 
 export const timetableApi = {
@@ -97,16 +118,29 @@ export const attendanceApi = {
     return res.data.data;
   }
 }
+
 export const subjectApi = {
   createSubject: async (
     api: AxiosInstance,
-    data: CreateSubjectPayload,
+    formData: SubjectFormData
   ) => {
-    const res = await api.post("/subjects/", data);
+    
+    const flatSlots: string[] = Object.values(formData.schedules).flat();
+
+    const res = await api.post("/subjects/", {
+    name: formData.name,
+    code: formData.code,
+    type: formData.type,
+    professor: formData.professor,
+    credits: Number(formData.credits), // Convert to number
+    slots: flatSlots,
+    Grading: formData.Grading, 
+    labLength: formData.labLength ? Number(formData.labLength) : undefined, // Optional
+    });
     return res.data.data;
   },
   getAllSubjects: async (api: AxiosInstance) => {
     const res = await api.get("/subjects/");
-    return res.data.data;
+    return res;
   },
 };

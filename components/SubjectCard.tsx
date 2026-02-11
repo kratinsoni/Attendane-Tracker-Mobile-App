@@ -1,17 +1,11 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { User, Calendar, ArrowRight } from 'lucide-react-native';
+import { User, Calendar, ArrowRight, AlertCircle } from 'lucide-react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { CreateSubjectPayload } from '../types/subjectTypes';
 
-// We extend the interface for UI-specific needs like attendance 
-// that might not be in the "Create" payload but are in the "View"
-interface SubjectCardProps extends CreateSubjectPayload {
-  attendedClasses?: number;
-  totalClasses?: number;
-}
-
 export const SubjectCard = ({
-  _id,
   name,
   code,
   credits,
@@ -19,88 +13,119 @@ export const SubjectCard = ({
   Grading,
   professor,
   slots,
-  attendedClasses = 0, // Default fallback
+  classesAttended = 0,
   totalClasses = 0,
-}: SubjectCardProps) => {
+}: CreateSubjectPayload) => {
+  const percentage = totalClasses > 0 ? Math.round((classesAttended / totalClasses) * 100) : 0;
   
-  // Logic for dynamic styling based on your Tailwind config
-  const isLab = type === 'LAB';
-  const isCritical = attendedClasses < 75 && attendedClasses > 0;
+  // Dynamic UI Constants
+  // Logic: Critical if below 75% (and if classes have actually started)
+
+  const isCritical = percentage < 75 && totalClasses > 0;
+
+  const isLab = type?.toUpperCase() === 'LAB';
+  const progressColor = isLab ? '#10B981' : '#2563EB'; // Green for Lab, Blue for Theory
+  const badgeBg = isLab ? 'bg-emerald-50' : 'bg-blue-50';
+  const badgeText = isLab ? 'text-emerald-600' : 'text-blue-600';
+
+  // SVG Progress Ring calculations
+  const radius = 22;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <View className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 mb-4 shadow-sm">
-      {/* Header Section */}
-      <View className="flex-row justify-between items-start">
-        <View className="flex-1">
-          <View className="flex-row gap-2 mb-1">
-            <View className={`${isLab ? 'bg-emerald-50' : 'bg-primary/10'} px-2 py-0.5 rounded`}>
-              <Text className={`text-[10px] font-bold tracking-widest uppercase ${isLab ? 'text-emerald-600' : 'text-primary'}`}>
-                {type}
-              </Text>
-            </View>
-            <View className="bg-orange-50 dark:bg-orange-500/10 px-2 py-0.5 rounded">
-              <Text className="text-[10px] font-bold tracking-widest text-orange-500 uppercase">
-                {Grading}
-              </Text>
-            </View>
+    <View className={`bg-white rounded-3xl p-5 mb-4 shadow-sm border ${
+        isCritical ? 'border-red-200' : 'border-gray-100'
+      }`}>
+      {/* Header Badges & Progress Ring */}
+      <View className="flex-row justify-between items-start mb-2">
+        <View className="flex-row gap-2">
+          <View className={`${badgeBg} px-3 py-1 rounded-md`}>
+            <Text className={`${badgeText} text-[10px] font-bold tracking-widest`}>{type?.toUpperCase()}</Text>
           </View>
-          <Text className="text-lg font-bold text-gray-900 dark:text-white mt-1 leading-tight">
-            {name}
-          </Text>
-          <Text className="text-xs text-gray-500 font-medium">
-            {code} • {credits} Credits
-          </Text>
+          <View className="bg-orange-50 px-3 py-1 rounded-md">
+            <Text className="text-orange-500 text-[10px] font-bold tracking-widest uppercase">{Grading}</Text>
+          </View>
+          {/* Critical Warning Badge */}
+
+          {isCritical && (
+            <View className="bg-red-50 px-2 py-1 rounded-md flex-row items-center">
+              <AlertCircle size={10} color="#EF4444" />
+              <Text className="text-red-500 text-[10px] font-bold ml-1">LOW</Text>
+            </View>
+          )}
         </View>
 
-        {/* Progress Circle (Simplified for Native) */}
-        <View className="items-end">
-          <View className={`w-14 h-14 rounded-full border-4 items-center justify-center ${isCritical ? 'border-red-500' : 'border-primary'}`}>
-            <Text className={`text-[11px] font-bold ${isCritical ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
-              {attendedClasses}%
-            </Text>
+        {/* Circular Progress Ring */}
+        <View className="items-center">
+          <View className="relative items-center justify-center">
+            <Svg width="54" height="54" viewBox="0 0 54 54">
+              <Circle cx="27" cy="27" r={radius} stroke="#F3F4F6" strokeWidth="5" fill="none" />
+              <Circle
+                cx="27"
+                cy="27"
+                r={radius}
+                stroke={progressColor}
+                strokeWidth="5"
+                fill="none"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                transform="rotate(-90 27 27)"
+              />
+            </Svg>
+            <View className="absolute">
+              <Text className={`text-[12px] font-bold ${isCritical ? 'text-red-600' : 'text-gray-800'}`}>
+                {percentage}%
+              </Text>
+            </View>
           </View>
-          <Text className={`text-[10px] mt-1 italic ${isCritical ? 'text-red-400' : 'text-gray-400'}`}>
-            {isCritical ? 'Critical' : 'Good Standing'}
-          </Text>
+          <Text className="text-[10px] italic text-gray-400 mt-1">{classesAttended}/{totalClasses} Classes</Text>
         </View>
       </View>
 
-      {/* Details Grid */}
-      <View className="flex-row py-3 border-y border-gray-50 dark:border-gray-800 my-3">
-        <View className="flex-1 flex-row items-center gap-2">
-          <User size={16} color="#9ca3af" />
-          <View className="flex-1">
-            <Text className="text-[10px] text-gray-400 leading-none">Professor</Text>
-            <Text className="text-xs font-medium dark:text-gray-200" numberOfLines={1}>
-              {professor}
-            </Text>
-          </View>
-        </View>
-        <View className="flex-1 flex-row items-center gap-2">
-          <Calendar size={16} color="#9ca3af" />
-          <View className="flex-1">
-            <Text className="text-[10px] text-gray-400 leading-none">Slots</Text>
-            <Text className="text-xs font-medium dark:text-gray-200" numberOfLines={1}>
-              {slots.join(', ')}
-            </Text>
-          </View>
-        </View>
+      {/* Course Title & Code */}
+      <View className="mb-4 -mt-12 mr-[60px]">
+        <Text className="text-xl font-bold text-slate-900 leading-tight">{name}</Text>
+        <Text className="text-sm text-slate-500 font-medium">{code} • {credits} Credits</Text>
       </View>
 
-      {/* Footer / Actions */}
-      <View className="flex-row justify-between items-center">
-        <View className="flex-row items-center">
-          <View className="w-7 h-7 rounded-full border-2 border-white dark:border-gray-900 bg-gray-200 items-center justify-center z-10">
-            <Text className="text-[9px] font-bold">{professor.split(' ').map(n => n[0]).join('')}</Text>
-          </View>
-          <View className="w-7 h-7 rounded-full border-2 border-white dark:border-gray-900 bg-primary/20 -ml-2 items-center justify-center">
-            <Text className="text-[9px] font-bold text-primary">{code.substring(0, 2)}</Text>
+      {/* Professor and Slots Section */}
+      <View className="flex-row mb-6 gap-5">
+        <View className="flex-1 flex-row items-center">
+          <User size={18} color="#94A3B8" strokeWidth={1.5} />
+          <View className="ml-2">
+            <Text className="text-[10px] text-gray-400 font-medium">Professor</Text>
+            <Text className="text-[13px] font-semibold text-gray-800">{professor}</Text>
           </View>
         </View>
         
-        <TouchableOpacity className="flex-row items-center gap-1 active:opacity-60">
-          <Text className="text-primary text-sm font-semibold">View Logs</Text>
-          <ArrowRight size={14} color="#1152d4" />
+        <View className="flex-1 flex-row items-center ml-2">
+          <Calendar size={18} color="#94A3B8" strokeWidth={1.5} />
+          <View className="ml-2">
+            <Text className="text-[10px] text-gray-400 font-medium">Slots</Text>
+            <Text className="text-[13px] font-semibold text-gray-800 uppercase" numberOfLines={1}>
+              {Array.isArray(slots) ? slots.join(', ') : slots}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Footer / View Logs */}
+      <View className="flex-row justify-between items-center pt-2">
+        {/* Profile Initials/Circles */}
+        <View className="flex-row">
+          <View className="w-7 h-7 rounded-full bg-slate-200 items-center justify-center border-2 border-white">
+            <Text className="text-[8px] font-bold text-gray-600">SJ</Text>
+          </View>
+          <View className={`w-7 h-7 rounded-full ${isLab ? 'bg-emerald-100' : 'bg-blue-100'} -ml-2 items-center justify-center border-2 border-white`}>
+            <Text className={`text-[8px] font-bold ${isLab ? 'text-emerald-600' : 'text-blue-600'}`}>{isLab ? 'DB' : 'OS'}</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity className="flex-row items-center">
+          <Text className="text-blue-600 font-bold text-sm mr-1">View Logs</Text>
+          <ArrowRight size={16} color="#2563EB" strokeWidth={3} />
         </TouchableOpacity>
       </View>
     </View>
