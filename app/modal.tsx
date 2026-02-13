@@ -54,7 +54,7 @@ export default function ModalScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/subject/GetAllSubjects")}
+            onPress={() => router.push("/subject/getAllSubjects")}
             className="px-4 py-2 bg-blue-500 rounded-md"
           >
             <Text className="text-xl text-white">Subject Page</Text>
@@ -70,6 +70,12 @@ export default function ModalScreen() {
             className="px-4 py-2 bg-blue-500 rounded-md"
           >
             <Text className="text-xl text-white"> Add Subject</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/dashboard")}
+            className="px-4 py-2 bg-blue-500 rounded-md"
+          >
+            <Text className="text-xl text-white"> Dashboard</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

@@ -75,7 +75,7 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="subject/GetAllSubjects"
+          name="subject/getAllSubjects"
           options={{
             title: "Subject page",
             headerShown: false,
@@ -88,6 +88,7 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
       <Toast/>
     </QueryClientProvider>
