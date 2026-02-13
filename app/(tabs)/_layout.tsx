@@ -13,11 +13,11 @@ export default function TabLayout() {
         screenOptions={{ headerShown: false }}
         tabBar={(props) => <CustomTabBar {...props} isDark={isDark} />}
       >
-        <Tabs.Screen name="dashboard" options={{ title: "Home" }} />
-        <Tabs.Screen name="timetable" options={{ title: "Timetable" }} />
-        <Tabs.Screen name="subjects" options={{ title: "Subjects" }} />
-        <Tabs.Screen name="events" options={{ title: "Events" }} />
-        <Tabs.Screen name="details" options={{ title: "Details" }} />
+        <Tabs.Screen name="dashboard" options={{ title: "Home", headerShown: false }} />
+        <Tabs.Screen name="timetable" options={{ title: "Timetable", headerShown: false }} />
+        <Tabs.Screen name="subjects" options={{ title: "Subjects", headerShown: false }} />
+        <Tabs.Screen name="events" options={{ title: "Events", headerShown: false }} />
+        <Tabs.Screen name="details" options={{ title: "Details", headerShown: false }} />
       </Tabs>
     </AuthLayout>
   );
