@@ -1,10 +1,10 @@
-import { View, Text, ActivityIndicator } from "react-native";
-import React, { useEffect } from "react";
 import { useMe } from "@/hooks/useMe";
 import { router } from "expo-router";
+import { useEffect } from "react";
+import { View } from "react-native";
 import LoadingScreen from "./Loading";
 
-const AuthLayout = ({ children }: { children: React.ReactNode }) => {
+export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   const { data, isLoading, isError } = useMe();
 
   useEffect(() => {
@@ -14,16 +14,12 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   }, [isLoading, isError, data]);
 
   if (isLoading) {
-    return (
-      <LoadingScreen />
-    );
+    return <LoadingScreen />;
   }
 
   if (isError || !data) {
-    return null; // navigation handled in useEffect
+    return null;
   }
 
   return <View style={{ flex: 1 }}>{children}</View>;
 };
-
-export default AuthLayout;

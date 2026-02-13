@@ -1,3 +1,4 @@
+import { useLogout } from "@/hooks/useLogout";
 import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -15,6 +16,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function UserProfile() {
   const { data } = useMe();
 
+  const {mutate} = useLogout();
+
+  const handleLogout = () =>{
+    mutate();
+  }
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
       <StatusBar barStyle="dark-content" />
@@ -164,7 +170,7 @@ export default function UserProfile() {
 
             {/* List Item 2 */}
             <TouchableOpacity className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800"
-            onPress={() => router.push("/subject/GetAllSubjects")}
+            onPress={() => router.push("/subject/getAllSubjects")}
             >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#135bec]/10 mr-4">
                 <MaterialIcons name="book" size={20} color="#135bec" />
@@ -213,7 +219,9 @@ export default function UserProfile() {
 
         {/* Logout Button */}
         <View className="px-4 mt-2">
-          <TouchableOpacity className="w-full bg-white dark:bg-[#1a2230] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex-row items-center justify-center gap-2 active:scale-95 active:bg-red-50 dark:active:bg-red-900/10 transition-transform">
+          <TouchableOpacity className="w-full bg-white dark:bg-[#1a2230] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex-row items-center justify-center gap-2 active:scale-95 active:bg-red-50 dark:active:bg-red-900/10 transition-transform"
+          onPress={handleLogout}
+          >
             <MaterialIcons name="logout" size={20} color="#dc2626" />
             <Text className="text-red-600 dark:text-red-400 font-semibold">
               Log Out
