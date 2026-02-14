@@ -5,6 +5,7 @@ export const useGetAttendanceForDateByTimetable = ({timetableId, date} : {timeta
     return useQuery({
         queryKey: ["attendance", timetableId, date],
         queryFn: async () => {
+            console.log('Hello', date);
             return attendanceApi.getAttendanceForDateByTimetable(api, timetableId, date);
         }
     });

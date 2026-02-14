@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -38,11 +38,23 @@ const ScheduleScreen = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [anchorDate, setAnchorDate] = useState<Date>(new Date());
 
+  
+  const offsetInMs: number = selectedDate.getTimezoneOffset() * 60 * 1000;
+
+// Subtract the offset to "neutralize" the ISO conversion shift
+const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
+  .toISOString()
+  .split("T")[0];
+
   // DATA FETCHING
   const { data } = useGetAttendanceForDateByTimetable({
     timetableId: id,
-    date: selectedDate.toISOString().split("T")[0],
+    date: localISODate, 
   });
+
+  // useEffect(() => {
+  //   console.log(selectedDate);
+  // }, [selectedDate]);
 
   // --- DATE LOGIC ---
   const getStartOfWeek = (date: Date) => {
@@ -53,6 +65,7 @@ const ScheduleScreen = () => {
   };
 
   console.log("Selected Date:", selectedDate.toDateString());
+  console.log(selectedDate);
   console.log("Fetched Classes:", data?.classes);
 
   const weekDates = useMemo(() => {
@@ -65,6 +78,7 @@ const ScheduleScreen = () => {
     }
     return days;
   }, [anchorDate]);
+  // console.log(weekDates);
 
   const changeWeek = (direction: "prev" | "next") => {
     const newAnchor = new Date(anchorDate);
@@ -88,7 +102,7 @@ const ScheduleScreen = () => {
     ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][date.getDay()];
   const formatDateNum = (date: Date): string => date.getDate().toString();
   const formatMonthYear = (date: Date): string =>
-    date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
   const isSameDate = (d1: Date, d2: Date) =>
     d1.toDateString() === d2.toDateString();
 
