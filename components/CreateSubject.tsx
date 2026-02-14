@@ -50,15 +50,17 @@ export default function CreateSubjectPage() {
       setSubjectName(fetchedSubject.subjectName);
       setCredits(Number(fetchedSubject.credits) || 0);
       const professors = fetchedSubject.professors ? fetchedSubject.professors.split(',').map((prof: string) => prof.trim()) : [];
+      console.log('Parsed Professors:', professors);
       setProfessors(professors);
       
       if (fetchedSubject.slots) {
         // Handle potential space-separated or comma-separated slots
-        const slots = [...new Set(fetchedSubject.slots.split(/[ ,]+/).map((slot: string) => slot.substring(0, 2)))];
+        const slots = fetchedSubject.slots.split(/[ ,]+/);
         console.log('Parsed Slots:', slots);
-        let mappedTimeBlocks: string[] = []; 
+        let mappedTimeBlocks: string[] = [];
         (slots as string[]).map((slot: string) => {
-          mappedTimeBlocks = [...mappedTimeBlocks, ...timeSlots[slot as keyof typeof timeSlots]];
+          if (slot.length === 1) mappedTimeBlocks = [ ...mappedTimeBlocks, ...timeSlots[slot] ];
+          else mappedTimeBlocks = [ ...mappedTimeBlocks, timeSlots[slot.substring(0, 2)][Number(slot.substring(2)) - 1] ];
         });
         setSelectedSlots(mappedTimeBlocks);
       }
