@@ -1,112 +1,130 @@
-import React, { useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  Animated,
+import React, { useEffect } from "react";
+import { View, Text, StatusBar } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialIcons } from "@expo/vector-icons";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
   Easing,
-  StatusBar,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons"; // Standard in Expo
+  interpolate,
+} from "react-native-reanimated";
+import { cssInterop } from "nativewind";
 
-export default function LoadingScreen() {
-  // Animation Values
-  const spinValue = useRef(new Animated.Value(0)).current;
-  const pulseValue = useRef(new Animated.Value(1)).current;
+// Enable LinearGradient to accept Tailwind classes
+cssInterop(LinearGradient, {
+  className: { target: "style" },
+});
+
+/**
+ * Animated Wave Bar Component
+ */
+const WaveBar = ({ delay }: { delay: number }) => {
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    // Rotation Animation (Spin)
-    Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 3000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-    ).start();
-
-    // Pulse Animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseValue, {
-          toValue: 1.1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseValue, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
+    // Start animation loop
+    progress.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }), // Expand
+          withTiming(0, { duration: 600, easing: Easing.inOut(Easing.ease) }), // Contract
+        ),
+        -1, // Infinite loop
+        false, // Do not reverse automatically
+      ),
+    );
   }, []);
 
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      height: interpolate(progress.value, [0, 1], [8, 24]),
+      opacity: interpolate(progress.value, [0, 1], [0.6, 1]),
+    };
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622] items-center justify-between">
-      <StatusBar barStyle="dark-content" />
+    <Animated.View
+      style={animatedStyle}
+      className="w-1.5 bg-[#0ed851] rounded-full mx-[3px]"
+    />
+  );
+};
 
-      {/* Top Spacer */}
-      <View className="h-12 w-full" />
-
-      {/* Main Content */}
-      <View className="flex-1 items-center justify-center w-full px-8">
-        <View className="relative items-center justify-center mb-8 h-20 w-20">
-          {/* Pulse Circle */}
-          <Animated.View
-            style={{ transform: [{ scale: pulseValue }] }}
-            className="absolute w-20 h-20 bg-[#135bec]/10 rounded-full"
-          />
-
-          {/* Spinning Border */}
-          <Animated.View
-            style={{ transform: [{ rotate: spin }] }}
-            className="absolute w-16 h-16 border-2 border-[#135bec]/5 border-t-[#135bec] rounded-full"
-          />
-
-          {/* Center Icon Box */}
-          <View className="w-12 h-12 bg-[#135bec] rounded-2xl items-center justify-center shadow-lg shadow-[#135bec]/30">
-            <MaterialCommunityIcons name="sync" size={24} color="white" />
-          </View>
-        </View>
-
-        <View className="items-center">
-          <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium tracking-widest">
-            Loading...
-          </Text>
-        </View>
-      </View>
-
-      {/* Footer */}
-      <View className="pb-12 items-center">
-        <View className="flex-row items-center gap-2 opacity-60">
-          <View className="w-5 h-5 bg-[#135bec] rounded items-center justify-center">
-            <MaterialCommunityIcons
-              name="check-circle"
-              size={14}
-              color="white"
-            />
-          </View>
-          <Text className="text-[#101622] dark:text-white font-bold tracking-tight text-base">
-            Attendly
-          </Text>
-        </View>
-        <Text className="text-slate-400 dark:text-slate-600 text-[10px] font-bold tracking-[2px] uppercase mt-2">
-          Education Systems
-        </Text>
-      </View>
-
-      {/* Background Blur Effect (Simplified for Mobile) */}
-      <View
-        pointerEvents="none"
-        className="absolute top-1/2 left-1/2 -ml-[250px] -mt-[250px] w-[500px] h-[500px] bg-[#135bec]/5 rounded-full"
-        style={{ opacity: 0.5 }}
+export default function LoadingScreen() {
+  return (
+    <View className="flex-1">
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
       />
-    </SafeAreaView>
+
+      {/* Background Gradient: Mint -> Sage */}
+      <LinearGradient
+        colors={["#E0F9E6", "#C8E6D3"]}
+        className="flex-1 w-full items-center justify-between p-8"
+      >
+        {/* Top Spacer */}
+        <View className="h-12 w-full" />
+
+        {/* Center Brand Identity */}
+        <View className="flex-1 items-center justify-center -mt-20">
+          {/* Icon Container */}
+          <View className="mb-8 relative items-center justify-center">
+            {/* Abstract Background Glow */}
+            <View className="absolute w-24 h-24 bg-[#0ed851]/20 rounded-full scale-150 blur-xl" />
+
+            {/* Main Icon Card */}
+            <View className="bg-white/90 p-6 rounded-3xl shadow-sm border border-white/50 backdrop-blur-sm">
+              <View className="relative w-20 h-20 items-center justify-center">
+                <MaterialIcons name="person" size={64} color="#0ed851" />
+
+                {/* Checkmark Badge */}
+                <View className="absolute top-0 right-0 bg-[#0A3F22] rounded-full p-1.5 border-4 border-white shadow-sm">
+                  <MaterialIcons
+                    name="check"
+                    size={14}
+                    color="white"
+                    style={{ fontWeight: "bold" }}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* App Title */}
+          <View className="items-center space-y-2">
+            <Text className="text-4xl font-bold text-[#0A3F22] tracking-tight">
+              KGP Presence
+            </Text>
+            <Text className="text-[#0A3F22]/60 text-sm font-medium tracking-wide uppercase">
+              Academic Tracker
+            </Text>
+          </View>
+        </View>
+
+        {/* Bottom Loading Section */}
+        <View className="pb-16 items-center space-y-6 w-full">
+          {/* Wave Animation */}
+          <View className="h-8 flex-row items-end justify-center">
+            <WaveBar delay={0} />
+            <WaveBar delay={100} />
+            <WaveBar delay={200} />
+            <WaveBar delay={300} />
+            <WaveBar delay={400} />
+          </View>
+
+          {/* Loading Text */}
+          <Text className="text-[#0A3F22]/40 text-xs font-semibold tracking-wider">
+            SYNCING DATA...
+          </Text>
+        </View>
+      </LinearGradient>
+    </View>
   );
 }

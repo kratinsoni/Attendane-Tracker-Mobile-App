@@ -123,7 +123,7 @@ export const ClassCard = ({
               icon={Ban}
               color="#94a3b8"
               bg="bg-slate-50 dark:bg-slate-700/40"
-              text="CANCEL"
+              text="CANCELLED"
               textColor="text-slate-600 dark:text-slate-300"
               onSubmit={handleMarkAttendance}
             />

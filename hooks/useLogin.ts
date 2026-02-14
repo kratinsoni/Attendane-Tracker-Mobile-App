@@ -27,7 +27,7 @@ export const useLogin = () => {
         text1: "Login Successful",
         position: "bottom",
       });
-      router.replace("/modal");
+      router.replace("/(tabs)/dashboard");
     },
 
     onError: (error) => {
