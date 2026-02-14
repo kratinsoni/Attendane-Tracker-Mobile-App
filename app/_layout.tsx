@@ -75,7 +75,7 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="subject/GetAllSubjects"
+          name="subject/getAllSubjects"
           options={{
             title: "Subject page",
             headerShown: false,

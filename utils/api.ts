@@ -131,28 +131,23 @@ export const attendanceApi = {
   }
 }
 
-export const subjectApi = {
-  createSubject: async (
-    api: AxiosInstance,
-    formData: SubjectFormData
-  ) => {
-    
-    const flatSlots: string[] = Object.values(formData.schedules).flat();
+// inside your api file (e.g., subjectApi.ts)
 
-    const res = await api.post("/subjects/", {
-    name: formData.name,
-    code: formData.code,
-    type: formData.type,
-    professor: formData.professor,
-    credits: Number(formData.credits), // Convert to number
-    slots: flatSlots,
-    Grading: formData.Grading, 
-    labLength: formData.labLength ? Number(formData.labLength) : undefined, // Optional
-    });
-    return res.data.data;
-  },
+export const subjectApi = {
   getAllSubjects: async (api: AxiosInstance) => {
     const res = await api.get("/subjects/");
-    return res;
+    return res.data.data; 
+  },
+  createSubject: async (
+    api: AxiosInstance,
+    payload: CreateSubjectPayload
+  ) => {
+    const res = await api.post("/subjects/", payload);
+    return res.data.data;
+  },
+  getSubjectByCode: async (api: AxiosInstance, code: string) => {
+    // Calls the backend endpoint: GET /subjects/:code
+    const res = await api.get(`/subjects/details/${code}`);
+    return res.data.data;
   },
 };

@@ -1,4 +1,4 @@
-import { TimetableCardType } from "@/types/timetableTypes";
+import { TimetableCardType } from "@/utils/types/timetableTypes";
 import { router } from "expo-router";
 import { Calendar, Edit2 } from "lucide-react-native";
 import React, { useMemo } from "react";

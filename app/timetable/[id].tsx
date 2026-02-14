@@ -20,7 +20,7 @@ import { useColorScheme } from "nativewind";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SubjectCard } from "@/components/TimetableViewPageSubjectCard";
 import { useGetTimetableById } from "@/hooks/useGetTimetableById";
-import { SubjectCardType } from "@/types/timetableTypes";
+import { SubjectCardType } from "@/utils/types/timetableTypes";
 
 
 export default function TimetableDetailScreen() {

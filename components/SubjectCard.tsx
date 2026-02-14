@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { User, Calendar, ArrowRight, AlertCircle } from 'lucide-react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { CreateSubjectPayload } from '../types/subjectTypes';
+import { CreateSubjectPayload } from '../utils/types/subjectTypes';
 
 export const SubjectCard = ({
   name,

@@ -1,7 +1,7 @@
 import LoadingScreen from "@/components/Loading";
 import { TimetableCard } from "@/components/TimetableCard";
 import { useGetUserTimetables } from "@/hooks/useGetUserTimetables";
-import { TimetableCardType } from "@/types/timetableTypes";
+import { TimetableCardType } from "@/utils/types/timetableTypes";
 import { router } from "expo-router";
 import { Menu, Plus, Search, UserCircle } from "lucide-react-native";
 import React, { useState, useCallback } from "react";
