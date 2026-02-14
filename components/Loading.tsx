@@ -57,7 +57,7 @@ const WaveBar = ({ delay }: { delay: number }) => {
 
 export default function LoadingScreen() {
   return (
-    <View className="flex-1">
+    <View className="flex-1 z-50">
       <StatusBar
         barStyle="dark-content"
         backgroundColor="transparent"
