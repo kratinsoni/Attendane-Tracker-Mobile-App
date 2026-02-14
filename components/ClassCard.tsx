@@ -6,13 +6,17 @@ import {
   MapPin,
   MoreVertical,
   XCircle,
+  Pencil,
   Clock,
 } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { StatusButton } from "./StatusButton";
 import { ClassSession } from "@/hooks/scheduleLogic";
 import { useCreateAttendance } from "@/hooks/useCreateAttendance";
+import { AttendanceEditPopup, AttendanceStatus } from "./AttendanceEditPopup"; // ADDED IMPORT
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { attendanceApi, api } from "@/utils/api";
 
 export const ClassCard = ({
   item,
@@ -23,7 +27,26 @@ export const ClassCard = ({
   timetableId: string;
   selectedDate: string;
 }) => {
+  // 1. Add state to toggle the edit UI
+  const [isEditing, setIsEditing] = useState(false);
+  const queryClient = useQueryClient();
+
   const { mutate } = useCreateAttendance({ timetableId, date: selectedDate });
+
+  const editMutation = useMutation({
+    // We only need the string 'type' (e.g., "PRESENT") from the popup
+    mutationFn: async (type: string) => {
+      // Call your exact API function here
+      return await attendanceApi.editAttendanceStatus(api, item.attendanceId as any, type);
+    },
+    onSuccess: () => {
+      // Refresh the attendance list so the UI updates instantly
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+    onError: (error) => {
+      console.error("Failed to update attendance:", error);
+    }
+  });
 
   const handleMarkAttendance = (status: string) => {
     mutate({
@@ -35,6 +58,52 @@ export const ClassCard = ({
       semester: item.semester,
     });
   };
+
+  // Helper function to safely map backend string status to the modal's expected AttendanceStatus type
+  const mapStatusForEditor = (status: string): AttendanceStatus | undefined => {
+    switch (status.toUpperCase()) {
+      case "PRESENT": return "P";
+      case "ABSENT": return "A";
+      case "MEDICAL": return "M";
+      case "CANCELLED": return "C";
+      default: return undefined;
+    }
+  };
+
+  // Helper function to get dynamic colors for logged attendance
+  const getStatusColors = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "PRESENT":
+        return {
+          bg: "bg-emerald-50 dark:bg-emerald-500/10",
+          text: "text-emerald-700 dark:text-emerald-400",
+        };
+      case "ABSENT":
+        return {
+          bg: "bg-rose-50 dark:bg-rose-500/10",
+          text: "text-rose-700 dark:text-rose-400",
+        };
+      case "MEDICAL":
+        return {
+          bg: "bg-amber-50 dark:bg-amber-500/10",
+          text: "text-amber-700 dark:text-amber-400",
+        };
+      case "CANCELLED":
+        return {
+          bg: "bg-slate-50 dark:bg-slate-700/40",
+          text: "text-slate-600 dark:text-slate-300",
+        };
+      default:
+        // Fallback colors
+        return {
+          bg: "bg-green-500/10",
+          text: "text-green-600 dark:text-green-400",
+        };
+    }
+  };
+
+  // Call it to get the colors for the current item
+  const statusColors = getStatusColors(item.status);
 
   return (
     <View className="relative mb-6 ml-2">
@@ -87,12 +156,22 @@ export const ClassCard = ({
             </View>
           </View>
 
-          <TouchableOpacity className="p-2 -mr-2">
-            <MoreVertical size={20} color="#cbd5e1" />
+          {/* EDIT BUTTON TOGGLE */}
+          <TouchableOpacity
+            className="p-2 -mr-2"
+            onPress={() => setIsEditing(true)} // <-- ADDED ONPRESS
+          >
+            {isEditing ? (
+              // Active State: Shows Pencil, made it slightly darker to look "active"
+              <Pencil size={20} color="#94a3b8" /> 
+            ) : (
+              // Default State: Shows MoreVertical
+              <MoreVertical size={20} color="#cbd5e1" /> 
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* ACTIONS */}
+        {/* ACTIONS / STATUS LOGGED */}
         {item.status === "UNMARKED" ? (
           <View className="flex-row justify-between mt-6 pt-5 border-t border-slate-100 dark:border-slate-700/50">
             <StatusButton
@@ -133,14 +212,36 @@ export const ClassCard = ({
             <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
               Attendance Logged
             </Text>
-            <View className="bg-green-500/10 px-3 py-1 rounded-full">
-              <Text className="text-green-600 dark:text-green-400 text-xs font-black">
+            <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
+              <Text className={`text-xs font-black uppercase ${statusColors.text}`}>
                 {item.status}
               </Text>
             </View>
           </View>
         )}
       </View>
+
+      {/* 3. CONDITIONALLY RENDER THE MODAL POPUP */}
+      {isEditing && (
+        <AttendanceEditPopup
+          scheduleId={item.subjectId} 
+          timetableId={timetableId}
+          selectedDate={selectedDate}
+          initialStatus={mapStatusForEditor(item.status)} 
+          onClose={() => setIsEditing(false)} 
+
+          // 1. ADD THIS MISSING PROP (This is what the compiler is complaining about)
+          onSave={async (statusName) => {
+            // statusName will be "PRESENT", "ABSENT", etc.
+            await editMutation.mutateAsync(statusName);
+          }}
+
+          // 2. (Optional) Just a simple callback for when it finishes successfully
+          onSuccessCallback={(status) => {
+            console.log("Updated successfully to:", status);
+          }}
+        />
+      )}
     </View>
   );
 };

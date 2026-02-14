@@ -128,6 +128,13 @@ export const attendanceApi = {
       semester,
     });
     return res.data.data;
+  },
+  
+  editAttendanceStatus : async ( api : AxiosInstance,timetableId:string, type : string)=>{
+    const res = await api.patch(`/attendance/${timetableId}`,{
+      type : type
+    });
+    return res.data.data;
   }
 }
 

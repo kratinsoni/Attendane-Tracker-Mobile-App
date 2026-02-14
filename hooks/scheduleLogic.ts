@@ -27,6 +27,7 @@ export interface ClassSession {
   status: string; 
   day: string;
   semester: number;
+  attendanceId?: string;
 }
 
 // --- HELPER TO PARSE TIME ---
@@ -53,7 +54,6 @@ export const useDailyClasses = (subjects: Subject[]): ClassSession[] => {
 
     const classesToday: ClassSession[] = subjects.map((subject) => {
       const displayTime = subject.timeSlot || "N/A";
-      
 
       return {
         subjectId: subject.subjectId,
@@ -67,6 +67,7 @@ export const useDailyClasses = (subjects: Subject[]): ClassSession[] => {
         status: subject.status, 
         day: subject.day,
         semester: subject.semester,
+        attendanceId: subject.attendanceId || undefined,
       };
     });
 
