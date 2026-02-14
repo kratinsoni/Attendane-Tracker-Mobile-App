@@ -1,4 +1,4 @@
-import { TimetableCardType } from "@/utils/types/timetableTypes";
+import { TimetableCardType } from "@/types/timetableTypes";
 import { router } from "expo-router";
 import { Calendar, Edit2 } from "lucide-react-native";
 import React, { useMemo } from "react";
@@ -57,7 +57,7 @@ export const TimetableCard = ({
             <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Last Modified: {updatedAt}
             </Text>
-            <Text className="mt-1 text-lg font-bold text-white ">{name}</Text>
+            <Text className="mt-1 text-lg font-bold text-black dark:text-white ">{name}</Text>
           </View>
           <TouchableOpacity className="p-1">
             <Edit2 size={18} color="#616f89" />
