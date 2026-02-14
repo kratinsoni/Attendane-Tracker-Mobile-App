@@ -25,7 +25,7 @@ import LoadingScreen from "@/components/Loading";
 
 // AuthLayout is imported but not used in your snippet; kept it to preserve imports
 import { SubjectCard } from "@/components/SubjectCard";
-import { CreateSubjectPayload } from "@/utils/types/subjectTypes";
+import { CreateSubjectPayload } from "@/types/subjectTypes";
 import { router } from "expo-router";
 
 interface SubjectCardProps extends CreateSubjectPayload {
