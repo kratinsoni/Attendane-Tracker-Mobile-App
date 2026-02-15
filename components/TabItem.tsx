@@ -1,11 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions, // Import this
-} from "react-native";
+import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -77,14 +71,17 @@ const TabItem = ({ icon, label, isActive, onPress, colors }: TabItemProps) => {
     return {
       opacity: animValue.value,
       transform: [
-        { translateX: interpolate(animValue.value, [0, 1], [-10, 0]) }, // Reduced slide distance for tighter spaces
+        { translateX: interpolate(animValue.value, [0, 1], [-10, 0]) },
       ],
     };
   });
 
   return (
-    <Pressable onPress={onPress} style={styles.tabItemContainer}>
-      <View style={styles.iconContainer}>
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center justify-center w-full h-full"
+    >
+      <View className="w-[30px] h-[30px] items-center justify-center">
         <FontAwesome
           name={icon}
           size={22}
@@ -93,10 +90,11 @@ const TabItem = ({ icon, label, isActive, onPress, colors }: TabItemProps) => {
       </View>
 
       {isActive && (
-        <Animated.View style={[styles.labelContainer, textStyle]}>
+        <Animated.View className="ml-1 justify-center" style={textStyle}>
           <Text
             numberOfLines={1}
-            style={[styles.labelText, { color: colors.text }]}
+            className="font-bold text-[14px]"
+            style={{ color: colors.text }}
           >
             {label}
           </Text>
@@ -121,12 +119,8 @@ export const CustomTabBar = ({
 
   // 2. Dynamic Calculations
   const TAB_COUNT = state.routes.length;
-  // Total available width for the tabs (Screen width - margins)
   const TOTAL_BAR_WIDTH = Math.min(screenWidth - 32, 400);
-  // How much width the expanded tab should take (roughly 30-40% of bar)
   const TAB_WIDTH_EXPANDED = 130;
-  // Calculate remaining space and divide by inactive tabs
-  // (Total - Expanded - PaddingBuffer) / (InactiveTabs)
   const TAB_WIDTH_COLLAPSED =
     (TOTAL_BAR_WIDTH - TAB_WIDTH_EXPANDED - 20) / (TAB_COUNT - 1);
 
@@ -144,25 +138,26 @@ export const CustomTabBar = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.barBg,
-          width: TOTAL_BAR_WIDTH, // Force container width
-        },
-      ]}
+      className="flex-row absolute bottom-[25px] self-center h-[75px] rounded-[40px] items-center justify-start px-2"
+      style={{
+        backgroundColor: colors.barBg,
+        width: TOTAL_BAR_WIDTH,
+        // Kept standard RN shadows to maintain exact design parity
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+        elevation: 8,
+      }}
     >
       {/* BACKGROUND SLIDER */}
       <Animated.View
-        style={[
-          styles.slider,
-          indicatorStyle,
-          { backgroundColor: colors.indicator },
-        ]}
+        className="absolute h-[58px] rounded-[30px] top-[8.5px] left-[8px] z-0"
+        style={[indicatorStyle, { backgroundColor: colors.indicator }]}
       />
 
       {/* TABS LAYER */}
-      <View style={styles.tabsLayer}>
+      <View className="flex-row z-10">
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label =
@@ -203,7 +198,8 @@ export const CustomTabBar = ({
           return (
             <Animated.View
               key={route.key}
-              style={[tabWidthStyle, styles.tabWrapper]}
+              className="h-[60px] justify-center items-center overflow-hidden"
+              style={tabWidthStyle}
             >
               <TabItem
                 icon={iconName}
@@ -219,61 +215,3 @@ export const CustomTabBar = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    position: "absolute",
-    bottom: 25,
-    alignSelf: "center",
-    height: 75,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingHorizontal: 8, // Fixed padding
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 8,
-  },
-  slider: {
-    position: "absolute",
-    height: 58,
-    borderRadius: 30,
-    top: 8.5,
-    left: 8,
-    zIndex: 0,
-  },
-  tabsLayer: {
-    flexDirection: "row",
-    zIndex: 1,
-  },
-  tabWrapper: {
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  tabItemContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    height: "100%",
-  },
-  iconContainer: {
-    width: 30, // Slightly tighter icon container
-    height: 30,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  labelContainer: {
-    marginLeft: 4, // Reduce margin to save space
-    justifyContent: "center",
-  },
-  labelText: {
-    fontWeight: "700",
-    fontSize: 14, // Slightly smaller text for 5 tabs
-  },
-});
