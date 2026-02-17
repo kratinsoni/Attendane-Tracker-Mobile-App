@@ -1,15 +1,20 @@
-import React from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  useColorScheme,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+  useGetLeastAttendance,
+  useGetTopAttendance,
+} from "@/hooks/useDashboardAttendanceStat";
+import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import React from "react";
+import {
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // 1. Setup Icons for NativeWind
 const Icon = ({ name, size = 24, color, className }: any) => (
@@ -17,8 +22,27 @@ const Icon = ({ name, size = 24, color, className }: any) => (
 );
 
 export default function Dashboard() {
+  
+  const { data } = useMe();
+  const { data: topAttendance } = useGetTopAttendance();
+  const { data: leastAttendance } = useGetLeastAttendance();
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  const today = new Date();
+
+  // 'en-US' means English. 'long' gives you "Monday", 'short' gives you "Mon".
+  const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(
+    today,
+  );
+  const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(
+    today,
+  );
+  const dateNumber = today.getDate();
+  const shortMonth = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+  }).format(today);
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
@@ -31,25 +55,26 @@ export default function Dashboard() {
         <View className="pt-4 pb-6 flex-row justify-between items-center">
           <View>
             <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Monday, Oct 24
+              {dayName}, {shortMonth} {dateNumber}
             </Text>
             <Text className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-              Hello, Alex
+              Hello, {data.firstName} {data.lastName}
             </Text>
           </View>
-          <TouchableOpacity className="relative" onPress={() => router.push("/profile/profile")}>
+          <TouchableOpacity
+            className="relative"
+            onPress={() => router.push("/profile/profile")}
+          >
             <Image
               source={{ uri: "https://i.pravatar.cc/150?img=11" }}
               className="w-12 h-12 rounded-full border-2 border-primary"
-              
             />
             <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />
           </TouchableOpacity>
         </View>
-
         {/* Stats Grid (Top Attendance & Needs Focus) */}
         <View className="flex-col gap-4 mb-6">
-          {/* Card 1: Attendance */}
+          {/* Card 1: Top Attendance */}
           <View className="bg-white dark:bg-[#151c2b] rounded-xl p-5 shadow-sm border border-slate-100 dark:border-slate-800">
             <View className="flex-row items-center gap-2 mb-4">
               <Icon name="trending-up" size={20} color="#22c55e" />
@@ -59,61 +84,98 @@ export default function Dashboard() {
             </View>
 
             <View className="gap-3">
-              <StatRow
-                label="Mathematics"
-                color="bg-primary"
-                score="98%"
-                scoreColor="text-green-700 dark:text-green-400"
-                scoreBg="bg-green-100 dark:bg-green-900/30"
-              />
-              <StatRow
-                label="Physics"
-                color="bg-primary/60"
-                score="95%"
-                scoreColor="text-green-700 dark:text-green-400"
-                scoreBg="bg-green-100 dark:bg-green-900/30"
-              />
-              <StatRow
-                label="Comp Sci"
-                color="bg-primary/40"
-                score="92%"
-                scoreColor="text-blue-700 dark:text-blue-400"
-                scoreBg="bg-blue-100 dark:bg-blue-900/30"
-              />
+              {topAttendance?.map((item: any, index: any) => {
+                const barOpacity =
+                  index === 0
+                    ? "bg-primary"
+                    : index === 1
+                      ? "bg-primary/60"
+                      : "bg-primary/40";
+                const isTopTwo = index < 2;
+
+                // Truncate long names to prevent layout breaking
+                const safeSubjectName =
+                  item.subjectName?.length > 18
+                    ? `${item.subjectName.substring(0, 18)}...`
+                    : item.subjectName;
+
+                return (
+                  <StatRow
+                    key={index}
+                    label={safeSubjectName}
+                    color={barOpacity}
+                    score={`${Math.round(item.attendancePercentage)}%`}
+                    scoreColor={
+                      isTopTwo
+                        ? "text-green-700 dark:text-green-400"
+                        : "text-blue-700 dark:text-blue-400"
+                    }
+                    scoreBg={
+                      isTopTwo
+                        ? "bg-green-100 dark:bg-green-900/30"
+                        : "bg-blue-100 dark:bg-blue-900/30"
+                    }
+                  />
+                );
+              })}
+
+              {topAttendance?.length === 0 && (
+                <Text className="text-slate-400 text-center py-2">
+                  No attendance data available
+                </Text>
+              )}
             </View>
           </View>
 
-          {/* Card 2: Needs Focus */}
+          {/* Card 2: Needs Focus (Cleaned up the double-nesting) */}
           <View className="bg-white dark:bg-[#151c2b] rounded-xl p-5 shadow-sm border border-slate-100 dark:border-slate-800">
             <View className="flex-row items-center gap-2 mb-4">
-              <Icon name="warning" size={20} color="#ef4444" />
+              <Icon name="trending-down" size={20} color="#ef4444" />
               <Text className="text-base font-semibold text-slate-800 dark:text-white">
                 Needs Focus
               </Text>
             </View>
 
             <View className="gap-3">
-              <StatRow
-                label="History"
-                color="bg-red-400"
-                score="72%"
-                scoreColor="text-red-700 dark:text-red-400"
-                scoreBg="bg-red-100 dark:bg-red-900/30"
-              />
-              <StatRow
-                label="Literature"
-                color="bg-orange-400"
-                score="75%"
-                scoreColor="text-orange-700 dark:text-orange-400"
-                scoreBg="bg-orange-100 dark:bg-orange-900/30"
-              />
-              <StatRow
-                label="Biology"
-                color="bg-orange-300"
-                score="78%"
-                scoreColor="text-orange-700 dark:text-orange-400"
-                scoreBg="bg-orange-100 dark:bg-orange-900/30"
-              />
+              {leastAttendance?.map((item: any, index: any) => {
+                const isLowest = index === 0;
+                const barColor = isLowest
+                  ? "bg-red-400"
+                  : index === 1
+                    ? "bg-orange-400"
+                    : "bg-orange-300";
+
+                // Truncate long names to prevent layout breaking
+                const safeSubjectName =
+                  item.subjectName?.length > 18
+                    ? `${item.subjectName.substring(0, 18)}...`
+                    : item.subjectName;
+
+                return (
+                  <StatRow
+                    key={index}
+                    label={safeSubjectName}
+                    color={barColor}
+                    score={`${Math.round(item.attendancePercentage)}%`}
+                    scoreColor={
+                      isLowest
+                        ? "text-red-700 dark:text-red-400"
+                        : "text-orange-700 dark:text-orange-400"
+                    }
+                    scoreBg={
+                      isLowest
+                        ? "bg-red-100 dark:bg-red-900/30"
+                        : "bg-orange-100 dark:bg-orange-900/30"
+                    }
+                  />
+                );
+              })}
+
+              {leastAttendance?.length === 0 && (
+                <Text className="text-slate-400 text-center py-2">
+                  No attendance data available
+                </Text>
+              )}
             </View>
           </View>
         </View>

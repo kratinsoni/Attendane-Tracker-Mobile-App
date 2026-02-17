@@ -6,7 +6,7 @@ export default function AppLayout() {
     <AuthLayout>
       <Stack screenOptions={{ headerShown: false }} >
         <Stack.Screen name="(tabs)" options={{headerShown: false}}/>
-        <Stack.Screen name="Dashboard/dashboard" options={{headerShown: false}}/>
+        <Stack.Screen name="Dashboard/Dashboard" options={{headerShown: false}}/>
         <Stack.Screen name="profile/profile" options={{headerShown: false}}/>
         <Stack.Screen name="subject/create" options={{headerShown: false}}/>
         <Stack.Screen name="timetable/createTimetablePage" options={{headerShown: false}}/>

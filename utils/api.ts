@@ -1,5 +1,5 @@
 import { getToken } from "@/utils/token";
-import axios, { AxiosInstance } from "axios";
+import axios, { Axios, AxiosInstance } from "axios";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { CreateSubjectPayload } from "../types/subjectTypes";
 import { UserInterface } from "@/types/userTypes";
@@ -158,3 +158,14 @@ export const subjectApi = {
     return res.data.data;
   },
 };
+
+export const dashboardApi = { 
+  getTopAttendance : async ( api : AxiosInstance) =>{
+    const res = await api.get("/dashboard/stat/most-attended");
+    return res.data.data;
+  },
+  getLeastAttendance : async ( api : AxiosInstance) =>{
+    const res = await api.get("/dashboard/stat/least-attended");
+    return res.data.data;
+  }
+}
