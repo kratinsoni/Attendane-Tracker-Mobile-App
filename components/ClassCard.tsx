@@ -159,9 +159,9 @@ export const ClassCard = ({
           {/* EDIT BUTTON TOGGLE */}
           <TouchableOpacity
             className="p-2 -mr-2"
-            onPress={() => setIsEditing(true)} // <-- ADDED ONPRESS
+            onPress={() => {if(item.status !== "UNMARKED")setIsEditing(true)}} // <-- ADDED ONPRESS
           >
-            {isEditing ? (
+            {isEditing? (
               // Active State: Shows Pencil, made it slightly darker to look "active"
               <Pencil size={20} color="#94a3b8" /> 
             ) : (
