@@ -1,0 +1,82 @@
+import {useMutation, useQueryClient} from "@tanstack/react-query";
+import { api, timetableApi } from "@/utils/api";
+import Toast from "react-native-toast-message";
+import { isAxiosError } from "axios";
+import { router } from "expo-router";
+
+export const useAddSubjectsToTimetable = (timetableId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (subjectIds: string[]) => {
+            return timetableApi.AddSubjectsToTimetable(api, timetableId, subjectIds);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['timetable', timetableId, 'subjects'],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['timetable', timetableId, 'subjects', 'notInTimetable'],
+            });
+
+            Toast.show({
+                type: "success",
+                text1: "Subjects added to timetable successfully",
+            });
+            router.replace(`/timetable/editTimetable/${timetableId}`);
+        },
+        onError: (error) => {
+
+            let message = "Failed to add subjects to timetable";
+
+            if(isAxiosError(error)) {
+                message = error.response?.data?.message || error.message;
+            }
+
+            console.error("Failed to add subjects to timetable:", error);
+
+            Toast.show({
+                type: "error",
+                text1: "Failed to add subjects to timetable",
+                text2: message,
+            });
+        }
+
+    });
+
+}
+
+export const useRemoveSubjectsFromTimetable = (timetableId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (subjectIds: string[]) => {
+            return timetableApi.removeSubjectsFromTimetable(api, timetableId, subjectIds);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['timetable', timetableId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['timetable', timetableId, 'subjects', 'notInTimetable'],
+            });
+            Toast.show({
+                type: "success",
+                text1: "Subjects removed from timetable successfully",
+            });
+        },
+        onError: (error) => {
+            let message = "Failed to remove subjects from timetable";
+
+            if(isAxiosError(error)) {
+                message = error.response?.data?.message || error.message;
+            }
+
+            console.error("Failed to remove subjects from timetable:", error);
+
+            Toast.show({
+                type: "error",
+                text1: "Failed to remove subjects from timetable",
+                text2: message,
+            });
+        }
+    });
+}

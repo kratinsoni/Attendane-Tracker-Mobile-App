@@ -1,27 +1,28 @@
+import { useCreateTimetable, useCreateTimetableByImage } from "@/hooks/useCreateTimetable";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
+import { Camera, ChevronLeft, Info, X } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
 import {
-  View,
+  Alert,
+  Image,
+  Platform,
+  ScrollView,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  StatusBar,
-  Platform,
-  Image,
-  Alert,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft, Camera, Info, X } from "lucide-react-native";
-import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import { useCreateTimetable } from "@/hooks/useCreateTimetable";
-import { useColorScheme } from "nativewind";
 
 export default function CreateTimetable() {
   const [name, setName] = useState("");
   const [semester, setSemester] = useState("");
   const [image, setImage] = useState<string | null>(null);
-    const {mutate} = useCreateTimetable()
+  const { mutate: createTimetable } = useCreateTimetable();
+  const { mutate: createTimetableByImage } = useCreateTimetableByImage();
 
   const pickImage = async () => {
     // Request permissions
@@ -50,21 +51,38 @@ export default function CreateTimetable() {
   const removeImage = () => setImage(null);
 
   const handleSubmit = () => {
-    if(!image){
-        mutate({name, semester})
+    if (!image) {
+      createTimetable({ name, semester });
+    } else {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("semester", semester);
+
+      const filename = image.split("/").pop() || "timetable.jpg";
+
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+      formData.append("image", {
+        uri: image,
+        name: filename,
+        type: type,
+      } as unknown as Blob);
+
+      createTimetableByImage(formData);
     }
-  }
+  };
 
-   const { colorScheme } = useColorScheme();
+  const { colorScheme } = useColorScheme();
 
-    const isDark = colorScheme === "dark";
+  const isDark = colorScheme === "dark";
 
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
       <StatusBar
-              barStyle={isDark ? "light-content" : "dark-content"}
-              backgroundColor={isDark ? "#101622" : "#f6f6f8"}
-            />
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#101622" : "#f6f6f8"}
+      />
 
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-4 bg-white dark:bg-[#101622] border-b border-[#dbdfe6] dark:border-white/10">
@@ -118,7 +136,7 @@ export default function CreateTimetable() {
           <View className="flex-row items-center gap-x-4 py-4">
             <View className="h-[1px] flex-1 bg-[#dbdfe6] dark:bg-white/10" />
             <Text className="text-[10px] font-bold text-[#616f89] dark:text-white/40 uppercase">
-              OR
+              OPTIONAL
             </Text>
             <View className="h-[1px] flex-1 bg-[#dbdfe6] dark:bg-white/10" />
           </View>
@@ -181,7 +199,7 @@ export default function CreateTimetable() {
       </ScrollView>
 
       {/* Footer */}
-      <View className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-[#101622]/80 border-t border-[#dbdfe6] dark:border-white/10">
+      <View className="absolute bottom-4 left-0 right-0 p-4 bg-white/80 dark:bg-[#101622]/80 border-t border-[#dbdfe6] dark:border-white/10">
         <TouchableOpacity
           activeOpacity={0.8}
           className={`w-full h-14 rounded-xl items-center justify-center shadow-lg ${
@@ -191,7 +209,7 @@ export default function CreateTimetable() {
           onPress={handleSubmit}
         >
           <Text className="text-white font-bold text-base">
-            Create Timetable
+            {image ? "Upload & Create" : "Proceed to Add Subjects"}
           </Text>
         </TouchableOpacity>
       </View>

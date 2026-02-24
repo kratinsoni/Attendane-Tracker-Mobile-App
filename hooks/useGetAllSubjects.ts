@@ -1,4 +1,4 @@
-import { CreateSubjectPayload } from "@/utils/types/subjectTypes";
+import { CreateSubjectPayload } from "@/types/subjectTypes";
 import { api , subjectApi} from "@/utils/api";
 import { useQuery } from "@tanstack/react-query";
 

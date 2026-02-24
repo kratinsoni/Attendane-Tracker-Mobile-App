@@ -27,7 +27,7 @@ export const useLogin = () => {
         text1: "Login Successful",
         position: "bottom",
       });
-      router.replace("/(tabs)/dashboard");
+      router.replace("/dashboard");
     },
 
     onError: (error) => {

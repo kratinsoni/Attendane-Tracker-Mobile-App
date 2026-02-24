@@ -66,7 +66,7 @@ export default function Dashboard() {
             onPress={() => router.push("/profile/profile")}
           >
             <Image
-              source={{ uri: "https://i.pravatar.cc/150?img=11" }}
+              source={{ uri: `https://picsum.photos/seed/${data._id}/400/200` }}
               className="w-12 h-12 rounded-full border-2 border-primary"
             />
             <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />

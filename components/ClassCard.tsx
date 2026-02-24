@@ -150,7 +150,7 @@ export const ClassCard = ({
               <View className="flex-row items-center">
                 <Code size={14} color="#64748b" strokeWidth={2.5} />
                 <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold ml-1">
-                  Section {item.semester}
+                  Semester {item.semester}
                 </Text>
               </View>
             </View>

@@ -20,7 +20,8 @@ import { useColorScheme } from "nativewind";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SubjectCard } from "@/components/TimetableViewPageSubjectCard";
 import { useGetTimetableById } from "@/hooks/useGetTimetableById";
-import { SubjectCardType } from "@/utils/types/timetableTypes";
+import { SubjectCardType } from "@/types/timetableTypes";
+import { SubjectInterface } from "@/types/subjectTypes";
 
 
 export default function TimetableDetailScreen() {
@@ -117,7 +118,7 @@ export default function TimetableDetailScreen() {
           </View>
 
           {data && data?.subjects?.length > 0 ? (
-            data.subjects.map((subject: SubjectCardType) => {
+            data.subjects.map((subject: SubjectInterface) => {
               const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F"];
               const icons = [Terminal, FlaskConical, FunctionSquare, Brain];
               const randomColor = colors[Math.floor(Math.random() * colors.length)];

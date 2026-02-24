@@ -58,7 +58,7 @@ export default function UserProfile() {
           <View className="relative">
             <Image
               source={{
-                uri: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                uri: `https://picsum.photos/seed/${data._id}/400/200`,
               }} // Placeholder for Google Image
               className="h-28 w-28 rounded-full border-4 border-white dark:border-gray-800"
             />
@@ -169,8 +169,9 @@ export default function UserProfile() {
             </TouchableOpacity>
 
             {/* List Item 2 */}
-            <TouchableOpacity className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800"
-            onPress={() => router.push("/subject/getAllSubjects")}
+            <TouchableOpacity
+              className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800"
+              onPress={() => router.push("/subject/getAllSubjects")}
             >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#135bec]/10 mr-4">
                 <MaterialIcons name="book" size={20} color="#135bec" />
@@ -219,8 +220,9 @@ export default function UserProfile() {
 
         {/* Logout Button */}
         <View className="px-4 mt-2">
-          <TouchableOpacity className="w-full bg-white dark:bg-[#1a2230] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex-row items-center justify-center gap-2 active:scale-95 active:bg-red-50 dark:active:bg-red-900/10 transition-transform"
-          onPress={handleLogout}
+          <TouchableOpacity
+            className="w-full bg-white dark:bg-[#1a2230] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex-row items-center justify-center gap-2 active:scale-95 active:bg-red-50 dark:active:bg-red-900/10 transition-transform"
+            onPress={handleLogout}
           >
             <MaterialIcons name="logout" size={20} color="#dc2626" />
             <Text className="text-red-600 dark:text-red-400 font-semibold">

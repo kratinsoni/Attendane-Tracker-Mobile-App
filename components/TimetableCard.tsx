@@ -55,11 +55,22 @@ export const TimetableCard = ({
         <View className="flex-row justify-between items-start">
           <View>
             <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Last Modified: {updatedAt}
+              Last Modified:{" "}
+              {updatedAt ? new Date(updatedAt).toLocaleString() : "N/A"}
             </Text>
-            <Text className="mt-1 text-lg font-bold text-black dark:text-white ">{name}</Text>
+            <Text className="mt-1 text-lg font-bold text-black dark:text-white ">
+              {name}
+            </Text>
           </View>
-          <TouchableOpacity className="p-1">
+          <TouchableOpacity
+            className="p-1"
+            onPress={() =>
+              router.push({
+                pathname: "/timetable/editTimetable/[id]",
+                params: { id: _id },
+              })
+            }
+          >
             <Edit2 size={18} color="#616f89" />
           </TouchableOpacity>
         </View>
@@ -73,19 +84,32 @@ export const TimetableCard = ({
             </Text>
           </View>
 
-          {/* Right Side: View Button */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
-            onPress={() =>
-              router.push({
-                pathname: "/timetable/[id]",
-                params: { id: _id },
-              })
-            }
-          >
-            <Text className="text-sm font-semibold text-white">View</Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            <TouchableOpacity
+              activeOpacity={0.8}
+              className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
+              onPress={() =>
+                router.push({
+                  pathname: "/timetable/editTimetable/[id]",
+                  params: { id: _id },
+                })
+              }
+            >
+              <Text className="text-sm font-semibold text-white">Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
+              onPress={() =>
+                router.push({
+                  pathname: "/timetable/[id]",
+                  params: { id: _id },
+                })
+              }
+            >
+              <Text className="text-sm font-semibold text-white">View</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </TouchableOpacity>

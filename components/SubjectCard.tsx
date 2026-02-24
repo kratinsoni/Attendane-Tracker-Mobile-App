@@ -3,19 +3,19 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { User, Calendar, ArrowRight, AlertCircle } from 'lucide-react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { CreateSubjectPayload } from '../utils/types/subjectTypes';
+import { SubjectInterface } from '../types/subjectTypes';
 
 export const SubjectCard = ({
   name,
   code,
   credits,
   type,
-  Grading,
-  professor,
+  grading,
+  professors,
   slots,
   classesAttended = 0,
   totalClasses = 0,
-}: CreateSubjectPayload) => {
+}: SubjectInterface) => {
   const percentage = totalClasses > 0 ? Math.round((classesAttended / totalClasses) * 100) : 0;
   
   // Dynamic UI Constants
@@ -44,7 +44,7 @@ export const SubjectCard = ({
             <Text className={`${badgeText} text-[10px] font-bold tracking-widest`}>{type?.toUpperCase()}</Text>
           </View>
           <View className="bg-orange-50 px-3 py-1 rounded-md">
-            <Text className="text-orange-500 text-[10px] font-bold tracking-widest uppercase">{Grading}</Text>
+            <Text className="text-orange-500 text-[10px] font-bold tracking-widest uppercase">{grading}</Text>
           </View>
           {/* Critical Warning Badge */}
 
@@ -96,7 +96,7 @@ export const SubjectCard = ({
           <User size={18} color="#94A3B8" strokeWidth={1.5} />
           <View className="ml-2">
             <Text className="text-[10px] text-gray-400 font-medium">Professor</Text>
-            <Text className="text-[13px] font-semibold text-gray-800">{professor}</Text>
+            <Text className="text-[13px] font-semibold text-gray-800">{professors}</Text>
           </View>
         </View>
         

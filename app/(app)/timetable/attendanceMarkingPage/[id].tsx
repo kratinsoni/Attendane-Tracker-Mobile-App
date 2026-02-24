@@ -27,7 +27,7 @@ import { ClassCard } from "@/components/ClassCard";
 // Import logic
 import { ClassSession, useDailyClasses } from "@/hooks/scheduleLogic";
 import { useGetAttendanceForDateByTimetable } from "@/hooks/useGetAttendanceForDateByTimetable";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 const ScheduleScreen = () => {
   const { colorScheme } = useColorScheme();
@@ -238,7 +238,7 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
         </View>
       </ScrollView>
 
-      <TouchableOpacity className="absolute bottom-8 right-8 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg shadow-blue-500/40">
+      <TouchableOpacity className="absolute bottom-8 right-8 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg shadow-blue-500/40" onPress={() => router.push("/dashboard")}>
         <Plus size={28} color="white" />
       </TouchableOpacity>
     </SafeAreaView>

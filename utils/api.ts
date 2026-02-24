@@ -1,12 +1,10 @@
-import { getToken } from "@/utils/token";
-import axios, { Axios, AxiosInstance } from "axios";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-import { CreateSubjectPayload } from "../types/subjectTypes";
-import { UserInterface } from "@/types/userTypes";
 import { RegisterPayload } from "@/hooks/useRegister";
+import { UserInterface } from "@/types/userTypes";
+import { getToken } from "@/utils/token";
+import axios, { AxiosInstance } from "axios";
+import { CreateSubjectPayload } from "../types/subjectTypes";
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL;
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const createApiClient = (): AxiosInstance => {
   const api = axios.create({
@@ -48,17 +46,17 @@ export const userApi = {
   me: async (api: AxiosInstance) => {
     return await api.get("/users/me");
   },
-  register: async (
-    {
-      api,
-      instituteId,
-      firstName,
-      lastName,
-      rollNo,
-      password,
-      confirmPassword,    
-    }: RegisterPayload & { api: AxiosInstance }
-  ): Promise<{ user: UserInterface }> => {
+  register: async ({
+    api,
+    instituteId,
+    firstName,
+    lastName,
+    rollNo,
+    password,
+    confirmPassword,
+  }: RegisterPayload & { api: AxiosInstance }): Promise<{
+    user: UserInterface;
+  }> => {
     const res = await api.post("/users/register", {
       instituteId,
       firstName,
@@ -78,7 +76,7 @@ export const userApi = {
   },
   logout: async (api: AxiosInstance) => {
     await api.post("/users/logout");
-  }
+  },
 };
 
 export const timetableApi = {
@@ -93,6 +91,26 @@ export const timetableApi = {
     });
     return res.data.data;
   },
+  updateTimetable: async (
+    api: AxiosInstance,
+    timetableId: string,
+    name: string,
+    semester: number,
+  ) => {
+    const res = await api.patch(`/timetable/update/${timetableId}`, {
+      name,
+      semester,
+    });
+    return res.data.data;
+  },
+  createTimetableByImage: async (api: AxiosInstance, formData: FormData) => {
+    const response = await api.post("/timetable/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data.data;
+  },
   getUserTimetables: async (api: AxiosInstance) => {
     const res = await api.get("/timetable/user");
     return res.data.data;
@@ -105,6 +123,30 @@ export const timetableApi = {
     const res = await api.get(`/timetable/subjects/${id}`);
     return res.data.data;
   },
+  AddSubjectsToTimetable: async (
+    api: AxiosInstance,
+    timetableId: string,
+    subjectIds: string[],
+  ) => {
+    const res = await api.post(`/timetable/addSubjects/${timetableId}`, {
+      subjectIds,
+    });
+    return res.data.data;
+  },
+  removeSubjectsFromTimetable: async (
+    api: AxiosInstance,
+    timetableId: string,
+    subjectIds: string[],
+  ) => {
+    const res = await api.post(`/timetable/removeSubjects/${timetableId}`, {
+      subjectIds,
+    });
+    return res.data.data;
+  },
+  deleteTimetable: async (api: AxiosInstance, timetableId: string) => {
+    const res = await api.delete(`/timetable/delete/${timetableId}`);
+    return res.data.data;
+  }
 };
 
 export const attendanceApi = {
@@ -118,7 +160,15 @@ export const attendanceApi = {
     );
     return res.data.data;
   },
-  createAttendance: async (api: AxiosInstance, subjectId: string, day: string, type: string, timeSlot: string, date: string, semester: number) => {
+  createAttendance: async (
+    api: AxiosInstance,
+    subjectId: string,
+    day: string,
+    type: string,
+    timeSlot: string,
+    date: string,
+    semester: number,
+  ) => {
     const res = await api.post("/attendance", {
       subjectId,
       day,
@@ -129,26 +179,27 @@ export const attendanceApi = {
     });
     return res.data.data;
   },
-  
-  editAttendanceStatus : async ( api : AxiosInstance,timetableId:string, type : string)=>{
-    const res = await api.patch(`/attendance/${timetableId}`,{
-      type : type
+
+  editAttendanceStatus: async (
+    api: AxiosInstance,
+    timetableId: string,
+    type: string,
+  ) => {
+    const res = await api.patch(`/attendance/${timetableId}`, {
+      type: type,
     });
     return res.data.data;
-  }
-}
+  },
+};
 
 // inside your api file (e.g., subjectApi.ts)
 
 export const subjectApi = {
   getAllSubjects: async (api: AxiosInstance) => {
     const res = await api.get("/subjects/");
-    return res.data.data; 
+    return res.data.data;
   },
-  createSubject: async (
-    api: AxiosInstance,
-    payload: CreateSubjectPayload
-  ) => {
+  createSubject: async (api: AxiosInstance, payload: CreateSubjectPayload) => {
     const res = await api.post("/subjects/", payload);
     return res.data.data;
   },
@@ -157,15 +208,22 @@ export const subjectApi = {
     const res = await api.get(`/subjects/details/${code}`);
     return res.data.data;
   },
+  getSubjectsNotInTimetable: async (
+    api: AxiosInstance,
+    timetableId: string,
+  ) => {
+    const res = await api.get(`/subjects/notInTimetable/${timetableId}`);
+    return res.data.data;
+  },
 };
 
-export const dashboardApi = { 
-  getTopAttendance : async ( api : AxiosInstance) =>{
+export const dashboardApi = {
+  getTopAttendance: async (api: AxiosInstance) => {
     const res = await api.get("/dashboard/stat/most-attended");
     return res.data.data;
   },
-  getLeastAttendance : async ( api : AxiosInstance) =>{
+  getLeastAttendance: async (api: AxiosInstance) => {
     const res = await api.get("/dashboard/stat/least-attended");
     return res.data.data;
-  }
-}
+  },
+};

@@ -125,7 +125,7 @@ export default function TimetableScreen() {
           shadowOpacity: 0.3,
           shadowRadius: 4.65,
         }}
-        className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full bg-blue-600 z-50"
+        className="absolute bottom-32 right-6 h-16 w-16 items-center justify-center rounded-full bg-blue-600 z-50"
         onPress={() => router.push("/timetable/createTimetablePage")}
       >
         <Plus size={32} color="white" />

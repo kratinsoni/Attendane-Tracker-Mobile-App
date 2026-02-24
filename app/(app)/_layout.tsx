@@ -11,6 +11,8 @@ export default function AppLayout() {
         <Stack.Screen name="subject/create" options={{headerShown: false}}/>
         <Stack.Screen name="timetable/createTimetablePage" options={{headerShown: false}}/>
         <Stack.Screen name="timetable/attendanceMarkingPage/[id]" options={{headerShown: false}}/>
+        <Stack.Screen name="timetable/addSubjectTotTimetable/[id]" options={{headerShown: false}}/>
+        <Stack.Screen name="timetable/editTimetable/[id]" options={{headerShown: false}}/>
       </Stack>
     </AuthLayout>
   );
