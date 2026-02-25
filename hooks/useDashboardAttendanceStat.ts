@@ -18,3 +18,12 @@ export const useGetLeastAttendance = () => {
         },
     });
 }
+
+export const useGetUpcomingClasses = () => {
+    return useQuery({
+        queryKey: ['userUpcomingClasses'],
+        queryFn: async () => {
+            return dashboardApi.getUpcomingClasses(api);
+        },
+    });
+}

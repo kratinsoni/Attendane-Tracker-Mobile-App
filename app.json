@@ -4,7 +4,7 @@
     "slug": "attendance-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/splash-icon-light.png",
     "scheme": "attendancetracker",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

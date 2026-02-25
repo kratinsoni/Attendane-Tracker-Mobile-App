@@ -226,4 +226,8 @@ export const dashboardApi = {
     const res = await api.get("/dashboard/stat/least-attended");
     return res.data.data;
   },
+  getUpcomingClasses: async (api: AxiosInstance) => {
+    const res = await api.get("/dashboard/upcoming/classes");
+    return res.data.data;
+  }
 };

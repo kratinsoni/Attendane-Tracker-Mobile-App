@@ -1,13 +1,15 @@
 import {
   useGetLeastAttendance,
   useGetTopAttendance,
+  useGetUpcomingClasses,
 } from "@/hooks/useDashboardAttendanceStat";
 import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -22,17 +24,31 @@ const Icon = ({ name, size = 24, color, className }: any) => (
 );
 
 export default function Dashboard() {
-  
   const { data } = useMe();
   const { data: topAttendance } = useGetTopAttendance();
   const { data: leastAttendance } = useGetLeastAttendance();
+  const { data: upcomingClasses } = useGetUpcomingClasses();
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
+  // --- New State for Schedule and Refresh ---
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // TODO: Call your actual API refetch functions here if your hooks provide them
+    // Example: Promise.all([refetchMe(), refetchTopAttendance(), ...]).then(() => setRefreshing(false))
+
+    // Simulating a network delay for the UI
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  }, []);
+
   const today = new Date();
 
-  // 'en-US' means English. 'long' gives you "Monday", 'short' gives you "Mon".
   const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(
     today,
   );
@@ -44,12 +60,45 @@ export default function Dashboard() {
     month: "short",
   }).format(today);
 
+  // Helper function to extract time and AM/PM from the slot string
+  const parseSlotTime = (slotString: string) => {
+    if (!slotString) return { time: "--:--", ampm: "" };
+    try {
+      const timePart = slotString.split("_")[1];
+      if (!timePart) return { time: "--:--", ampm: "" };
+      const startTime = timePart.split("-")[0];
+      const match = startTime.match(/(\d+)(AM|PM)/i);
+      if (match) {
+        return {
+          time: `${match[1]}:00`,
+          ampm: match[2].toUpperCase(),
+        };
+      }
+      return { time: startTime, ampm: "" };
+    } catch (error) {
+      return { time: "--:--", ampm: "" };
+    }
+  };
+
+  // Determine how many classes to show
+  const hasMoreThanTwo = upcomingClasses && upcomingClasses.length > 2;
+  const displayedClasses = isExpanded
+    ? upcomingClasses
+    : upcomingClasses?.slice(0, 2);
+
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
       <ScrollView
         className="flex-1 px-5"
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={isDark ? "#ffffff" : "#000000"} // Loading spinner color
+          />
+        }
       >
         {/* Header Section */}
         <View className="pt-4 pb-6 flex-row justify-between items-center">
@@ -58,7 +107,7 @@ export default function Dashboard() {
               {dayName}, {shortMonth} {dateNumber}
             </Text>
             <Text className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-              Hello, {data.firstName} {data.lastName}
+              Hello, {data?.firstName} {data?.lastName}
             </Text>
           </View>
           <TouchableOpacity
@@ -66,12 +115,15 @@ export default function Dashboard() {
             onPress={() => router.push("/profile/profile")}
           >
             <Image
-              source={{ uri: `https://picsum.photos/seed/${data._id}/400/200` }}
+              source={{
+                uri: `https://picsum.photos/seed/${data?._id}/400/200`,
+              }}
               className="w-12 h-12 rounded-full border-2 border-primary"
             />
             <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />
           </TouchableOpacity>
         </View>
+
         {/* Stats Grid (Top Attendance & Needs Focus) */}
         <View className="flex-col gap-4 mb-6">
           {/* Card 1: Top Attendance */}
@@ -93,7 +145,6 @@ export default function Dashboard() {
                       : "bg-primary/40";
                 const isTopTwo = index < 2;
 
-                // Truncate long names to prevent layout breaking
                 const safeSubjectName =
                   item.subjectName?.length > 18
                     ? `${item.subjectName.substring(0, 18)}...`
@@ -127,7 +178,7 @@ export default function Dashboard() {
             </View>
           </View>
 
-          {/* Card 2: Needs Focus (Cleaned up the double-nesting) */}
+          {/* Card 2: Needs Focus */}
           <View className="bg-white dark:bg-[#151c2b] rounded-xl p-5 shadow-sm border border-slate-100 dark:border-slate-800">
             <View className="flex-row items-center gap-2 mb-4">
               <Icon name="trending-down" size={20} color="#ef4444" />
@@ -145,7 +196,6 @@ export default function Dashboard() {
                     ? "bg-orange-400"
                     : "bg-orange-300";
 
-                // Truncate long names to prevent layout breaking
                 const safeSubjectName =
                   item.subjectName?.length > 18
                     ? `${item.subjectName.substring(0, 18)}...`
@@ -194,26 +244,39 @@ export default function Dashboard() {
                   Schedule at a Glance
                 </Text>
               </View>
-              <TouchableOpacity className="bg-white/20 px-3 py-1.5 rounded-lg active:bg-white/30">
-                <Text className="text-xs font-medium text-white">
-                  View Full
-                </Text>
-              </TouchableOpacity>
+              {/* Only show the button if there are more than 2 classes */}
+              {hasMoreThanTwo && (
+                <TouchableOpacity
+                  onPress={() => setIsExpanded(!isExpanded)}
+                  className="bg-white/20 px-3 py-1.5 rounded-lg active:bg-white/30"
+                >
+                  <Text className="text-xs font-medium text-white">
+                    {isExpanded ? "View Less" : "View Full"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <View className="gap-4">
-              <ScheduleItem
-                time="10:00"
-                ampm="AM"
-                subject="Mathematics"
-                room="Room 302, Building A"
-              />
-              <ScheduleItem
-                time="12:00"
-                ampm="PM"
-                subject="History"
-                room="Room 101, Main Hall"
-              />
+              {displayedClasses && displayedClasses.length > 0 ? (
+                displayedClasses.map((item: any, index: number) => {
+                  const { time, ampm } = parseSlotTime(item.slot);
+
+                  return (
+                    <ScheduleItem
+                      key={`${item.subjectCode}-${index}`}
+                      time={time}
+                      ampm={ampm}
+                      subject={item.subjectName}
+                      room={`Code: ${item.subjectCode} • ${item.credits} Credits`}
+                    />
+                  );
+                })
+              ) : (
+                <Text className="text-white text-center opacity-80 py-2">
+                  No upcoming classes scheduled.
+                </Text>
+              )}
             </View>
           </View>
         </View>
