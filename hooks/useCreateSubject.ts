@@ -13,9 +13,9 @@ export const useCreateSubject = () => {
       // Pass both the axios instance and the form data
       return subjectApi.createSubject(api, data);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // 🔄 Invalidate 'subjects' cache so the UI updates automatically
-      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      await queryClient.invalidateQueries({ queryKey: ['subjects'] });
 
       Toast.show({
         type: "success",
@@ -37,7 +37,7 @@ export const useCreateSubject = () => {
         message = error.response?.data?.message || error.message;
       }
 
-      console.error("Subject creation error:", error);
+      console.log("Subject creation error:", error);
 
       Toast.show({
         type: "error",

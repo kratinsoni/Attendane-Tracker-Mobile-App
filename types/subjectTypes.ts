@@ -2,8 +2,7 @@ export interface SubjectInterface {
   _id: string;
   name: string;
   code: string;
-  type: "THEORY" | "LAB";
-  labLength: number; // Keep this required for the database model
+  type: "THEORY" | "LAB" | "OTHER";
   professors: string[];
   credits: number;
   totalClasses: number;
@@ -19,7 +18,5 @@ export interface SubjectInterface {
 // 2. Then add it back as an optional property
 export interface CreateSubjectPayload extends Omit<
   SubjectInterface, 
-  "_id" | "totalClasses" | "classesAttended" | "owner" | "createdAt" | "updatedAt" | "labLength" | "type"
-> {
-  labLength?: number; 
-}
+  "_id" | "totalClasses" | "classesAttended" | "owner" | "createdAt" | "updatedAt" | "labLength"
+> {}

@@ -25,3 +25,18 @@ export interface SubjectCardType {
     createdAt: string,
     updatedAt: string,
 }
+
+export enum SemesterType {
+  AUTUMN = "AUTUMN",
+  SPRING = "SPRING",
+}
+
+export interface TimetableInterface {
+  name: string;
+  semester: number;
+  student: string;       // Representing the ObjectId as a string
+  subjects: string[];    // Array of ObjectIds as strings
+  semesterType: SemesterType;
+  createdAt?: Date;      // Added due to { timestamps: true }
+  updatedAt?: Date;      // Added due to { timestamps: true }
+}

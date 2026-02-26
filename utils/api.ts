@@ -146,7 +146,11 @@ export const timetableApi = {
   deleteTimetable: async (api: AxiosInstance, timetableId: string) => {
     const res = await api.delete(`/timetable/delete/${timetableId}`);
     return res.data.data;
-  }
+  },
+  getAllTimetablesOfUser: async(api: AxiosInstance) => {
+    const res = await api.get(`/timetable/user`);
+    return res.data.data;
+  },
 };
 
 export const attendanceApi = {
@@ -206,6 +210,30 @@ export const subjectApi = {
   getSubjectByCode: async (api: AxiosInstance, code: string) => {
     // Calls the backend endpoint: GET /subjects/:code
     const res = await api.get(`/subjects/details/${code}`);
+    return res.data.data;
+  },
+  getSubjectsBySemester: async (api: AxiosInstance, semester: number) => {
+    const res = await api.get(`/subjects/semester/${semester}`);
+    return res.data.data;
+  },
+  getSubjectsByTimetableId: async (api: AxiosInstance, id: string) => {
+    const res = await api.get(`/subjects/timetable/${id}`);
+    return res.data.data;
+  },
+  getSubjectById: async (api: AxiosInstance, id: string) => {
+    const res = await api.get(`/subjects/${id}`);
+    return res.data.data;
+  },
+  deleteSubject: async (api: AxiosInstance, id: string) => {
+    const res = await api.delete(`/subjects/${id}`);
+    return res.data.data;
+  },
+  updateSubject: async (
+    api: AxiosInstance,
+    id: string,
+    payload: Partial<CreateSubjectPayload> // Using Partial since updates might not require all fields
+  ) => {
+    const res = await api.patch(`/subjects/${id}`, payload);
     return res.data.data;
   },
   getSubjectsNotInTimetable: async (
