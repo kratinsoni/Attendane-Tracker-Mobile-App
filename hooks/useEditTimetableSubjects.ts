@@ -17,6 +17,9 @@ export const useAddSubjectsToTimetable = (timetableId: string) => {
             queryClient.invalidateQueries({
                 queryKey: ['timetable', timetableId, 'subjects', 'notInTimetable'],
             });
+            queryClient.invalidateQueries({
+                queryKey: ['subjects', 'semester'],
+            });
 
             Toast.show({
                 type: "success",

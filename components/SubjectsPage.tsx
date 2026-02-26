@@ -239,8 +239,8 @@ export default function SubjectsPage() {
                   </Text>
                 </TouchableOpacity>
 
-                {options.map((option) => {
-                  const label = typeof option === 'string' ? option : (option as TimetableInterface).name;
+                {options.map((option, index) => {
+                  const label = option;
                   const isSelected = selectedFilters[activeFilter] === label;
 
                   return (
