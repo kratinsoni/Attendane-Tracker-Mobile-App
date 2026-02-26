@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 
 // Hooks (Assuming these are exported from your hooks folder)
 import { useGetAllSubjects } from '@/hooks/useGetAllSubjects';
@@ -173,7 +173,7 @@ export default function SubjectsPage() {
   };
 
   const handleEdit = (id: string) => {
-    console.log("Navigating to edit:", id);
+    router.push(`/subject/update/${id}`);
     clearSelection();
     setActiveCardMenuId(null);
   };

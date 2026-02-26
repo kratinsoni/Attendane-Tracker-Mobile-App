@@ -80,3 +80,44 @@ export const useRemoveSubjectsFromTimetable = (timetableId: string) => {
         }
     });
 }
+
+export const useRemoveSubjectsFromTimetables = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        // The mutation function now accepts the ID as part of the payload
+        mutationFn: async ({ timetableId, subjectIds }: { timetableId: string, subjectIds: string[] }) => {
+            return timetableApi.removeSubjectsFromTimetable(api, timetableId, subjectIds);
+        },
+        onSuccess: (_, variables) => {
+            // We get the timetableId from the variables passed to the mutation
+            const { timetableId } = variables;
+
+            queryClient.invalidateQueries({
+                queryKey: ['timetable', timetableId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['timetable', timetableId, 'subjects', 'notInTimetable'],
+            });
+            Toast.show({
+                type: "success",
+                text1: "Subjects removed from timetable successfully",
+            });
+        },
+        onError: (error) => {
+            let message = "Failed to remove subjects from timetable";
+
+            if (isAxiosError(error)) {
+                message = error.response?.data?.message || error.message;
+            }
+
+            console.error("Failed to remove subjects from timetable:", error);
+
+            Toast.show({
+                type: "error",
+                text1: "Failed to remove subjects from timetable",
+                text2: message,
+            });
+        }
+    });
+}

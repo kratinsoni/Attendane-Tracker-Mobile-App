@@ -18,12 +18,12 @@ export const useUpdateSubject = () => {
       return subjectApi.updateSubject(api, id, payload);
     },
 
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       // 1. Invalidate 'subjects' queries to refresh lists
-      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      await queryClient.invalidateQueries({ queryKey: ['subjects'] });
       
       // 2. Optional: You can also invalidate the specific subject detail
-      queryClient.invalidateQueries({ queryKey: ['subjects', 'id', variables.id] });
+      await queryClient.invalidateQueries({ queryKey: ['subject', 'id', variables.id] });
     },
 
     onError: (error) => {
