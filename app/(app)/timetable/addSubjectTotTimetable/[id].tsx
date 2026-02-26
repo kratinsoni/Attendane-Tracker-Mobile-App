@@ -15,18 +15,31 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-
 export default function AddSubjectsScreen() {
   const id = useLocalSearchParams().id;
 
-  const {data: subjectsNotInTimetable} = useGetAllSubjectsNotInTimetable(id as string);
+  const { data: subjectsNotInTimetable } = useGetAllSubjectsNotInTimetable(
+    id as string,
+  );
 
-  const {mutate: addSubjectsToTimetable} = useAddSubjectsToTimetable(id as string);
+  const { mutate: addSubjectsToTimetable } = useAddSubjectsToTimetable(
+    id as string,
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]); // Default selected matching your image
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  const filteredSubjects = subjectsNotInTimetable?.filter(
+    (sub: SubjectInterface) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        sub.name.toLowerCase().includes(query) ||
+        sub.code.toLowerCase().includes(query)
+      );
+    },
+  );
 
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) =>
@@ -35,10 +48,18 @@ export default function AddSubjectsScreen() {
   };
 
   const selectAll = () => {
-    if (selectedIds.length === subjectsNotInTimetable?.length) {
-      setSelectedIds([]);
+    if (!filteredSubjects || filteredSubjects.length === 0) return;
+
+    const visibleIds = filteredSubjects.map((sub: SubjectInterface) => sub._id);
+
+    const areAllVisibleSelected = visibleIds.every((id: string) =>
+      selectedIds.includes(id),
+    );
+
+    if (areAllVisibleSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
     } else {
-      setSelectedIds(subjectsNotInTimetable?.map((sub: SubjectInterface) => sub._id) || []);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
     }
   };
 
@@ -117,7 +138,7 @@ export default function AddSubjectsScreen() {
 
   const handleAddSubject = () => {
     addSubjectsToTimetable(selectedIds);
-  }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-900">
@@ -155,12 +176,16 @@ export default function AddSubjectsScreen() {
           />
         </View>
 
-        <View className="flex-row items-center justify-between mt-3 px-1 text-xs font-medium">
-          <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+        <View className="flex-row items-center justify-between mt-3 px-1 font-medium">
+          <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium">
             SUGGESTED
           </Text>
-          <TouchableOpacity onPress={selectAll}>
-            <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium hover:text-emerald-500">
+          <TouchableOpacity
+            onPress={selectAll}
+            className="px-2"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text className="text-slate-500 dark:text-slate-400 text-sm font-bold">
               Select All
             </Text>
           </TouchableOpacity>
@@ -169,7 +194,7 @@ export default function AddSubjectsScreen() {
 
       {/* Scrollable Content List */}
       <FlatList
-        data={subjectsNotInTimetable}
+        data={filteredSubjects}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}

@@ -68,6 +68,10 @@ export default function EditTimetable() {
   };
 
   const handleSelectAll = () => {
+    if (selectedSubjectIds.length === timetableData?.subjects.length) {
+      return setSelectedSubjectIds([]);
+    }
+
     setSelectedSubjectIds(
       timetableData?.subjects.map((subject: SubjectInterface) => subject._id),
     );
