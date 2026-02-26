@@ -90,7 +90,7 @@ export default function TimetableScreen() {
       {/* Main Scrollable Content */}
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 150 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
