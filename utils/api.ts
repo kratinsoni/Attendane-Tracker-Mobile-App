@@ -259,3 +259,18 @@ export const dashboardApi = {
     return res.data.data;
   }
 };
+
+export const detailsApi = {
+  getAttendanceStatBySemester: async (api: AxiosInstance, semester: number) => {
+    const res = await api.get(`/details/attendance/semester/${semester}`);
+    return res.data.data;
+  },
+  getAttendanceStatOfAllSubjects: async (api: AxiosInstance) => {
+    const res = await api.get("/details/attendance/subjects");
+    return res.data.data;
+  },
+  getAttendanceStatOfAllTimetables: async (api: AxiosInstance, semester: number) => {
+    const res = await api.get(`/details/attendance/timetables/semester/${semester}`);
+    return res.data.data;
+  }
+}
