@@ -4,6 +4,7 @@ import {
   useGetAttendanceStatOfAllTimetables,
 } from "@/hooks/useDetails";
 import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Modal,
@@ -506,7 +507,13 @@ export default function AttendanceDetails() {
               }
 
               return (
-                <View
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: "/timetable/[id]",
+                      params: { id: tt?.timetableId },
+                    })
+                  }
                   key={index}
                   className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
                 >
@@ -562,7 +569,7 @@ export default function AttendanceDetails() {
                       {status.text}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
 

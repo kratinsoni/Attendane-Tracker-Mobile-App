@@ -272,5 +272,9 @@ export const detailsApi = {
   getAttendanceStatOfAllTimetables: async (api: AxiosInstance, semester: number) => {
     const res = await api.get(`/details/attendance/timetables/semester/${semester}`);
     return res.data.data;
+  },
+  getAttendanceStatByTimetable: async (api: AxiosInstance, timetableId: string) => {
+    const res = await api.get(`/details/attendance/timetable/${timetableId}`);
+    return res.data.data;
   }
 }
