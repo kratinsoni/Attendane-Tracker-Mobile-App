@@ -3,7 +3,7 @@ import { TimetableCard } from "@/components/TimetableCard";
 import { useGetUserTimetables } from "@/hooks/useGetUserTimetables";
 import { TimetableCardType } from "@/types/timetableTypes";
 import { router } from "expo-router";
-import { Menu, Plus, Search, UserCircle } from "lucide-react-native";
+import { ArrowBigLeft, ArrowLeft, Menu, Plus, Search, User, UserCircle } from "lucide-react-native";
 import React, { useState, useCallback } from "react";
 import {
   ScrollView,
@@ -64,13 +64,13 @@ export default function TimetableScreen() {
       <View className="bg-white/80 dark:bg-slate-900/80 px-4 pt-4 pb-2">
         <View className="flex-row items-center justify-between mb-4">
           <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-            <Menu size={24} color="#135bec" />
+            <ArrowLeft size={24} color="#135bec" onPress={() => router.back()}/>
           </TouchableOpacity>
           <Text className="text-xl font-bold text-slate-900 dark:text-white">
             My Timetables
           </Text>
           <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-            <UserCircle size={24} color="#135bec" />
+            <User size={24} color="#135bec" onPress={() => router.push("/(app)/profile/profile")}/>
           </TouchableOpacity>
         </View>
 

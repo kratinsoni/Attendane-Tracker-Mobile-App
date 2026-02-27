@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "attendance-tracker",
+    "name": "KGP Presence",
     "slug": "attendance-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/splash-icon-light.png",
     "scheme": "attendancetracker",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    // "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "icon": {
@@ -22,7 +22,6 @@
         "foregroundImage": "./assets/icons/adaptive-icon.png",
         "monochromeImage": "./assets/icons/adaptive-icon.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.kratinsoni.attendancetracker"
     },
