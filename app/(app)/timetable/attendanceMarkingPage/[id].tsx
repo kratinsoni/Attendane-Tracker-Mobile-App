@@ -16,12 +16,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
-  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { ClassCard } from "@/components/ClassCard";
 
 // Import logic
@@ -38,13 +38,12 @@ const ScheduleScreen = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [anchorDate, setAnchorDate] = useState<Date>(new Date());
 
-  
   const offsetInMs: number = selectedDate.getTimezoneOffset() * 60 * 1000;
 
-// Subtract the offset to "neutralize" the ISO conversion shift
-const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
-  .toISOString()
-  .split("T")[0];
+  // Subtract the offset to "neutralize" the ISO conversion shift
+  const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
+    .toISOString()
+    .split("T")[0];
 
   // DATA FETCHING
   const { data } = useGetAttendanceForDateByTimetable({
@@ -60,10 +59,6 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
     return new Date(d.setDate(diff));
   };
 
-  console.log("Selected Date:", selectedDate.toDateString());
-  console.log(selectedDate);
-  console.log("Fetched Classes:", data?.classes);
-
   const weekDates = useMemo(() => {
     const startOfWeek = getStartOfWeek(anchorDate);
     const days = [];
@@ -74,7 +69,6 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
     }
     return days;
   }, [anchorDate]);
-  // console.log(weekDates);
 
   const changeWeek = (direction: "prev" | "next") => {
     const newAnchor = new Date(anchorDate);
@@ -89,7 +83,7 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
   );
 
   // SPLIT CLASSES: Morning (< 12:00) vs Afternoon (>= 12:00)
-  // 1200 represents 12:00 PM in the sortTime integer format
+  // 1300 represents 1:00 PM in the sortTime integer format
   const morningClasses = todaysClasses.filter((c) => c.sortTime <= 1300);
   const afternoonClasses = todaysClasses.filter((c) => c.sortTime > 1300);
 
@@ -104,7 +98,14 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-900">
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      {/* Using expo-status-bar with explicitly defined background colors 
+        ensures it doesn't become transparent/unreadable on Android 
+      */}
+      <StatusBar 
+        style={isDark ? "light" : "dark"} 
+        backgroundColor={isDark ? "#0f172a" : "#f8fafc"} 
+        translucent={false}
+      />
 
       {/* HEADER SECTION */}
       <View className="px-4 pt-4 pb-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
@@ -212,7 +213,12 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
 
           {/* 1. MORNING CLASSES */}
           {morningClasses.map((item, index) => (
-            <ClassCard key={`morning-${index}`} item={item} timetableId={id} selectedDate={selectedDate.toISOString().split("T")[0]}/>
+            <ClassCard 
+              key={`morning-${index}`} 
+              item={item} 
+              timetableId={id} 
+              selectedDate={localISODate}
+            />
           ))}
 
           {/* 2. LUNCH BREAK (Only show if there are actually classes today) */}
@@ -229,19 +235,24 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
 
           {/* 3. AFTERNOON CLASSES */}
           {afternoonClasses.map((item, index) => (
-            <ClassCard key={`afternoon-${index}`} item={item} timetableId={id} selectedDate={selectedDate.toISOString().split("T")[0]} />
+            <ClassCard 
+              key={`afternoon-${index}`} 
+              item={item} 
+              timetableId={id} 
+              selectedDate={localISODate} 
+            />
           ))}
         </View>
       </ScrollView>
 
-      <TouchableOpacity className="absolute bottom-8 right-8 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg shadow-blue-500/40" onPress={() => router.push("/dashboard")}>
+      <TouchableOpacity 
+        className="absolute bottom-8 right-8 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg shadow-blue-500/40" 
+        onPress={() => router.push("/dashboard")}
+      >
         <Plus size={28} color="white" />
       </TouchableOpacity>
     </SafeAreaView>
   );
 };
-
-
-
 
 export default ScheduleScreen;
