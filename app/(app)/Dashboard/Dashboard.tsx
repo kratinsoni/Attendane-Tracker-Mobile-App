@@ -3,10 +3,11 @@ import {
   useGetTopAttendance,
   useGetUpcomingClasses,
 } from "@/hooks/useDashboardAttendanceStat";
+import { useEvents } from "@/hooks/useEvents";
 import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Image,
   RefreshControl,
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const { data: topAttendance } = useGetTopAttendance();
   const { data: leastAttendance } = useGetLeastAttendance();
   const { data: upcomingClasses } = useGetUpcomingClasses();
+  const { data: allEvents } = useEvents();
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -85,6 +87,44 @@ export default function Dashboard() {
   const displayedClasses = isExpanded
     ? upcomingClasses
     : upcomingClasses?.slice(0, 2);
+
+  // Events tab state and filtering
+  const EVENT_TABS = ["All", "Exam", "Assignment", "Test", "Other"] as const;
+  const [activeEventTab, setActiveEventTab] = useState<string>("All");
+
+  const filteredEvents = useMemo(() => {
+    if (!allEvents || allEvents.length === 0) return [];
+    const sorted = [...allEvents].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+    if (activeEventTab === "All") return sorted.slice(0, 5);
+    return sorted.filter((e) => e.type === activeEventTab).slice(0, 5);
+  }, [allEvents, activeEventTab]);
+
+  const getEventColor = (type: string) => {
+    switch (type) {
+      case "Exam":
+        return {
+          color: "bg-red-50 dark:bg-red-900/20",
+          textColor: "text-red-500",
+        };
+      case "Assignment":
+        return {
+          color: "bg-indigo-50 dark:bg-indigo-900/20",
+          textColor: "text-indigo-500",
+        };
+      case "Test":
+        return {
+          color: "bg-amber-50 dark:bg-amber-900/20",
+          textColor: "text-amber-500",
+        };
+      default:
+        return {
+          color: "bg-purple-50 dark:bg-purple-900/20",
+          textColor: "text-purple-500",
+        };
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
@@ -288,38 +328,43 @@ export default function Dashboard() {
           className="flex-row pb-2 mb-4"
           contentContainerStyle={{ gap: 8 }}
         >
-          <TabButton title="Exams" active />
-          <TabButton title="Assignments" />
-          <TabButton title="Tests" />
-          <TabButton title="Events" />
+          {EVENT_TABS.map((tab) => (
+            <TabButton
+              key={tab}
+              title={tab}
+              active={activeEventTab === tab}
+              onPress={() => setActiveEventTab(tab)}
+            />
+          ))}
         </ScrollView>
 
-        {/* Exam List Items */}
+        {/* Event List Items */}
         <View className="gap-3 mt-2">
-          <ExamCard
-            date="30"
-            month="OCT"
-            title="Midterm: Physics"
-            detail="Written Exam • 2 hours"
-            color="bg-red-50 dark:bg-red-900/20"
-            textColor="text-red-500"
-          />
-          <ExamCard
-            date="05"
-            month="NOV"
-            title="Final: Literature"
-            detail="Essay • Online Submission"
-            color="bg-indigo-50 dark:bg-indigo-900/20"
-            textColor="text-indigo-500"
-          />
-          <ExamCard
-            date="12"
-            month="NOV"
-            title="Review: Algebra II"
-            detail="Practice Test • 45 mins"
-            color="bg-amber-50 dark:bg-amber-900/20"
-            textColor="text-amber-500"
-          />
+          {filteredEvents.length > 0 ? (
+            filteredEvents.map((event) => {
+              const eventDate = new Date(event.date);
+              const day = String(eventDate.getDate()).padStart(2, "0");
+              const month = new Intl.DateTimeFormat("en-US", { month: "short" })
+                .format(eventDate)
+                .toUpperCase();
+              const { color, textColor } = getEventColor(event.type);
+              return (
+                <ExamCard
+                  key={event._id}
+                  date={day}
+                  month={month}
+                  title={event.name}
+                  detail={`${event.type} • ${event.location}`}
+                  color={color}
+                  textColor={textColor}
+                />
+              );
+            })
+          ) : (
+            <Text className="text-slate-400 text-center py-4">
+              No events found.
+            </Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -359,16 +404,24 @@ const ScheduleItem = ({ time, ampm, subject, room }: any) => (
   </View>
 );
 
-const TabButton = ({ title, active }: any) => (
+const TabButton = ({ title, active, onPress }: any) => (
   <TouchableOpacity
-    className={`px-5 py-2.5 rounded-full border ${
-      active
-        ? "bg-primary border-primary shadow-sm"
-        : "bg-white dark:bg-[#151c2b] border-slate-200 dark:border-slate-700"
-    }`}
+    onPress={onPress}
+    style={{
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 999,
+      borderWidth: 1,
+      backgroundColor: active ? "#2563EB" : "#ffffff",
+      borderColor: active ? "#2563EB" : "#e2e8f0",
+    }}
   >
     <Text
-      className={`text-sm font-medium ${active ? "text-white" : "text-slate-600 dark:text-slate-300"}`}
+      style={{
+        fontSize: 14,
+        fontWeight: "500",
+        color: active ? "#ffffff" : "#475569",
+      }}
     >
       {title}
     </Text>
