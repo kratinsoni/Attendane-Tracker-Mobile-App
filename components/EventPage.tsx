@@ -1,15 +1,19 @@
+import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Modal,
   SectionList,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../components/EmptyState";
 import { EventCard } from "../components/EventCard";
 import { useEvents } from "../hooks/useEvents";
@@ -37,14 +41,15 @@ const formatDateGroup = (isoString: string) => {
 };
 
 // Available event types based on your payload
-const EVENT_TYPES = ['All', 'Assignment', 'Lecture', 'Workshop', 'Social', 'Test'];
+const EVENT_TYPES = ["All", "Exam", "Assignment", "Test", "Other"];
 
 export const EventsScreen = () => {
+  const { data } = useMe();
   const { data: events, isLoading, isError } = useEvents();
-  
+
   // States for filtering
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState<EventType | 'All'>('All');
+  const [selectedType, setSelectedType] = useState<EventType | "All">("All");
   const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 
   // Process data: Sort -> Search Filter -> Type Filter -> Group
@@ -53,7 +58,7 @@ export const EventsScreen = () => {
 
     // 1. ALWAYS sort all events chronologically first (earliest date first)
     const sortedEvents = [...events].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
     let eventsToDisplay = sortedEvents;
@@ -65,14 +70,14 @@ export const EventsScreen = () => {
         (event) =>
           event.name?.toLowerCase().includes(query) ||
           event.description?.toLowerCase().includes(query) ||
-          event.location?.toLowerCase().includes(query)
+          event.location?.toLowerCase().includes(query),
       );
     }
 
     // 3. Filter by Event Type
-    if (selectedType !== 'All') {
+    if (selectedType !== "All") {
       eventsToDisplay = eventsToDisplay.filter(
-        (event) => event.type === selectedType
+        (event) => event.type === selectedType,
       );
     }
 
@@ -89,31 +94,37 @@ export const EventsScreen = () => {
         }
         return acc;
       },
-      [] as { title: string; data: AppEvent[] }[]
+      [] as { title: string; data: AppEvent[] }[],
     );
   }, [events, searchQuery, selectedType]);
 
   return (
-    <View className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+      <StatusBar barStyle="dark-content" />
       {/* Header */}
-      <View className="px-5 pt-12 pb-5 bg-white">
+      <View className="px-5 pt-4 pb-6">
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-xl font-bold text-slate-900 leading-tight">
+          <TouchableOpacity
+            className="flex h-10 w-10 items-center justify-center rounded-full"
+            onPress={() => router.back()}
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#111318" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-slate-900 dark:text-white">
             Events
           </Text>
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity className="p-2 rounded-full bg-slate-50 border border-gray-100">
-              <MaterialIcons
-                name="notifications-none"
-                size={18}
-                color="#94A3B8"
-              />
-            </TouchableOpacity>
-            {/* Profile Initials */}
-            <View className="w-7 h-7 rounded-full bg-slate-200 items-center justify-center border-2 border-white">
-              <Text className="text-[8px] font-bold text-gray-600">JD</Text>
-            </View>
-          </View>
+          <TouchableOpacity
+            className="relative"
+            onPress={() => router.push("/profile/profile")}
+          >
+            <Image
+              source={{
+                uri: `https://picsum.photos/seed/${data?._id}/400/200`,
+              }}
+              className="w-12 h-12 rounded-full border-2 border-primary"
+            />
+            <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />
+          </TouchableOpacity>
         </View>
 
         {/* Search & Filters */}
@@ -136,9 +147,9 @@ export const EventsScreen = () => {
 
           <View className="flex-row items-center gap-2">
             {/* Type Filter Dropdown Trigger */}
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setIsTypeMenuOpen(true)}
-              className={`flex-row items-center gap-1 px-3 py-1.5 rounded-md ${selectedType !== 'All' ? 'bg-blue-100 border-blue-200' : 'bg-blue-50 border-transparent'} border`}
+              className={`flex-row items-center gap-1 px-3 py-1.5 rounded-md ${selectedType !== "All" ? "bg-blue-100 border-blue-200" : "bg-blue-50 border-transparent"} border`}
             >
               <MaterialIcons name="filter-list" size={14} color="#2563EB" />
               <Text className="text-[10px] font-bold tracking-widest uppercase text-blue-600 ml-1">
@@ -205,18 +216,22 @@ export const EventsScreen = () => {
         >
           <View className="bg-white w-full rounded-2xl overflow-hidden shadow-lg">
             <View className="p-4 bg-slate-50 border-b border-gray-100">
-              <Text className="text-sm font-bold text-slate-800 text-center">Select Event Type</Text>
+              <Text className="text-sm font-bold text-slate-800 text-center">
+                Select Event Type
+              </Text>
             </View>
             {EVENT_TYPES.map((type, index) => (
               <TouchableOpacity
                 key={type}
-                className={`py-4 border-b border-gray-50 ${selectedType === type ? 'bg-blue-50' : 'bg-white'} ${index === EVENT_TYPES.length - 1 ? 'border-b-0' : ''}`}
+                className={`py-4 border-b border-gray-50 ${selectedType === type ? "bg-blue-50" : "bg-white"} ${index === EVENT_TYPES.length - 1 ? "border-b-0" : ""}`}
                 onPress={() => {
-                  setSelectedType(type as EventType | 'All');
+                  setSelectedType(type as EventType | "All");
                   setIsTypeMenuOpen(false);
                 }}
               >
-                <Text className={`text-center font-medium ${selectedType === type ? 'text-blue-600' : 'text-slate-600'}`}>
+                <Text
+                  className={`text-center font-medium ${selectedType === type ? "text-blue-600" : "text-slate-600"}`}
+                >
                   {type}
                 </Text>
               </TouchableOpacity>
@@ -233,6 +248,6 @@ export const EventsScreen = () => {
       >
         <MaterialIcons name="add" size={28} color="#ffffff" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
