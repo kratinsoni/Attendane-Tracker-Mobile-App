@@ -3,6 +3,7 @@ import { UserInterface } from "@/types/userTypes";
 import { getToken } from "@/utils/token";
 import axios, { AxiosInstance } from "axios";
 import { CreateSubjectPayload } from "../types/subjectTypes";
+import { CreateEventPayload } from '../types/event';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -278,3 +279,14 @@ export const detailsApi = {
     return res.data.data;
   }
 }
+
+export const eventApi = {
+  getAllEvents: async (api: AxiosInstance) => {
+    const res = await api.get("/events/");
+    return res.data.data;
+  },
+  createEvent: async (api: AxiosInstance, payload: CreateEventPayload) => {
+    const res = await api.post("/events", payload);
+    return res.data.data;
+  },
+};

@@ -7,7 +7,6 @@
     "icon": "./assets/icons/splash-icon-light.png",
     "scheme": "attendancetracker",
     "userInterfaceStyle": "automatic",
-    // "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "icon": {
@@ -44,7 +43,8 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
