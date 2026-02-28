@@ -52,10 +52,6 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
     date: localISODate, 
   });
 
-  // useEffect(() => {
-  //   console.log(selectedDate);
-  // }, [selectedDate]);
-
   // --- DATE LOGIC ---
   const getStartOfWeek = (date: Date) => {
     const d = new Date(date);
@@ -94,8 +90,8 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
 
   // SPLIT CLASSES: Morning (< 12:00) vs Afternoon (>= 12:00)
   // 1200 represents 12:00 PM in the sortTime integer format
-  const morningClasses = todaysClasses.filter((c) => c.sortTime < 1200);
-  const afternoonClasses = todaysClasses.filter((c) => c.sortTime >= 1200);
+  const morningClasses = todaysClasses.filter((c) => c.sortTime <= 1300);
+  const afternoonClasses = todaysClasses.filter((c) => c.sortTime > 1300);
 
   // Formatting Helpers
   const formatDay = (date: Date): string =>
@@ -225,7 +221,7 @@ const localISODate: string = new Date(selectedDate.getTime() - offsetInMs)
               <View className="absolute -left-[30px] top-4 w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700" />
               <View className="bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 p-3 rounded-xl items-center">
                 <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  Lunch Break • 12:00 - 02:00 PM
+                  Lunch Break • 01:00 PM - 02:00 PM
                 </Text>
               </View>
             </View>
