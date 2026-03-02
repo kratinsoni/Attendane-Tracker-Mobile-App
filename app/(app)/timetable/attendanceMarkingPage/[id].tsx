@@ -15,11 +15,14 @@ import { useColorScheme } from "nativewind";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Image,
+  Platform,
   ScrollView,
   Text,
   TouchableOpacity,
+  Vibration,
   View,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ClassCard } from "@/components/ClassCard";
@@ -247,7 +250,18 @@ const ScheduleScreen = () => {
 
       <TouchableOpacity 
         className="absolute bottom-8 right-8 w-14 h-14 bg-blue-500 rounded-full items-center justify-center shadow-lg shadow-blue-500/40" 
-        onPress={() => router.push("/dashboard")}
+        onPress={() => {
+          if (Platform.OS === "android") {
+                // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                // This creates a sharp "tick" rather than a soft buzz.
+                Vibration.vibrate(20);
+              } else {
+                // iOS handles impacts much better natively, so stick to Expo here
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+
+              router.push(`/timetable/addSubjectToTimetable/${id}`);
+        }}
       >
         <Plus size={28} color="white" />
       </TouchableOpacity>

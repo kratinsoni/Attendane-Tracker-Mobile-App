@@ -9,14 +9,192 @@ import {
   Pencil,
   Clock,
 } from "lucide-react-native";
-import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  Text,
+  TouchableOpacity,
+  View,
+  Platform,
+  Vibration,
+  useColorScheme,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withSequence,
+  withDelay,
+  Easing,
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import { StatusButton } from "./StatusButton";
 import { ClassSession } from "@/hooks/scheduleLogic";
 import { useCreateAttendance } from "@/hooks/useCreateAttendance";
-import { AttendanceEditPopup, AttendanceStatus } from "./AttendanceEditPopup"; // ADDED IMPORT
+import { AttendanceEditPopup, AttendanceStatus } from "./AttendanceEditPopup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { attendanceApi, api } from "@/utils/api";
+
+// --- JUICY PHYSICS-BASED ANIMATION OVERLAY ---
+const StatusAnimation = ({
+  status,
+  onComplete,
+}: {
+  status: string;
+  onComplete: () => void;
+}) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  // Reanimated Shared Values
+  const scale = useSharedValue(0);
+  const opacity = useSharedValue(1);
+  const bgOpacity = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const rotate = useSharedValue(0);
+
+  // Ring/Burst effect shared values
+  const ringScale = useSharedValue(0);
+  const ringOpacity = useSharedValue(1);
+
+  // Dynamic Colors for Light/Dark modes
+  const colors: Record<string, string> = {
+    PRESENT: isDark ? "#34d399" : "#10b981", // Emerald
+    ABSENT: isDark ? "#fb7185" : "#f43f5e", // Rose
+    MEDICAL: isDark ? "#fbbf24" : "#f59e0b", // Amber
+    CANCELLED: isDark ? "#94a3b8" : "#64748b", // Slate
+  };
+  const color = colors[status] || colors.PRESENT;
+
+  const Icons: Record<string, any> = {
+    PRESENT: CheckCircle,
+    ABSENT: XCircle,
+    MEDICAL: Activity,
+    CANCELLED: Ban,
+  };
+  const Icon = Icons[status] || CheckCircle;
+
+  useEffect(() => {
+    // 1. Fade in the background blur/dim instantly
+    bgOpacity.value = withTiming(1, { duration: 150 });
+
+    // 2. Trigger the specific bouncy animation for ALL statuses
+    // THE INSTAGRAM POP: Extreme pop with overshoot and a burst ring
+    scale.value = withSpring(1, { mass: 1, damping: 5, stiffness: 350 });
+
+    // Ring burst effect
+    ringScale.value = withTiming(2, {
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+    });
+    ringOpacity.value = withTiming(0, {
+      duration: 400,
+      easing: Easing.in(Easing.quad),
+    });
+
+    // 3. Exit Animation & Cleanup (Reanimated v4 friendly: pure JS timeouts)
+    // Start exit animation at 750ms
+    const exitTimeout = setTimeout(() => {
+      // Shrink back down dynamically (the "reverse pop")
+      scale.value = withTiming(0, {
+        duration: 250,
+        easing: Easing.in(Easing.back(2)),
+      });
+      opacity.value = withTiming(0, { duration: 200 });
+      bgOpacity.value = withTiming(0, { duration: 250 });
+    }, 750);
+
+    // Completely unmount and trigger the actual mutation at 1000ms
+    const completeTimeout = setTimeout(() => {
+      onComplete();
+    }, 1000);
+
+    return () => {
+      clearTimeout(exitTimeout);
+      clearTimeout(completeTimeout);
+    };
+  }, [status]);
+
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { scale: scale.value },
+      { translateY: translateY.value },
+      { rotate: `${rotate.value}deg` },
+    ],
+  }));
+
+  const animatedRingStyle = useAnimatedStyle(() => ({
+    opacity: ringOpacity.value,
+    transform: [{ scale: ringScale.value }],
+  }));
+
+  return (
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        { justifyContent: "center", alignItems: "center", zIndex: 100 },
+      ]}
+      pointerEvents="box-none"
+    >
+      {/* Background Dimming (Subtle overlay) */}
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: isDark
+              ? "rgba(15, 23, 42, 0.45)"
+              : "rgba(255, 255, 255, 0.65)",
+            borderRadius: 24,
+          },
+          useAnimatedStyle(() => ({ opacity: bgOpacity.value })),
+        ]}
+        pointerEvents="auto"
+      />
+
+      {/* Burst Ring (Now active for ALL statuses) */}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            width: 90,
+            height: 90,
+            borderRadius: 45,
+            borderWidth: 4,
+            borderColor: color,
+          },
+          animatedRingStyle,
+        ]}
+        pointerEvents="none"
+      />
+
+      {/* Main Bouncing Icon */}
+      <Animated.View
+        style={[
+          {
+            backgroundColor: isDark ? "#1e293b" : "#ffffff",
+            padding: 18,
+            borderRadius: 100,
+            shadowColor: color,
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: isDark ? 0.8 : 0.4,
+            shadowRadius: 15,
+            elevation: 12,
+            borderWidth: isDark ? 1 : 0,
+            borderColor: isDark ? "rgba(255,255,255,0.05)" : "transparent",
+          },
+          animatedIconStyle,
+        ]}
+        pointerEvents="none"
+      >
+        <Icon size={64} color={color} strokeWidth={2.5} />
+      </Animated.View>
+    </View>
+  );
+};
+// --- END ANIMATION COMPONENT ---
 
 export const ClassCard = ({
   item,
@@ -27,50 +205,101 @@ export const ClassCard = ({
   timetableId: string;
   selectedDate: string;
 }) => {
-  // 1. Add state to toggle the edit UI
   const [isEditing, setIsEditing] = useState(false);
+  const [pendingAnimation, setPendingAnimation] = useState<string | null>(null);
+
+  // NEW: Add optimistic state for immediate UI feedback
+  const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { mutate } = useCreateAttendance({ timetableId, date: selectedDate });
 
+  // NEW: Clear optimistic status when the real API data updates
+  useEffect(() => {
+    if (item.status !== "UNMARKED") {
+      setOptimisticStatus(null);
+    }
+  }, [item.status]);
+
   const editMutation = useMutation({
-    // We only need the string 'type' (e.g., "PRESENT") from the popup
     mutationFn: async (type: string) => {
-      // Call your exact API function here
-      return await attendanceApi.editAttendanceStatus(api, item.attendanceId as any, type);
+      return await attendanceApi.editAttendanceStatus(
+        api,
+        item.attendanceId as any,
+        type,
+      );
     },
     onSuccess: () => {
-      // Refresh the attendance list so the UI updates instantly
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },
     onError: (error) => {
       console.error("Failed to update attendance:", error);
-    }
+    },
   });
 
   const handleMarkAttendance = (status: string) => {
-    mutate({
-      subjectId: item.subjectId,
-      day: item.day,
-      type: status,
-      timeSlot: item.timeSlot,
-      date: selectedDate,
-      semester: item.semester,
-    });
+    if (Platform.OS === "android") {
+      Vibration.vibrate(40);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+    }
+
+    // 1. Instantly update UI
+    setOptimisticStatus(status);
+
+    // 2. Trigger animation
+    setPendingAnimation(status);
+
+    // 3. Execute mutation with error handling
+    mutate(
+      {
+        subjectId: item.subjectId,
+        day: item.day,
+        type: status,
+        timeSlot: item.timeSlot,
+        date: selectedDate,
+        semester: item.semester,
+      },
+      {
+        // --- THE ROLLBACK ---
+        onError: (error) => {
+          console.error("Attendance mutation failed:", error);
+
+          // Revert the optimistic state so the buttons show up again
+          setOptimisticStatus(null);
+
+          // Let the user know it failed so they can try again
+          Alert.alert(
+            "Update Failed",
+            "We couldn't save your attendance. Please check your connection and try again.",
+          );
+        },
+        onSuccess: () => {
+          // Optional: You can trigger a background refetch here if your
+          // useCreateAttendance hook doesn't already do it.
+          // queryClient.invalidateQueries({ queryKey: ["attendance"] });
+        },
+      },
+    );
   };
 
-  // Helper function to safely map backend string status to the modal's expected AttendanceStatus type
+  // --- Replaced executeAttendanceMutation with immediate execution above ---
+
   const mapStatusForEditor = (status: string): AttendanceStatus | undefined => {
     switch (status.toUpperCase()) {
-      case "PRESENT": return "P";
-      case "ABSENT": return "A";
-      case "MEDICAL": return "M";
-      case "CANCELLED": return "C";
-      default: return undefined;
+      case "PRESENT":
+        return "P";
+      case "ABSENT":
+        return "A";
+      case "MEDICAL":
+        return "M";
+      case "CANCELLED":
+        return "C";
+      default:
+        return undefined;
     }
   };
 
-  // Helper function to get dynamic colors for logged attendance
   const getStatusColors = (status: string) => {
     switch (status.toUpperCase()) {
       case "PRESENT":
@@ -94,7 +323,6 @@ export const ClassCard = ({
           text: "text-slate-600 dark:text-slate-300",
         };
       default:
-        // Fallback colors
         return {
           bg: "bg-green-500/10",
           text: "text-green-600 dark:text-green-400",
@@ -102,18 +330,15 @@ export const ClassCard = ({
     }
   };
 
-  // Call it to get the colors for the current item
-  const statusColors = getStatusColors(item.status);
+  // NEW: Determine which status to display (Optimistic overrides real until real catches up)
+  const displayStatus = optimisticStatus || item.status;
+  const statusColors = getStatusColors(displayStatus);
 
   return (
     <View className="relative mb-6 ml-2">
-      {/* TIMELINE CONNECTOR (Vertical Line) */}
       <View className="absolute -left-[26px] top-4 bottom-[-24px] w-[2px] bg-slate-200 dark:bg-slate-800" />
-
-      {/* TIMELINE DOT (Glow Effect) */}
       <View className="absolute -left-[32px] top-1 w-4 h-4 rounded-full bg-blue-500 border-4 border-white dark:border-slate-900 shadow-lg shadow-blue-500/50" />
 
-      {/* HEADER INFO */}
       <View className="flex-row justify-between mb-3 items-center">
         <View className="flex-row items-center bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
           <Clock size={12} color="#3b82f6" />
@@ -126,9 +351,8 @@ export const ClassCard = ({
         </Text>
       </View>
 
-      {/* CARD BODY */}
       <View
-        className="bg-white dark:bg-slate-800 p-5 rounded-[24px] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-50 dark:border-slate-700/50"
+        className="bg-white dark:bg-slate-800 p-5 rounded-[24px] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-50 dark:border-slate-700/50 relative overflow-hidden"
         style={{ elevation: 4 }}
       >
         <View className="flex-row justify-between items-start">
@@ -156,23 +380,23 @@ export const ClassCard = ({
             </View>
           </View>
 
-          {/* EDIT BUTTON TOGGLE */}
           <TouchableOpacity
             className="p-2 -mr-2"
-            onPress={() => {if(item.status !== "UNMARKED")setIsEditing(true)}} // <-- ADDED ONPRESS
+            onPress={() => {
+              // Ensure we use displayStatus so they can edit optimistic updates too
+              if (displayStatus !== "UNMARKED") setIsEditing(true);
+            }}
           >
-            {isEditing? (
-              // Active State: Shows Pencil, made it slightly darker to look "active"
-              <Pencil size={20} color="#94a3b8" /> 
+            {isEditing ? (
+              <Pencil size={20} color="#94a3b8" />
             ) : (
-              // Default State: Shows MoreVertical
-              <MoreVertical size={20} color="#cbd5e1" /> 
+              <MoreVertical size={20} color="#cbd5e1" />
             )}
           </TouchableOpacity>
         </View>
 
-        {/* ACTIONS / STATUS LOGGED */}
-        {item.status === "UNMARKED" ? (
+        {/* NEW: Use displayStatus instead of item.status */}
+        {displayStatus === "UNMARKED" ? (
           <View className="flex-row justify-between mt-6 pt-5 border-t border-slate-100 dark:border-slate-700/50">
             <StatusButton
               icon={CheckCircle}
@@ -213,30 +437,39 @@ export const ClassCard = ({
               Attendance Logged
             </Text>
             <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
-              <Text className={`text-xs font-black uppercase ${statusColors.text}`}>
-                {item.status}
+              <Text
+                className={`text-xs font-black uppercase ${statusColors.text}`}
+              >
+                {displayStatus}
               </Text>
             </View>
           </View>
         )}
+
+        {/* NEW: onComplete now just clears the animation overlay */}
+        {pendingAnimation && (
+          <StatusAnimation
+            status={pendingAnimation}
+            onComplete={() => setPendingAnimation(null)}
+          />
+        )}
       </View>
 
-      {/* 3. CONDITIONALLY RENDER THE MODAL POPUP */}
       {isEditing && (
         <AttendanceEditPopup
-          scheduleId={item.subjectId} 
+          scheduleId={item.subjectId}
           timetableId={timetableId}
           selectedDate={selectedDate}
-          initialStatus={mapStatusForEditor(item.status)} 
-          onClose={() => setIsEditing(false)} 
-
-          // 1. ADD THIS MISSING PROP (This is what the compiler is complaining about)
+          initialStatus={mapStatusForEditor(displayStatus)}
+          onClose={() => setIsEditing(false)}
           onSave={async (statusName) => {
-            // statusName will be "PRESENT", "ABSENT", etc.
+            if (Platform.OS === "android") {
+              Vibration.vibrate(40);
+            } else {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+            }
             await editMutation.mutateAsync(statusName);
           }}
-
-          // 2. (Optional) Just a simple callback for when it finishes successfully
           onSuccessCallback={(status) => {
             console.log("Updated successfully to:", status);
           }}
