@@ -11,15 +11,18 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
+  Platform,
   ScrollView,
   StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   useColorScheme,
+  Vibration,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 
 export default function EditTimetable() {
   const id = useLocalSearchParams().id as string;
@@ -41,6 +44,16 @@ export default function EditTimetable() {
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
 
   const handleDelete = () => {
+
+    if(Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     Alert.alert(
       "Delete Timetable",
       "Are you sure you want to delete this timetable? This action cannot be undone.",
@@ -56,6 +69,16 @@ export default function EditTimetable() {
   };
 
   const toggleSubject = (id: string) => {
+
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(5);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
     setSelectedSubjectIds((prevSelected) => {
       if (prevSelected.includes(id)) {
         // Remove ID if it's already selected
@@ -78,6 +101,16 @@ export default function EditTimetable() {
   };
 
   const handleRemoveSubjects = () => {
+
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(10);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     Alert.alert(
       "Remove Subjects",
       `Are you sure you want to remove ${selectedSubjectIds.length} subject(s) from this timetable?`,
@@ -93,6 +126,14 @@ export default function EditTimetable() {
   };
 
   const handleUpdate = () => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     updateTimetable({ name: timetableName, semester });
   };
 

@@ -5,13 +5,16 @@ import { router } from "expo-router";
 import React from "react";
 import {
   Image,
+  Platform,
   ScrollView,
   StatusBar,
   Text,
   TouchableOpacity,
+  Vibration,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 
 export default function UserProfile() {
   const { data } = useMe();
@@ -19,6 +22,14 @@ export default function UserProfile() {
   const {mutate} = useLogout();
 
   const handleLogout = () =>{
+    if(Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     mutate();
   }
   return (

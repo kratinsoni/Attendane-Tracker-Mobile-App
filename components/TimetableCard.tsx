@@ -1,8 +1,16 @@
 import { TimetableCardType } from "@/types/timetableTypes";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { Calendar, Edit2 } from "lucide-react-native";
 import React, { useMemo } from "react";
-import { ImageBackground, Text, TouchableOpacity, View } from "react-native";
+import {
+  ImageBackground,
+  Platform,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
 
 // const getRandomGradient = () => {
 //   const gradients = [
@@ -31,16 +39,27 @@ export const TimetableCard = ({
     return `https://picsum.photos/seed/${_id}/400/200`;
   }, [_id]);
 
+  const handleCardPress = () => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 5 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    router.push({
+      pathname: "/timetable/attendanceMarkingPage/[id]",
+      params: { id: _id },
+    });
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       className={`mb-4 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm`}
-      onPress={() =>
-        router.push({
-          pathname: "/timetable/attendanceMarkingPage/[id]",
-          params: { id: _id },
-        })
-      }
+      onPress={handleCardPress}
     >
       <ImageBackground
         source={{ uri: imageUrl }}

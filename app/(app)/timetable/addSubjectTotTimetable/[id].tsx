@@ -2,15 +2,18 @@ import { useAddSubjectsToTimetable } from "@/hooks/useEditTimetableSubjects";
 import { useGetAllSubjectsNotInTimetable } from "@/hooks/useGetTimetableById";
 import { SubjectInterface } from "@/types/subjectTypes";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   FlatList,
+  Platform,
   StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   useColorScheme,
+  Vibration,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -42,6 +45,15 @@ export default function AddSubjectsScreen() {
   );
 
   const toggleSelection = (id: string) => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(5);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
@@ -137,6 +149,14 @@ export default function AddSubjectsScreen() {
   };
 
   const handleAddSubject = () => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     addSubjectsToTimetable(selectedIds);
   };
 

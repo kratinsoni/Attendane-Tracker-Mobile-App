@@ -13,10 +13,13 @@ import {
   TouchableOpacity,
   View,
   RefreshControl,
+  Vibration,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
 import ErrorScreen from "@/components/ErrorPage";
+import * as Haptics from "expo-haptics";
 
 export default function TimetableScreen() {
   // Destructure refetch from your custom hook
@@ -126,7 +129,17 @@ export default function TimetableScreen() {
           shadowRadius: 4.65,
         }}
         className="absolute bottom-32 right-6 h-16 w-16 items-center justify-center rounded-full bg-blue-600 z-50"
-        onPress={() => router.push("/timetable/createTimetablePage")}
+        onPress={() =>{
+          if(Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+           router.push("/timetable/createTimetablePage");
+        }}
       >
         <Plus size={32} color="white" />
       </TouchableOpacity>

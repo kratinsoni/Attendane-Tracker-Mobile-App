@@ -13,6 +13,8 @@ import { ChevronLeft, Eye, EyeOff, LogIn } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLogin } from "@/hooks/useLogin";
 import { router } from "expo-router";
+import * as Haptics from "expo-haptics";
+import { Vibration } from "react-native";
 // import { styled } from "nativewind";
 
 // const StyledView = styled(View);
@@ -26,6 +28,16 @@ export default function LoginScreen() {
   const {mutate} = useLogin();
 
   const handleSubmit = () => {
+
+    if(Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     console.log("Submitting:", { instituteId, password });
     mutate({ instituteId, password });
   }

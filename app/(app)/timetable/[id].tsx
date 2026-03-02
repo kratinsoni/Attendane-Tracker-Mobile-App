@@ -1,17 +1,17 @@
+import { useGetAttendanceStatByTimetable } from "@/hooks/useDetails";
+import { SubjectInterface } from "@/types/subjectTypes";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
-  View,
-  Text,
   ScrollView,
+  Text,
   TouchableOpacity,
   useColorScheme,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
-import { useGetAttendanceStatByTimetable } from "@/hooks/useDetails";
-import { useLocalSearchParams } from "expo-router";
-import { SubjectInterface } from "@/types/subjectTypes";
 
 const apiResponse = {
   statusCode: 200,
@@ -108,13 +108,10 @@ const formatTimeSlot = (slot: string) => {
 const PRIMARY_COLOR = "#0fbd2c";
 
 export default function TimetableScreen() {
-
-  const {id} = useLocalSearchParams() as { id: string };
+  const { id } = useLocalSearchParams() as { id: string };
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-
-  
 
   const { data } = useGetAttendanceStatByTimetable(id);
   const percentage = Math.round(data?.attendancePercentage || 0);
@@ -142,14 +139,14 @@ export default function TimetableScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f6f8f6] dark:bg-[#102213]">
+    <SafeAreaView className="flex-1 bg-[#f6f8f6] dark:bg-[#070824]">
       {/* Top App Bar */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#0fbd2c]/10 dark:border-[#0fbd2c]/20 bg-[#f6f8f6]/95 dark:bg-[#102213]/95">
-        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full hover:bg-[#0fbd2c]/10">
+      <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#0fbd2c]/10 dark:border-[#0fbd2c]/20 bg-[#f6f8f6]/95 dark:bg-[#070824]">
+        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full hover:bg-[#070824]/10" onPress={() => router.back()}>
           <MaterialIcons
             name="arrow-back"
             size={24}
-            color={isDark ? "#f1f5f9" : "#0f172a"}
+            color={isDark ? "#f1f5f9" : "#070824"}
           />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-slate-900 dark:text-slate-100 flex-1 text-center">
@@ -159,7 +156,7 @@ export default function TimetableScreen() {
           <MaterialIcons
             name="more-vert"
             size={24}
-            color={isDark ? "#f1f5f9" : "#0f172a"}
+            color={isDark ? "#f1f5f9" : "#070824"}
           />
         </TouchableOpacity>
       </View>
@@ -278,48 +275,50 @@ export default function TimetableScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
           >
-            {data?.timetable?.subjects.map((subject: SubjectInterface, index: number) => {
-              const theme = subjectThemes[index % subjectThemes.length];
-              const progressWidth = Math.min(
-                (subject.classesAttended / subject.totalClasses) * 100,
-                100,
-              );
+            {data?.timetable?.subjects.map(
+              (subject: SubjectInterface, index: number) => {
+                const theme = subjectThemes[index % subjectThemes.length];
+                const progressWidth = Math.min(
+                  (subject.classesAttended / subject.totalClasses) * 100,
+                  100,
+                );
 
-              return (
-                <View
-                  key={subject._id}
-                  className="w-36 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex-col justify-between"
-                  style={{ minHeight: 110 }}
-                >
+                return (
                   <View
-                    className={`w-8 h-8 rounded-lg items-center justify-center mb-2 ${theme.bg}`}
+                    key={subject._id}
+                    className="w-36 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex-col justify-between"
+                    style={{ minHeight: 110 }}
                   >
-                    <MaterialIcons
-                      name={theme.icon as any}
-                      size={18}
-                      color={isDark ? "#60a5fa" : "#2563eb"}
-                    />
-                  </View>
-                  <View className="mb-3">
-                    <Text
-                      className="font-semibold text-sm text-slate-900 dark:text-slate-100"
-                      numberOfLines={1}
-                    >
-                      {subject.name}
-                    </Text>
-                    <Text className="text-xs text-slate-500 dark:text-slate-400">
-                      {subject.code}
-                    </Text>
-                  </View>
-                  <View className="h-1 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                     <View
-                      className={`h-full rounded-full ${theme.fill}`}
-                      style={{ width: `${progressWidth}%` }}
-                    />
+                      className={`w-8 h-8 rounded-lg items-center justify-center mb-2 ${theme.bg}`}
+                    >
+                      <MaterialIcons
+                        name={theme.icon as any}
+                        size={18}
+                        color={isDark ? "#60a5fa" : "#2563eb"}
+                      />
+                    </View>
+                    <View className="mb-3">
+                      <Text
+                        className="font-semibold text-sm text-slate-900 dark:text-slate-100"
+                        numberOfLines={1}
+                      >
+                        {subject.name}
+                      </Text>
+                      <Text className="text-xs text-slate-500 dark:text-slate-400">
+                        {subject.code}
+                      </Text>
+                    </View>
+                    <View className="h-1 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <View
+                        className={`h-full rounded-full ${theme.fill}`}
+                        style={{ width: `${progressWidth}%` }}
+                      />
+                    </View>
                   </View>
-                </View>
-              );
-            })}
+                );
+              },
+            )}
           </ScrollView>
         </View>
 

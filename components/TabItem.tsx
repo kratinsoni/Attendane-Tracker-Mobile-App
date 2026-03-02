@@ -9,6 +9,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { FontAwesome } from "@expo/vector-icons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import * as Haptics from "expo-haptics";
+import { Vibration, Platform } from "react-native";
 
 // --- Types ---
 type IconName = keyof typeof FontAwesome.glyphMap;
@@ -142,7 +144,6 @@ export const CustomTabBar = ({
       style={{
         backgroundColor: colors.barBg,
         width: TOTAL_BAR_WIDTH,
-        // Kept standard RN shadows to maintain exact design parity
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.12,
@@ -172,6 +173,15 @@ export const CustomTabBar = ({
             });
 
             if (!isFocused && !event.defaultPrevented) {
+              if (Platform.OS === "android") {
+                // Forces the motor to spin up and stop in exactly 10 milliseconds.
+                // This creates a sharp "tick" rather than a soft buzz.
+                Vibration.vibrate(5);
+              } else {
+                // iOS handles impacts much better natively, so stick to Expo here
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+
               navigation.navigate(route.name, route.params);
             }
           };
