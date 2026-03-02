@@ -13,77 +13,77 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 
-const apiResponse = {
-  statusCode: 200,
-  data: {
-    timetable: {
-      name: "Tarun first Sample Timetable Edited",
-      semester: 6,
-      subjects: [
-        {
-          _id: "6985b0dcd0828b0f76a43e0e",
-          name: "PROJECT ENGINEERING AND MANAGEMENT",
-          code: "CH62028",
-          professor: "Suverna Trivedi",
-          totalClasses: 15,
-          classesAttended: 9,
-        },
-        {
-          _id: "6985b11bf4dd50714332897f",
-          name: "GRAVITY AND MAGNETIC METHODS OF PROSPECTING",
-          code: "GG31204",
-          professor: "William Kumar Mohanty",
-          totalClasses: 18,
-          classesAttended: 10,
-        },
-        {
-          _id: "6985b131f4dd507143328984",
-          name: "GEOPHYSICAL INVERSE THEORY",
-          code: "GG31202",
-          professor: "Chandrani Singh",
-          totalClasses: 11,
-          classesAttended: 10,
-        },
-      ],
-    },
-    totalClasses: 82,
-    attendedClasses: 49,
-    absentClasses: 17,
-    medicalClasses: 5,
-    cancelledClasses: 11,
-    attendancePercentage: 74.24242424242425,
-    attendanceRecords: [
-      {
-        _id: "69a032aa58b10e9e697a13ac",
-        subject: "6985b14cf4dd507143328989",
-        date: "2026-02-26T00:00:00.000Z",
-        type: "CANCELLED",
-        timeSlot: "THURSDAY_5PM-6PM",
-      },
-      {
-        _id: "69a032a758b10e9e697a13a2",
-        subject: "6985b11bf4dd50714332897f",
-        date: "2026-02-26T00:00:00.000Z",
-        type: "PRESENT",
-        timeSlot: "THURSDAY_4PM-5PM",
-      },
-      {
-        _id: "699d95cb34dd84c058282ad1",
-        subject: "6985b0dcd0828b0f76a43e0e",
-        date: "2026-02-24T00:00:00.000Z",
-        type: "MEDICAL",
-        timeSlot: "TUESDAY_9AM-10AM",
-      },
-      {
-        _id: "699eb6b6a079eab05be1033d",
-        subject: "6985b11bf4dd50714332897f",
-        date: "2026-02-24T00:00:00.000Z",
-        type: "ABSENT",
-        timeSlot: "TUESDAY_11AM-12PM",
-      },
-    ],
-  },
-};
+// const apiResponse = {
+//   statusCode: 200,
+//   data: {
+//     timetable: {
+//       name: "Tarun first Sample Timetable Edited",
+//       semester: 6,
+//       subjects: [
+//         {
+//           _id: "6985b0dcd0828b0f76a43e0e",
+//           name: "PROJECT ENGINEERING AND MANAGEMENT",
+//           code: "CH62028",
+//           professor: "Suverna Trivedi",
+//           totalClasses: 15,
+//           classesAttended: 9,
+//         },
+//         {
+//           _id: "6985b11bf4dd50714332897f",
+//           name: "GRAVITY AND MAGNETIC METHODS OF PROSPECTING",
+//           code: "GG31204",
+//           professor: "William Kumar Mohanty",
+//           totalClasses: 18,
+//           classesAttended: 10,
+//         },
+//         {
+//           _id: "6985b131f4dd507143328984",
+//           name: "GEOPHYSICAL INVERSE THEORY",
+//           code: "GG31202",
+//           professor: "Chandrani Singh",
+//           totalClasses: 11,
+//           classesAttended: 10,
+//         },
+//       ],
+//     },
+//     totalClasses: 82,
+//     attendedClasses: 49,
+//     absentClasses: 17,
+//     medicalClasses: 5,
+//     cancelledClasses: 11,
+//     attendancePercentage: 74.24242424242425,
+//     attendanceRecords: [
+//       {
+//         _id: "69a032aa58b10e9e697a13ac",
+//         subject: "6985b14cf4dd507143328989",
+//         date: "2026-02-26T00:00:00.000Z",
+//         type: "CANCELLED",
+//         timeSlot: "THURSDAY_5PM-6PM",
+//       },
+//       {
+//         _id: "69a032a758b10e9e697a13a2",
+//         subject: "6985b11bf4dd50714332897f",
+//         date: "2026-02-26T00:00:00.000Z",
+//         type: "PRESENT",
+//         timeSlot: "THURSDAY_4PM-5PM",
+//       },
+//       {
+//         _id: "699d95cb34dd84c058282ad1",
+//         subject: "6985b0dcd0828b0f76a43e0e",
+//         date: "2026-02-24T00:00:00.000Z",
+//         type: "MEDICAL",
+//         timeSlot: "TUESDAY_9AM-10AM",
+//       },
+//       {
+//         _id: "699eb6b6a079eab05be1033d",
+//         subject: "6985b11bf4dd50714332897f",
+//         date: "2026-02-24T00:00:00.000Z",
+//         type: "ABSENT",
+//         timeSlot: "TUESDAY_11AM-12PM",
+//       },
+//     ],
+//   },
+// };
 
 const getSubjectDetails = (subjectId: string, subjects: any[]) => {
   return (
@@ -263,11 +263,11 @@ export default function TimetableScreen() {
             <Text className="text-lg font-bold text-slate-900 dark:text-slate-100">
               Enrolled Subjects
             </Text>
-            <TouchableOpacity>
+            {/* <TouchableOpacity>
               <Text className="text-sm font-semibold text-[#0fbd2c]">
                 View All
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <ScrollView
@@ -419,7 +419,7 @@ export default function TimetableScreen() {
                       {subjectInfo.name}
                     </Text>
                     <Text className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                      {subjectInfo.professor || "Unknown Prof."}
+                      {subjectInfo?.professors?.join(", ") || "Unknown Prof."}
                     </Text>
                   </View>
                 </View>
