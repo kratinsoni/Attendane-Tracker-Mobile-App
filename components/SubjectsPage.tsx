@@ -145,7 +145,7 @@ export default function SubjectsPage() {
     let baseData: SubjectInterface[] = subjectsData || [];
 
     if (selectedTimetableId) baseData = timetableSubjectsData || [];
-    if (selectedSemesterNumber) baseData = subjectsBySemesterData || [];
+    else if (selectedSemesterNumber) baseData = subjectsBySemesterData || [];
 
     const filteredData = baseData.filter((s) => {
       const matchesSearch =
@@ -380,7 +380,7 @@ export default function SubjectsPage() {
 
                   return (
                     <TouchableOpacity
-                      key={label}
+                      key={index}
                       onPress={() => {
                         setSelectedFilters((prev) => ({
                           ...prev,
