@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../components/EmptyState";
@@ -46,6 +47,10 @@ const EVENT_TYPES = ["All", "Exam", "Assignment", "Test", "Other"];
 export const EventsScreen = () => {
   const { data } = useMe();
   const { data: events, isLoading, isError } = useEvents();
+  
+  // Theme hook for items that don't support Tailwind classes directly (like Icon colors)
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   // States for filtering
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,7 +105,8 @@ export const EventsScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
       {/* Header */}
       <View className="px-5 pt-4 pb-6">
         <View className="flex-row items-center justify-between mb-4">
@@ -108,7 +114,11 @@ export const EventsScreen = () => {
             className="flex h-10 w-10 items-center justify-center rounded-full"
             onPress={() => router.back()}
           >
-            <MaterialIcons name="arrow-back" size={24} color="#111318" />
+            <MaterialIcons 
+              name="arrow-back" 
+              size={24} 
+              color={isDark ? "#F8FAFC" : "#111318"} 
+            />
           </TouchableOpacity>
           <Text className="text-2xl font-bold text-slate-900 dark:text-white">
             Events
@@ -133,13 +143,13 @@ export const EventsScreen = () => {
             <MaterialIcons
               name="search"
               size={18}
-              color="#94A3B8"
+              color={isDark ? "#64748B" : "#94A3B8"}
               style={{ position: "absolute", left: 14, zIndex: 10 }}
             />
             <TextInput
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-50 border border-gray-100 text-sm font-medium text-slate-900"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-sm font-medium text-slate-900 dark:text-slate-100"
               placeholder="Search events..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -149,23 +159,35 @@ export const EventsScreen = () => {
             {/* Type Filter Dropdown Trigger */}
             <TouchableOpacity
               onPress={() => setIsTypeMenuOpen(true)}
-              className={`flex-row items-center gap-1 px-3 py-1.5 rounded-md ${selectedType !== "All" ? "bg-blue-100 border-blue-200" : "bg-blue-50 border-transparent"} border`}
+              className={`flex-row items-center gap-1 px-3 py-1.5 rounded-md border ${
+                selectedType !== "All"
+                  ? "bg-blue-100 border-blue-200 dark:bg-blue-900/40 dark:border-blue-800"
+                  : "bg-blue-50 border-transparent dark:bg-slate-800 dark:border-slate-700"
+              }`}
             >
-              <MaterialIcons name="filter-list" size={14} color="#2563EB" />
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-blue-600 ml-1">
+              <MaterialIcons 
+                name="filter-list" 
+                size={14} 
+                color={isDark ? "#60A5FA" : "#2563EB"} 
+              />
+              <Text className="text-[10px] font-bold tracking-widest uppercase text-blue-600 dark:text-blue-400 ml-1">
                 Type: {selectedType}
               </Text>
-              <MaterialIcons name="expand-more" size={14} color="#2563EB" />
+              <MaterialIcons 
+                name="expand-more" 
+                size={14} 
+                color={isDark ? "#60A5FA" : "#2563EB"} 
+              />
             </TouchableOpacity>
 
-            <TouchableOpacity className="px-3 py-1.5 rounded-md bg-slate-50 border border-gray-100">
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
+            <TouchableOpacity className="px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-slate-400">
                 Upcoming
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className="px-3 py-1.5 rounded-md bg-slate-50 border border-gray-100">
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
+            <TouchableOpacity className="px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-slate-400">
                 Past
               </Text>
             </TouchableOpacity>
@@ -176,11 +198,11 @@ export const EventsScreen = () => {
       {/* Main Content Area */}
       {isLoading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color={isDark ? "#60A5FA" : "#2563EB"} />
         </View>
       ) : isError ? (
         <View className="flex-1 justify-center items-center px-5">
-          <Text className="text-red-500 font-medium text-center">
+          <Text className="text-red-500 dark:text-red-400 font-medium text-center">
             Failed to load events. Please try again later.
           </Text>
         </View>
@@ -192,10 +214,10 @@ export const EventsScreen = () => {
           ListEmptyComponent={<EmptyState />}
           renderSectionHeader={({ section: { title } }) => (
             <View className="flex-row items-center gap-3 mb-4 mt-2">
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400">
+              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-slate-400">
                 {title}
               </Text>
-              <View className="h-[1px] bg-gray-100 flex-1" />
+              <View className="h-[1px] bg-gray-100 dark:bg-slate-700 flex-1" />
             </View>
           )}
           renderItem={({ item }) => <EventCard event={item} />}
@@ -210,27 +232,35 @@ export const EventsScreen = () => {
         onRequestClose={() => setIsTypeMenuOpen(false)}
       >
         <TouchableOpacity
-          className="flex-1 bg-black/40 justify-center items-center px-10"
+          className="flex-1 bg-black/40 dark:bg-black/60 justify-center items-center px-10"
           activeOpacity={1}
           onPress={() => setIsTypeMenuOpen(false)}
         >
-          <View className="bg-white w-full rounded-2xl overflow-hidden shadow-lg">
-            <View className="p-4 bg-slate-50 border-b border-gray-100">
-              <Text className="text-sm font-bold text-slate-800 text-center">
+          <View className="bg-white dark:bg-slate-900 w-full rounded-2xl overflow-hidden shadow-lg">
+            <View className="p-4 bg-slate-50 dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700">
+              <Text className="text-sm font-bold text-slate-800 dark:text-slate-200 text-center">
                 Select Event Type
               </Text>
             </View>
             {EVENT_TYPES.map((type, index) => (
               <TouchableOpacity
                 key={type}
-                className={`py-4 border-b border-gray-50 ${selectedType === type ? "bg-blue-50" : "bg-white"} ${index === EVENT_TYPES.length - 1 ? "border-b-0" : ""}`}
+                className={`py-4 border-b border-gray-50 dark:border-slate-800 ${
+                  selectedType === type 
+                    ? "bg-blue-50 dark:bg-blue-900/30" 
+                    : "bg-white dark:bg-slate-900"
+                } ${index === EVENT_TYPES.length - 1 ? "border-b-0" : ""}`}
                 onPress={() => {
                   setSelectedType(type as EventType | "All");
                   setIsTypeMenuOpen(false);
                 }}
               >
                 <Text
-                  className={`text-center font-medium ${selectedType === type ? "text-blue-600" : "text-slate-600"}`}
+                  className={`text-center font-medium ${
+                    selectedType === type 
+                      ? "text-blue-600 dark:text-blue-400" 
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
                 >
                   {type}
                 </Text>
@@ -243,7 +273,7 @@ export const EventsScreen = () => {
       {/* Floating Action Button */}
       <TouchableOpacity
         activeOpacity={0.9}
-        className="absolute bottom-36 right-6 h-14 w-14 bg-blue-600 rounded-full shadow-sm items-center justify-center z-30 border-2 border-white"
+        className="absolute bottom-36 right-6 h-14 w-14 bg-blue-600 dark:bg-blue-500 rounded-full shadow-sm items-center justify-center z-30 border-2 border-white dark:border-background-dark"
         onPress={() => router.push("/event/eventCreateScreen")}
       >
         <MaterialIcons name="add" size={28} color="#ffffff" />
