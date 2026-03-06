@@ -89,7 +89,14 @@ export default function Dashboard() {
     : upcomingClasses?.slice(0, 2);
 
   // Events tab state and filtering
-  const EVENT_TABS = ["All", "Exam", "Assignment", "Test", "Other"] as const;
+  const EVENT_TABS = [
+    { id: "All", icon: "dashboard" },
+    { id: "Exam", icon: "menu-book" },
+    { id: "Assignment", icon: "assignment" },
+    { id: "Test", icon: "quiz" },
+    { id: "Other", icon: "event" },
+  ] as const;
+  
   const [activeEventTab, setActiveEventTab] = useState<string>("All");
 
   const filteredEvents = useMemo(() => {
@@ -130,7 +137,7 @@ export default function Dashboard() {
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
       <ScrollView
         className="flex-1 px-5"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -330,10 +337,12 @@ export default function Dashboard() {
         >
           {EVENT_TABS.map((tab) => (
             <TabButton
-              key={tab}
-              title={tab}
-              active={activeEventTab === tab}
-              onPress={() => setActiveEventTab(tab)}
+              key={tab.id}
+              title={tab.id}
+              iconName={tab.icon}
+              active={activeEventTab === tab.id}
+              onPress={() => setActiveEventTab(tab.id)}
+              isDark={isDark}
             />
           ))}
         </ScrollView>
@@ -404,29 +413,49 @@ const ScheduleItem = ({ time, ampm, subject, room }: any) => (
   </View>
 );
 
-const TabButton = ({ title, active, onPress }: any) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={{
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-      borderRadius: 999,
-      borderWidth: 1,
-      backgroundColor: active ? "#2563EB" : "#ffffff",
-      borderColor: active ? "#2563EB" : "#e2e8f0",
-    }}
-  >
-    <Text
+const TabButton = ({ title, active, onPress, iconName, isDark }: any) => {
+  // Define colors based on theme and active state
+  const activeBg = "#2563EB"; // Blue-600
+  const inactiveBg = isDark ? "#1E293B" : "#ffffff"; // Slate-800 or White
+  const activeBorder = "#2563EB";
+  const inactiveBorder = isDark ? "#334155" : "#e2e8f0"; // Slate-700 or Slate-200
+  const activeContent = "#ffffff";
+  const inactiveContent = isDark ? "#94A3B8" : "#64748B"; // Slate-400 or Slate-500
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
       style={{
-        fontSize: 14,
-        fontWeight: "500",
-        color: active ? "#ffffff" : "#475569",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999, // Full pill shape
+        borderWidth: 1,
+        backgroundColor: active ? activeBg : inactiveBg,
+        borderColor: active ? activeBorder : inactiveBorder,
+        gap: 6, // Space between icon and text (Works in RN 0.71+)
       }}
     >
-      {title}
-    </Text>
-  </TouchableOpacity>
-);
+      <MaterialIcons
+        name={iconName}
+        size={16}
+        color={active ? activeContent : inactiveContent}
+      />
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "600",
+          color: active ? activeContent : inactiveContent,
+        }}
+      >
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 const ExamCard = ({ date, month, title, detail, color, textColor }: any) => (
   <TouchableOpacity className="bg-white dark:bg-[#151c2b] p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex-row items-center justify-between">
@@ -447,9 +476,6 @@ const ExamCard = ({ date, month, title, detail, color, textColor }: any) => (
           {detail}
         </Text>
       </View>
-    </View>
-    <View className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center">
-      <Icon name="chevron-right" size={18} className="text-slate-400" />
     </View>
   </TouchableOpacity>
 );
