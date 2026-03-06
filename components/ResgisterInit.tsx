@@ -62,7 +62,7 @@ export default function RegisterInit() {
       });
     } else {
       if (otp.length < 6) return; 
-      verifyOtp({ instituteId: trimmedId, otp });
+      verifyOtp({ instituteId: trimmedId, otp, event: "register" });
     }
   };
 

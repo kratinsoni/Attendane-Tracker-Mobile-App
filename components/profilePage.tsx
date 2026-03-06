@@ -210,7 +210,10 @@ export default function UserProfile() {
             Account Security
           </Text>
           <View className="bg-white dark:bg-[#1a2230] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <TouchableOpacity className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800">
+            <TouchableOpacity 
+              className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800"
+              onPress={() => router.push("../password/changePassword")}
+            >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 mr-4">
                 <MaterialIcons
                   name="lock"

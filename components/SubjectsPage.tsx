@@ -507,7 +507,7 @@ export default function SubjectsPage() {
         onLongPress={() => handleLongPress(item._id || "")}
         onPress={() => {
           if (isSelectionMode) toggleSelection(item._id || "");
-          // else go to subject details if needed
+          else router.push(`/subject/details/${item._id}`);
         }}
         className={`bg-white dark:bg-slate-800 rounded-2xl p-4 mb-4 border ${
           isSelected

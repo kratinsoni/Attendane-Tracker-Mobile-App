@@ -75,6 +75,35 @@ export const userApi = {
   verifyOtp: async (api: AxiosInstance, instituteId: string, otp: string) => {
     return await api.post("/users/verify", { instituteId, otp });
   },
+  changePassword: async (
+    api: AxiosInstance,
+    currentPassword: string,
+    newPassword: string,
+    confirmNewPassword: string,
+  ) => {
+    const res = await api.patch("/users/change-password", {
+      currentPassword,
+      newPassword,
+      confirmNewPassword
+    });
+    return res.data.data;
+  },
+  changeForgotPasswordInit: async (api: AxiosInstance, instituteId: string) => {
+    return await api.post("/users/change-forgot-password-init", { instituteId });
+  },
+  changeForgotPassword: async (
+    api: AxiosInstance,
+    instituteId: string,
+    newPassword: string,
+    confirmNewPassword: string,
+  ) => {
+    const res = await api.post("/users/change-forgot-password", {
+      instituteId,
+      newPassword,
+      confirmNewPassword,
+    });
+    return res.data.data;
+  },
   logout: async (api: AxiosInstance) => {
     await api.post("/users/logout");
   },
@@ -184,15 +213,21 @@ export const attendanceApi = {
     });
     return res.data.data;
   },
-
   editAttendanceStatus: async (
     api: AxiosInstance,
-    timetableId: string,
+    attendanceId: string,
     type: string,
   ) => {
-    const res = await api.patch(`/attendance/${timetableId}`, {
+    const res = await api.patch(`/attendance/${attendanceId}`, {
       type: type,
     });
+    return res.data.data;
+  },
+  getAttendanceBySubject: async (
+    api: AxiosInstance,
+    subjectId: string
+  ) => {
+    const res = await api.get(`/attendance/subject/${subjectId}`);
     return res.data.data;
   },
 };

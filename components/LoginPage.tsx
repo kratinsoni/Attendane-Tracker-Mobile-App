@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { ChevronLeft, Eye, EyeOff, LogIn } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,7 +26,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [instituteId, setInstituteId] = useState("");
 
-  const {mutate} = useLogin();
+  const {mutate, isPending} = useLogin();
 
   const handleSubmit = () => {
 
@@ -48,7 +49,9 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled">
           {/* Top Bar */}
           <View className="flex-row items-center justify-between px-4 py-4">
             <TouchableOpacity className="p-2">
@@ -126,7 +129,10 @@ export default function LoginScreen() {
             </View>
 
             {/* Forgot Password */}
-            <TouchableOpacity className="items-end">
+            <TouchableOpacity 
+              className="items-end"
+              onPress={() => router.push('/forgotPassword')}
+            >
               <Text className="text-[#135bec] text-sm font-medium">
                 Forgot Password?
               </Text>
@@ -137,9 +143,16 @@ export default function LoginScreen() {
               activeOpacity={0.8}
               className="w-full bg-[#135bec] h-14 rounded-xl flex-row items-center justify-center shadow-lg mt-4"
               onPress={handleSubmit}
+              disabled={isPending}
             >
-              <Text className="text-white font-bold text-lg mr-2">Login</Text>
-              <LogIn size={20} color="white" />
+              {isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Text className="text-white font-bold text-lg mr-2">Login</Text>
+                  <LogIn size={20} color="white" />
+                </>
+              )}
             </TouchableOpacity>
           </View>
 

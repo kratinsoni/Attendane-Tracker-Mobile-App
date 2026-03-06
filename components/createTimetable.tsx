@@ -5,6 +5,7 @@ import { Camera, ChevronLeft, Info, X } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Platform,
@@ -23,8 +24,8 @@ export default function CreateTimetable() {
   const [name, setName] = useState("");
   const [semester, setSemester] = useState("");
   const [image, setImage] = useState<string | null>(null);
-  const { mutate: createTimetable } = useCreateTimetable();
-  const { mutate: createTimetableByImage } = useCreateTimetableByImage();
+  const { mutate: createTimetable, isPending: isCreatingTimetable } = useCreateTimetable();
+  const { mutate: createTimetableByImage, isPending: isCreatingTimetableByImage } = useCreateTimetableByImage();
 
   const pickImage = async () => {
     // Request permissions
@@ -203,7 +204,7 @@ export default function CreateTimetable() {
           <View className="flex-row items-start gap-x-3 p-4 mt-6 rounded-xl bg-gray-100 dark:bg-[#1c2433] border border-[#dbdfe6] dark:border-white/10">
             <Info color="#135bec" size={20} />
             <Text className="flex-1 text-[#616f89] dark:text-white/60 text-xs leading-4">
-              Our AI will scan for course codes and time slots. You'll be able
+              Our AI will scan for course codes and time slots. You&apos;ll be able
               to review everything before saving.
             </Text>
           </View>
@@ -217,12 +218,17 @@ export default function CreateTimetable() {
           className={`w-full h-14 rounded-xl items-center justify-center shadow-lg ${
             name ? "bg-[#135bec] shadow-[#135bec]/40" : "bg-gray-400"
           }`}
-          disabled={!name && !image}
+          disabled={(!name && !image) || isCreatingTimetable || isCreatingTimetableByImage}
           onPress={handleSubmit}
+          
         >
-          <Text className="text-white font-bold text-base">
-            {image ? "Upload & Create" : "Proceed to Add Subjects"}
-          </Text>
+          {isCreatingTimetable || isCreatingTimetableByImage ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-white font-bold text-base">
+              {image ? "Upload & Create" : "Proceed to Add Subjects"}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

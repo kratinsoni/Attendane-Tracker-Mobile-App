@@ -41,7 +41,8 @@ export const useCreateAttendance = ({timetableId, date}: {timetableId: string, d
     },
 
     onError: (error) => {
-      let message = "Login failed";
+      let message = "Marking attendance failed";
+      console.log(error);
 
       if (axios.isAxiosError(error)) {
         message = error.response?.data?.message || error.message; // 👈 backend message // fallback
@@ -51,9 +52,9 @@ export const useCreateAttendance = ({timetableId, date}: {timetableId: string, d
 
       Toast.show({
         type: "error",
-        text1: "Login Failed",
+        text1: "Marking Attendance Failed",
         text2: message,
-        position: "bottom",
+        position: "top",
       });
     },
   });

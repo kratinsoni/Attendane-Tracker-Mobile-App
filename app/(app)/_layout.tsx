@@ -17,6 +17,7 @@ export default function AppLayout() {
         <Stack.Screen name="timetable/addSubjectTotTimetable/[id]" options={{headerShown: false}}/>
         <Stack.Screen name="timetable/editTimetable/[id]" options={{headerShown: false}}/>
         <Stack.Screen name="event/eventCreateScreen" options={{headerShown: false}}/>
+        <Stack.Screen name="password/changePassword" options={{headerShown: false}}/>
       </Stack>
     </AuthLayout>
   );

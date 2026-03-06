@@ -318,7 +318,7 @@ export default function EditTimetable() {
                 className="flex-1 flex-row items-center justify-center gap-2 h-10 rounded-lg bg-green-600 "
                 onPress={() =>
                   router.push({
-                    pathname: "/timetable/addSubjectTotTimetable/[id]",
+                    pathname: "/timetable/addSubjectToTimetable/[id]",
                     params: { id: id },
                   })
                 }
