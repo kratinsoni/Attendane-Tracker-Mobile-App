@@ -159,7 +159,7 @@ export default function AttendanceDetails() {
 
       {/* HEADER */}
       <View className="flex-row items-center justify-between p-4 bg-white/90 dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 z-50 shadow-sm">
-        <TouchableOpacity className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+        <TouchableOpacity className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => router.back()}>
           <MaterialIcons
             name="arrow-back"
             size={24}

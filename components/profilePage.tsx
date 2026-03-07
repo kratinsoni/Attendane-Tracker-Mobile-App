@@ -162,7 +162,10 @@ export default function UserProfile() {
             {/* List Item 1 */}
             <TouchableOpacity
               className="flex-row items-center w-full p-4 border-b border-gray-100 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800"
-              onPress={() => router.push("/timetable/TimetableHomePage")}
+              onPress={() => {
+                Vibration.vibrate(20);
+                router.push("/timetable/timetableHomePage");
+              }}
             >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#135bec]/10 mr-4">
                 <MaterialIcons
@@ -182,7 +185,10 @@ export default function UserProfile() {
             {/* List Item 2 */}
             <TouchableOpacity
               className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800"
-              onPress={() => router.push("/subject/getAllSubjects")}
+              onPress={() => {
+                Vibration.vibrate(20);
+                router.push("/subject/getAllSubjects");
+              }}
             >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#135bec]/10 mr-4">
                 <MaterialIcons name="book" size={20} color="#135bec" />
@@ -193,11 +199,11 @@ export default function UserProfile() {
                 </Text>
               </View>
               <View className="flex-row items-center gap-2">
-                <View className="bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-full">
+                {/* <View className="bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-full">
                   <Text className="text-gray-600 dark:text-gray-300 text-xs font-bold">
                     6
                   </Text>
-                </View>
+                </View> */}
                 <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
               </View>
             </TouchableOpacity>
@@ -212,7 +218,10 @@ export default function UserProfile() {
           <View className="bg-white dark:bg-[#1a2230] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             <TouchableOpacity 
               className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800"
-              onPress={() => router.push("../password/changePassword")}
+              onPress={() => {
+                Vibration.vibrate(20);
+                router.push("/password/changePassword");
+              }}
             >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 mr-4">
                 <MaterialIcons

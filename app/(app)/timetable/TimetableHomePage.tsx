@@ -73,7 +73,7 @@ export default function TimetableScreen() {
             My Timetables
           </Text>
           <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-            <User size={24} color="#135bec" onPress={() => router.push("/(app)/profile/profile")}/>
+            <User size={24} color="#135bec" onPress={() => router.push("/profile/profile")}/>
           </TouchableOpacity>
         </View>
 

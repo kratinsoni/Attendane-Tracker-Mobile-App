@@ -3,7 +3,7 @@ import { useGetAllSubjectsNotInTimetable } from "@/hooks/useGetTimetableById";
 import { SubjectInterface } from "@/types/subjectTypes";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   FlatList,
@@ -176,7 +176,7 @@ export default function AddSubjectsScreen() {
         <Text className="text-lg font-bold text-slate-800 dark:text-slate-100 flex-1 text-center pr-2">
           Add Subjects
         </Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/subject/create")}>
           <Text className="text-emerald-500 font-semibold text-sm px-3 py-1.5">
             Create New
           </Text>
