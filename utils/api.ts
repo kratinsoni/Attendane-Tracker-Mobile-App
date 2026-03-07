@@ -225,9 +225,10 @@ export const attendanceApi = {
   },
   getAttendanceBySubject: async (
     api: AxiosInstance,
-    subjectId: string
+    subjectId: string,
+    semester: number
   ) => {
-    const res = await api.get(`/attendance/subject/${subjectId}`);
+    const res = await api.get(`/attendance/subject/${subjectId}/semester/${semester}`);
     return res.data.data;
   },
 };

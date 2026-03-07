@@ -11,6 +11,16 @@ import { timeSlots } from '@/constants/slotData';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const dayMap = {
+  "SUNDAY": 0,
+  "MONDAY": 1,
+  "TUESDAY": 2,
+  "WEDNESDAY": 3,
+  "THURSDAY": 4,
+  "FRIDAY": 5,
+  "SATURDAY": 6
+}
+
 export default function CreateSubjectPage() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -65,6 +75,11 @@ export default function CreateSubjectPage() {
         (slots as string[]).map((slot: string) => {
           if (slot.length === 1) mappedTimeBlocks = [ ...mappedTimeBlocks, ...timeSlots[slot] ];
           else mappedTimeBlocks = [ ...mappedTimeBlocks, timeSlots[slot.substring(0, 2)][Number(slot.substring(2)) - 1] ];
+        });
+        mappedTimeBlocks.sort((a, b) => {
+          const dayA = dayMap[a.split('_')[0] as keyof typeof dayMap], dayB = dayMap[b.split('_')[0] as keyof typeof dayMap];
+          if (dayA === dayB) return (a < b ? -1 : 1);
+          return (dayA < dayB ? -1 : 1);
         });
         setSelectedSlots(mappedTimeBlocks);
 

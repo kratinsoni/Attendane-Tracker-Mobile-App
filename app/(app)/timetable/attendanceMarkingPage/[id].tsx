@@ -51,7 +51,7 @@ const ScheduleScreen = () => {
   // DATA FETCHING
   const { data } = useGetAttendanceForDateByTimetable({
     timetableId: id,
-    date: localISODate, 
+    date: localISODate
   });
 
   // --- DATE LOGIC ---

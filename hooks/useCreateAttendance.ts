@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import Toast from "react-native-toast-message";
 import { api, attendanceApi } from "../utils/api";
 
@@ -48,7 +48,59 @@ export const useCreateAttendance = ({timetableId, date}: {timetableId: string, d
         message = error.response?.data?.message || error.message; // 👈 backend message // fallback
       }
 
-      console.error("Login failed:", error);
+      console.error("Failed to create attendance:", error);
+
+      Toast.show({
+        type: "error",
+        text1: "Marking Attendance Failed",
+        text2: message,
+        position: "top",
+      });
+    },
+  });
+};
+
+export const useCreateAttendanceForSubjectPage = ({date}: {date: string}) => {
+  return useMutation({
+    mutationFn: async (data: {
+      subjectId: string;
+      day: string;
+      type: string;
+      timeSlot: string;
+      date: string;
+      semester: number;
+    }) => {
+
+        console.log("Creating attendance with data:", data);
+
+      return await attendanceApi.createAttendance(
+        api,
+        data.subjectId,
+        data.day,
+        data.type,
+        data.timeSlot,
+        data.date,
+        data.semester,
+      );
+    },
+
+    onSuccess: () => {
+      console.log("Attendance created successfully");
+      Toast.show({
+        type: "success",
+        text1: "Attendance created successfully",
+      });
+    },
+
+    onError: (error) => {
+      let message = "Marking attendance failed";
+      console.log(error);
+
+      if (isAxiosError(error)) {
+        message = error.response?.data?.message || error.message; // 👈 backend message // fallback
+      }
+
+      console.error("Failed to create attendance:", error);
 
       Toast.show({
         type: "error",

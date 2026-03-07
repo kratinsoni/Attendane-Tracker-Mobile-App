@@ -251,6 +251,7 @@ export const ClassCard = ({
     setPendingAnimation(status);
 
     // 3. Execute mutation with error handling
+    console.log(item)
     mutate(
       {
         subjectId: item.subjectId,
