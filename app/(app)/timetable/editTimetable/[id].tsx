@@ -45,7 +45,7 @@ export default function EditTimetable() {
 
   const handleDelete = () => {
 
-    if(Platform.OS === "android") {
+    if (Platform.OS === "android") {
       // Forces the motor to spin up and stop in exactly 20 milliseconds.
       // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
@@ -156,10 +156,20 @@ export default function EditTimetable() {
 
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 h-14 border-b border-slate-200 dark:border-slate-800 bg-background-light/90 dark:bg-background-dark/90">
-        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => {
+          if (Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          router.back()
+        }}>
           <MaterialIcons
-            name="arrow-back"
-            size={24}
+            name="chevron-left"
+            size={28}
             color={isDark ? "#cbd5e1" : "#475569"}
           />
         </TouchableOpacity>
@@ -201,7 +211,7 @@ export default function EditTimetable() {
               {timetableData?.name || "Spring 2024"}
             </Text>
             <Text className="text-slate-300 text-sm">
-              Semester {timetableData?.semester} • Computer Science
+              Semester {timetableData?.semester}
             </Text>
           </View>
         </View>
@@ -267,11 +277,10 @@ export default function EditTimetable() {
                   >
                     {/* Custom Checkbox */}
                     <View
-                      className={`w-5 h-5 mr-4 items-center justify-center rounded-md light ${
-                        isSelected
+                      className={`w-5 h-5 mr-4 items-center justify-center rounded-md light ${isSelected
                           ? "bg-red-600"
                           : "bg-transparent border border-slate-300 dark:border-slate-600"
-                      }`}
+                        }`}
                     >
                       {isSelected && (
                         <MaterialIcons name="check" size={14} color="white" />

@@ -315,8 +315,8 @@ export const detailsApi = {
     const res = await api.get(`/details/attendance/semester/${semester}`);
     return res.data.data;
   },
-  getAttendanceStatOfAllSubjects: async (api: AxiosInstance) => {
-    const res = await api.get("/details/attendance/subjects");
+  getAttendanceStatOfAllSubjects: async (api: AxiosInstance, semester: number) => {
+    const res = await api.get(`/details/attendance/subjects/semester/${semester}`);
     return res.data.data;
   },
   getAttendanceStatOfAllTimetables: async (api: AxiosInstance, semester: number) => {

@@ -9,9 +9,12 @@ import {
   TouchableOpacity,
   useColorScheme,
   View,
+  Platform,
+  Vibration
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
+import * as Haptics from "expo-haptics"
 
 // const apiResponse = {
 //   statusCode: 200,
@@ -142,19 +145,39 @@ export default function TimetableScreen() {
     <SafeAreaView className="flex-1 bg-[#f6f8f6] dark:bg-[#070824]">
       {/* Top App Bar */}
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-[#0fbd2c]/10 dark:border-[#0fbd2c]/20 bg-[#f6f8f6]/95 dark:bg-[#070824]">
-        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full hover:bg-[#070824]/10" onPress={() => router.back()}>
+        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full hover:bg-[#070824]/10" onPress={() => {
+          if (Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          router.back()
+        }}>
           <MaterialIcons
-            name="arrow-back"
-            size={24}
+            name="chevron-left"
+            size={28}
             color={isDark ? "#f1f5f9" : "#070824"}
           />
         </TouchableOpacity>
         <Text className="text-lg font-bold text-slate-900 dark:text-slate-100 flex-1 text-center">
           Timetable Details
         </Text>
-        <TouchableOpacity className="w-10 h-10 items-center justify-center">
+        <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => {
+          if (Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          router.push(`/timetable/editTimetable/${id}`)
+        }}>
           <MaterialIcons
-            name="more-vert"
+            name="edit"
             size={24}
             color={isDark ? "#f1f5f9" : "#070824"}
           />

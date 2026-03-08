@@ -90,8 +90,8 @@ export default function SubjectsPage() {
   const selectedTimetableId =
     selectedFilters.Timetable !== "Timetable"
       ? timetablesData?.find(
-          (t: TimetableInterface) => t.name === selectedFilters.Timetable,
-        )?._id
+        (t: TimetableInterface) => t.name === selectedFilters.Timetable,
+      )?._id
       : null;
   const selectedSemesterNumber =
     selectedFilters.Semester !== "Semester"
@@ -423,11 +423,10 @@ export default function SubjectsPage() {
                       }));
                     setActiveFilter(null);
                   }}
-                  className={`mr-2 mb-2 px-4 py-2 rounded-full border ${
-                    selectedFilters[activeFilter] === activeFilter
+                  className={`mr-2 mb-2 px-4 py-2 rounded-full border ${selectedFilters[activeFilter] === activeFilter
                       ? "bg-blue-600 border-blue-600"
                       : "bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-700"
-                  }`}
+                    }`}
                 >
                   <Text
                     className={
@@ -459,11 +458,10 @@ export default function SubjectsPage() {
                           }));
                         setActiveFilter(null);
                       }}
-                      className={`mr-2 mb-2 px-4 py-2 rounded-full border ${
-                        isSelected
+                      className={`mr-2 mb-2 px-4 py-2 rounded-full border ${isSelected
                           ? "bg-blue-600 border-blue-600"
                           : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700"
-                      }`}
+                        }`}
                     >
                       <Text
                         className={`${isSelected ? "text-white font-bold" : "text-gray-700 dark:text-gray-300"}`}
@@ -517,11 +515,10 @@ export default function SubjectsPage() {
                         setSortByOption(option);
                         setSortMenuVisible(false);
                       }}
-                      className={`flex-row justify-between items-center p-4 rounded-xl border ${
-                        isSelected
+                      className={`flex-row justify-between items-center p-4 rounded-xl border ${isSelected
                           ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
                           : "bg-gray-50 dark:bg-slate-800 border-transparent"
-                      }`}
+                        }`}
                     >
                       <Text
                         className={`text-base ${isSelected ? "text-blue-700 dark:text-blue-400 font-bold" : "text-gray-700 dark:text-gray-300"}`}
@@ -583,11 +580,10 @@ export default function SubjectsPage() {
           if (isSelectionMode) toggleSelection(item._id || "");
           else router.push(`/subject/details/${item._id}`);
         }}
-        className={`bg-white dark:bg-slate-800 rounded-2xl p-4 mb-4 border ${
-          isSelected
+        className={`bg-white dark:bg-slate-800 rounded-2xl p-4 mb-4 border ${isSelected
             ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
             : "border-gray-100 dark:border-slate-700"
-        }`}
+          }`}
         style={{
           shadowColor: "#000",
           shadowOpacity: isDark ? 0 : 0.05,
@@ -819,7 +815,17 @@ export default function SubjectsPage() {
 
           <View>
             <TouchableOpacity
-              onPress={() => setHeaderMenuVisible(true)}
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                setHeaderMenuVisible(true)
+              }}
               className="p-1"
             >
               <Ionicons
@@ -917,11 +923,10 @@ export default function SubjectsPage() {
             return (
               <TouchableOpacity
                 onPress={() => setActiveFilter(item)}
-                className={`flex-row items-center px-4 py-2 rounded-full border mr-3 ${
-                  isActive
+                className={`flex-row items-center px-4 py-2 rounded-full border mr-3 ${isActive
                     ? "bg-blue-600 border-blue-600"
                     : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700"
-                }`}
+                  }`}
               >
                 <Text
                   className={`font-semibold mr-1 ${isActive ? "text-white" : "text-gray-700 dark:text-gray-300"}`}
@@ -977,7 +982,8 @@ export default function SubjectsPage() {
               // iOS handles impacts much better natively, so stick to Expo here
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
-            router.push("/subject/create")}}
+            router.push("/subject/create")
+          }}
           className="absolute bottom-40 right-6 bg-blue-600 w-14 h-14 rounded-full justify-center items-center shadow-lg shadow-blue-300 dark:shadow-none z-10"
         >
           <Ionicons name="add" size={30} color="white" />

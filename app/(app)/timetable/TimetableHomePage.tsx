@@ -3,8 +3,8 @@ import { TimetableCard } from "@/components/TimetableCard";
 import { useGetUserTimetables } from "@/hooks/useGetUserTimetables";
 import { TimetableCardType } from "@/types/timetableTypes";
 import { router } from "expo-router";
-import { ArrowBigLeft, ArrowLeft, ChevronLeft, Menu, Plus, Search, User, UserCircle } from "lucide-react-native";
-import React, { useState, useCallback } from "react";
+import { ArrowBigLeft, ArrowLeft, ChevronLeft, Menu, Plus, Search, User, UserCircle, Filter } from "lucide-react-native";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   ScrollView,
   StatusBar,
@@ -15,6 +15,8 @@ import {
   RefreshControl,
   Vibration,
   Platform,
+  Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
@@ -26,9 +28,32 @@ export default function TimetableScreen() {
   const { data, isLoading, isError, refetch } = useGetUserTimetables();
   const { colorScheme } = useColorScheme();
   const [searchQuery, setSearchQuery] = useState("");
-  const filteredData = data?.filter((timetable: TimetableCardType) =>
-    timetable.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  
+  // State for semester filtering
+  const [selectedSemester, setSelectedSemester] = useState<number | "All" | null>(null);
+  const [isFilterModalVisible, setFilterModalVisible] = useState(false);
+
+  // Extract unique semesters and sort them descending (highest first)
+  const uniqueSemesters = useMemo(() => {
+    if (!data) return [];
+    // Assuming timetable.semester is a number. Filter out undefined/null values
+    const semesters = data.map((t: any) => t.semester).filter((s: any) => s != null);
+    return [...new Set(semesters)].sort((a: unknown, b: unknown) => (b as number) - (a as number));
+  }, [data]);
+
+  // Set the highest semester as default when data loads
+  useEffect(() => {
+    if (uniqueSemesters.length > 0 && selectedSemester === null) {
+      setSelectedSemester(uniqueSemesters[0] as number);
+    }
+  }, [uniqueSemesters, selectedSemester]);
+
+  const filteredData = data?.filter((timetable: TimetableCardType) => {
+    const matchesSearch = timetable.name.toLowerCase().includes(searchQuery.toLowerCase());
+    // @ts-ignore - Assuming semester exists on TimetableCardType
+    const matchesSemester = selectedSemester === "All" || selectedSemester === null ? true : timetable.semester === selectedSemester;
+    return matchesSearch && matchesSemester;
+  });
 
   // State for the pull-to-refresh spinner
   const [refreshing, setRefreshing] = useState(false);
@@ -95,16 +120,24 @@ export default function TimetableScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
-        <View className="mb-2 flex-row items-center rounded-xl bg-slate-100 dark:bg-slate-800 px-4 h-12">
-          <Search size={20} color="#616f89" />
-          <TextInput
-            placeholder="Search timetables"
-            placeholderTextColor="#616f89"
-            className="flex-1 ml-3 text-base text-slate-900 dark:text-white"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+        {/* Search Bar & Filter Button */}
+        <View className="mb-2 flex-row items-center space-x-2">
+          <View className="flex-1 flex-row items-center rounded-xl bg-slate-100 dark:bg-slate-800 px-4 h-12 mr-2">
+            <Search size={20} color="#616f89" />
+            <TextInput
+              placeholder="Search timetables"
+              placeholderTextColor="#616f89"
+              className="flex-1 ml-3 text-base text-slate-900 dark:text-white"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity 
+            className="h-12 w-12 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800"
+            onPress={() => setFilterModalVisible(true)}
+          >
+            <Filter size={20} color="#616f89" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -161,6 +194,59 @@ export default function TimetableScreen() {
       >
         <Plus size={32} color="white" />
       </TouchableOpacity>
+
+      {/* Semester Filter Modal */}
+      <Modal
+        visible={isFilterModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity 
+          className="flex-1 justify-center items-center bg-black/50"
+          activeOpacity={1}
+          onPressOut={() => setFilterModalVisible(false)}
+        >
+          <TouchableWithoutFeedback>
+            <View className="w-4/5 bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xl">
+              <Text className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                Filter by Semester
+              </Text>
+              
+              <ScrollView className="max-h-64">
+                {/* "All" Option */}
+                <TouchableOpacity
+                  className={`py-3 px-4 rounded-xl mb-2 ${selectedSemester === "All" ? "bg-blue-100 dark:bg-blue-900/30" : ""}`}
+                  onPress={() => {
+                    setSelectedSemester("All");
+                    setFilterModalVisible(false);
+                  }}
+                >
+                  <Text className={`text-base ${selectedSemester === "All" ? "text-blue-600 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
+                    All Semesters
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Individual Semesters */}
+                {uniqueSemesters.map((semester) => (
+                  <TouchableOpacity
+                    key={semester as number}
+                    className={`py-3 px-4 rounded-xl mb-2 ${selectedSemester === semester ? "bg-blue-100 dark:bg-blue-900/30" : ""}`}
+                    onPress={() => {
+                      setSelectedSemester(semester as number);
+                      setFilterModalVisible(false);
+                    }}
+                  >
+                    <Text className={`text-base ${selectedSemester === semester ? "text-blue-600 font-bold" : "text-slate-700 dark:text-slate-300"}`}>
+                      Semester {semester as number}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </TouchableWithoutFeedback>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }

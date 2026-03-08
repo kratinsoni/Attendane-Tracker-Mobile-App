@@ -1,9 +1,10 @@
 import { api, userApi } from "@/utils/api";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 
 export const useEditProfile = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (updatedData: {
       firstName: string;
@@ -14,13 +15,15 @@ export const useEditProfile = () => {
     }) => {
       return userApi.updateProfile(api, updatedData);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
         console.log("Profile updated successfully!");
         Toast.show({
             type: 'success',
             text1: 'Profile updated successfully!',
         });
-
+        await queryClient.invalidateQueries({
+          queryKey: ['me']
+        })
         router.replace("/profile/profile");
     },
     onError: (error) => {

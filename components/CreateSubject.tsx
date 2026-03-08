@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, ScrollView, 
-  ActivityIndicator, KeyboardAvoidingView, Platform, 
-  TouchableWithoutFeedback, useColorScheme
+import {
+  View, Text, TextInput, TouchableOpacity, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Platform,
+  TouchableWithoutFeedback, useColorScheme, Vibration
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCreateSubject } from '@/hooks/useCreateSubject';
@@ -10,6 +10,7 @@ import { useGetSubjectByCode } from '@/hooks/useGetSubjectByCode';
 import { timeSlots } from '@/constants/slotData';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from "expo-haptics"
 
 const dayMap = {
   "SUNDAY": 0,
@@ -35,10 +36,10 @@ export default function CreateSubjectPage() {
   }
   const TIME_LABELS = [
     '8 AM - 9 AM', '9 AM - 10 AM', '10 AM - 11 AM', '11 AM - 12 PM',
-    '12 PM - 1 PM', '1 PM - 2 PM (LUNCH)', '2 PM - 3 PM', '3 PM - 4 PM', 
+    '12 PM - 1 PM', '1 PM - 2 PM (LUNCH)', '2 PM - 3 PM', '3 PM - 4 PM',
     '4 PM - 5 PM', '5 PM - 6 PM'
   ];
-  
+
   const mapUiToSlotKey = (day: string, timeLabel: string) => {
     const timeRange = timeLabel.replace(/\s/g, '').replace(' (LUNCH)', '');
     return `${dayFull[day as keyof typeof dayFull]}_${timeRange}`;
@@ -55,7 +56,7 @@ export default function CreateSubjectPage() {
   const [type, setType] = useState<'THEORY' | 'LAB' | 'OTHER'>('OTHER');
 
   const { mutate: createSubject, isPending: isCreating } = useCreateSubject();
-  
+
   const { data: fetchedSubject, isFetching: isSearching } = useGetSubjectByCode(subjectCode.toUpperCase());
 
   useEffect(() => {
@@ -66,15 +67,15 @@ export default function CreateSubjectPage() {
       const professors = fetchedSubject.professors ? fetchedSubject.professors.split(',').map((prof: string) => prof.trim()) : [];
       console.log('Parsed Professors:', professors);
       setProfessors(professors);
-      
+
       if (fetchedSubject.slots) {
         // Handle potential space-separated or comma-separated slots
         const slots = fetchedSubject.slots.split(/[ ,]+/);
         console.log('Parsed Slots:', slots);
         let mappedTimeBlocks: string[] = [];
         (slots as string[]).map((slot: string) => {
-          if (slot.length === 1) mappedTimeBlocks = [ ...mappedTimeBlocks, ...timeSlots[slot] ];
-          else mappedTimeBlocks = [ ...mappedTimeBlocks, timeSlots[slot.substring(0, 2)][Number(slot.substring(2)) - 1] ];
+          if (slot.length === 1) mappedTimeBlocks = [...mappedTimeBlocks, ...timeSlots[slot]];
+          else mappedTimeBlocks = [...mappedTimeBlocks, timeSlots[slot.substring(0, 2)][Number(slot.substring(2)) - 1]];
         });
         mappedTimeBlocks.sort((a, b) => {
           const dayA = dayMap[a.split('_')[0] as keyof typeof dayMap], dayB = dayMap[b.split('_')[0] as keyof typeof dayMap];
@@ -100,13 +101,29 @@ export default function CreateSubjectPage() {
   }, [fetchedSubject]);
 
   const toggleSlot = (slotKey: string) => {
+    if (Platform.OS === "android") {
+                    // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                    // This creates a sharp "tick" rather than a soft buzz.
+                    Vibration.vibrate(20);
+                  } else {
+                    // iOS handles impacts much better natively, so stick to Expo here
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  }
     if (slotKey.includes('1-2PM')) return;
-    setSelectedSlots(prev => 
+    setSelectedSlots(prev =>
       prev.includes(slotKey) ? prev.filter(s => s !== slotKey) : [...prev, slotKey]
     );
   };
 
   const handleCreate = () => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     console.log(subjectCode, subjectName, credits, grading, professors, selectedSlots);
     createSubject({
       code: subjectCode.toUpperCase(),
@@ -126,14 +143,24 @@ export default function CreateSubjectPage() {
   return (
     // edges={['top']} prevents the bottom safe area from messing with the keyboard view
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* Header - Simplified padding since SafeAreaView handles the top */}
         <View className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <TouchableOpacity onPress={() => router.back()} className="p-1">
+          <TouchableOpacity onPress={() => {
+            if (Platform.OS === "android") {
+              // Forces the motor to spin up and stop in exactly 20 milliseconds.
+              // This creates a sharp "tick" rather than a soft buzz.
+              Vibration.vibrate(20);
+            } else {
+              // iOS handles impacts much better natively, so stick to Expo here
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            router.back()
+          }} className="p-1">
             <Text className="text-blue-600 dark:text-blue-400 text-lg font-medium">Back</Text>
           </TouchableOpacity>
           <Text className="text-xl font-bold text-gray-900 dark:text-white">New Subject</Text>
@@ -145,8 +172,8 @@ export default function CreateSubjectPage() {
         </View>
 
         <TouchableWithoutFeedback>
-          <ScrollView 
-            className="flex-1 px-6" 
+          <ScrollView
+            className="flex-1 px-6"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 300 }}
             keyboardShouldPersistTaps="handled"
@@ -186,10 +213,10 @@ export default function CreateSubjectPage() {
             {/* Schedule Slots Section */}
             <View className="mt-8">
               <Text className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Schedule Slots</Text>
-              
+
               <View className="flex-row justify-between mb-6">
                 {DAYS.map(day => (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     key={day}
                     onPress={() => setSelectedDay(day)}
                     className={`px-4 py-2 rounded-full border ${selectedDay === day ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500' : 'bg-gray-50 border-gray-100 dark:bg-gray-800 dark:border-gray-700'}`}
@@ -208,14 +235,14 @@ export default function CreateSubjectPage() {
                   const isLunch = label.includes('LUNCH');
 
                   // Dynamic styles for slots to handle complex dark mode logic
-                  const slotBg = isLunch 
-                    ? 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700' 
-                    : isSelected 
-                      ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700' 
+                  const slotBg = isLunch
+                    ? 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700'
+                    : isSelected
+                      ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700'
                       : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700';
 
-                  const slotText = isSelected 
-                    ? 'text-blue-700 dark:text-blue-300' 
+                  const slotText = isSelected
+                    ? 'text-blue-700 dark:text-blue-300'
                     : 'text-gray-500 dark:text-gray-400';
 
                   return (
@@ -299,9 +326,9 @@ export default function CreateSubjectPage() {
                   onChangeText={setCurrentProf}
                   placeholderTextColor={placeholderColor}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => {
-                    if(currentProf) {
+                    if (currentProf) {
                       setProfessors([...professors, currentProf]);
                       setCurrentProf('');
                     }
@@ -322,7 +349,7 @@ export default function CreateSubjectPage() {
               ))}
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleCreate}
               disabled={isCreating}
               className={`py-5 rounded-2xl items-center mb-10 ${isCreating ? 'bg-gray-300 dark:bg-gray-700' : 'bg-blue-600 dark:bg-blue-500 shadow-lg shadow-blue-200 dark:shadow-none'}`}

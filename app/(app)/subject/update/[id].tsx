@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, ScrollView, 
   ActivityIndicator, KeyboardAvoidingView, Platform, 
-  TouchableWithoutFeedback, useColorScheme, Alert
+  TouchableWithoutFeedback, useColorScheme, Alert,
+  Vibration
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -203,7 +204,9 @@ export default function UpdateSubjectPage() {
       >
         {/* Header */}
         <View className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <TouchableOpacity onPress={() => router.back()} className="p-1">
+          <TouchableOpacity onPress={() => {
+            Vibration.vibrate(20)
+            router.back()}} className="p-1">
             <Text className="text-blue-600 dark:text-blue-400 text-lg font-medium">Back</Text>
           </TouchableOpacity>
           <Text className="text-xl font-bold text-gray-900 dark:text-white">Edit Subject</Text>

@@ -153,7 +153,7 @@ export default function EditProfileScreen() {
           <View className="gap-4 items-center">
             <View className="relative">
               <Image
-                source={{ uri: "https://via.placeholder.com/150" }} // Replace with actual Google user profile pic URL
+                source={{ uri: "https://picsum.photos/seed/123/400/200" }} // Replace with actual Google user profile pic URL
                 className="w-32 h-32 rounded-full border-4 border-primary/20"
               />
               <TouchableOpacity className="absolute bottom-0 right-0 bg-primary p-2 rounded-full shadow-lg">

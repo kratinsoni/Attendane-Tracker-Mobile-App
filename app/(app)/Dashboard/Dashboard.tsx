@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { User } from "lucide-react-native";
 
 // 1. Setup Icons for NativeWind
 const Icon = ({ name, size = 24, color, className }: any) => (
@@ -160,9 +161,8 @@ export default function Dashboard() {
               Hello, {data?.firstName} {data?.lastName}
             </Text>
           </View>
-          <TouchableOpacity
-            className="relative"
-            onPress={() => {
+          <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
+            <User size={24} color="#135bec" onPress={() => {
               if (Platform.OS === "android") {
                 // Forces the motor to spin up and stop in exactly 20 milliseconds.
                 // This creates a sharp "tick" rather than a soft buzz.
@@ -171,15 +171,7 @@ export default function Dashboard() {
                 // iOS handles impacts much better natively, so stick to Expo here
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }
-              router.push("/profile/profile")}}
-          >
-            <Image
-              source={{
-                uri: `https://picsum.photos/seed/${data?._id}/400/200`,
-              }}
-              className="w-12 h-12 rounded-full border-2 border-primary"
-            />
-            <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />
+              router.push("/profile/profile")}}/>
           </TouchableOpacity>
         </View>
 

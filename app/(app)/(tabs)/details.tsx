@@ -22,6 +22,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { User } from "lucide-react-native";
 
 export default function AttendanceDetails() {
   const [selectedSem, setSelectedSem] = useState<number>(6);
@@ -42,7 +43,7 @@ export default function AttendanceDetails() {
   const { data: semesterOverviewData, refetch: refetchSemesterOverview } =
     useGetAttendanceStatBySemester(selectedSem);
   const { data: allSubjectsData, refetch: refetchAllSubjects } =
-    useGetAttendanceStatOfAllSubjects();
+    useGetAttendanceStatOfAllSubjects(selectedSem);
   const { data: timetablesData, refetch: refetchTimetables } =
     useGetAttendanceStatOfAllTimetables(selectedSem);
 
@@ -171,7 +172,8 @@ export default function AttendanceDetails() {
             // iOS handles impacts much better natively, so stick to Expo here
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           }
-          router.back()}}>
+          router.back()
+        }}>
           <MaterialIcons
             name="chevron-left"
             size={32}
@@ -181,11 +183,20 @@ export default function AttendanceDetails() {
         <Text className="text-xl font-bold text-slate-900 dark:text-white">
           Attendance Details
         </Text>
-        <TouchableOpacity className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-          <MaterialIcons
-            name="more-vert"
+        <TouchableOpacity className="p-2 rounded-full bg-green-50 dark:bg-green-900/30 hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => {
+          if (Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          router.push("/profile/profile")
+        }}>
+          <User
             size={24}
-            color={isDark ? "#f8fafc" : "#0f172a"}
+            color="#48bb78"
           />
         </TouchableOpacity>
       </View>
@@ -211,7 +222,17 @@ export default function AttendanceDetails() {
 
             <TouchableOpacity
               className="flex-row items-center bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-full"
-              onPress={() => setIsSemModalVisible(true)}
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                setIsSemModalVisible(true)
+              }}
             >
               <Text className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider mr-1">
                 SEM {selectedSem}
@@ -378,18 +399,18 @@ export default function AttendanceDetails() {
               );
               return (
                 <TouchableOpacity
-                onPress={() => {
-                  if (Platform.OS === "android") {
-                    // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                    // This creates a sharp "tick" rather than a soft buzz.
-                    Vibration.vibrate(20);
-                  } else {
-                    // iOS handles impacts much better natively, so stick to Expo here
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  }
+                  onPress={() => {
+                    if (Platform.OS === "android") {
+                      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                      // This creates a sharp "tick" rather than a soft buzz.
+                      Vibration.vibrate(20);
+                    } else {
+                      // iOS handles impacts much better natively, so stick to Expo here
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }
 
-                  router.push(`/subject/details/${subject.subjectId}`)
-                }}
+                    router.push(`/subject/details/${subject.subjectId}`)
+                  }}
                   key={index}
                   className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
                 >
@@ -464,7 +485,8 @@ export default function AttendanceDetails() {
                   // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
-                setIsSubjectsExpanded(!isSubjectsExpanded)}}
+                setIsSubjectsExpanded(!isSubjectsExpanded)
+              }}
             >
               <Text className="text-emerald-600 dark:text-emerald-400 font-semibold">
                 {isSubjectsExpanded
@@ -541,11 +563,20 @@ export default function AttendanceDetails() {
 
               return (
                 <TouchableOpacity
-                  onPress={() =>
+                  onPress={() => {
+                    if (Platform.OS === "android") {
+                      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                      // This creates a sharp "tick" rather than a soft buzz.
+                      Vibration.vibrate(20);
+                    } else {
+                      // iOS handles impacts much better natively, so stick to Expo here
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }
                     router.push({
                       pathname: "/timetable/[id]",
                       params: { id: tt?.timetableId },
                     })
+                  }
                   }
                   key={index}
                   className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
@@ -627,7 +658,8 @@ export default function AttendanceDetails() {
                   // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
-                setIsTimetablesExpanded(!isTimetablesExpanded)}}
+                setIsTimetablesExpanded(!isTimetablesExpanded)
+              }}
             >
               <Text className="text-emerald-600 dark:text-emerald-400 font-semibold">
                 {isTimetablesExpanded
@@ -663,21 +695,27 @@ export default function AttendanceDetails() {
                 <TouchableOpacity
                   key={sem}
                   onPress={() => {
+                    if (Platform.OS === "android") {
+                      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                      // This creates a sharp "tick" rather than a soft buzz.
+                      Vibration.vibrate(20);
+                    } else {
+                      // iOS handles impacts much better natively, so stick to Expo here
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }
                     setSelectedSem(sem);
                     setIsSemModalVisible(false);
                   }}
-                  className={`w-16 h-16 rounded-xl items-center justify-center border-2 ${
-                    selectedSem === sem
-                      ? "bg-emerald-500 border-emerald-500"
-                      : "bg-slate-50 dark:bg-slate-700 border-slate-100 dark:border-slate-600"
-                  }`}
+                  className={`w-16 h-16 rounded-xl items-center justify-center border-2 ${selectedSem === sem
+                    ? "bg-emerald-500 border-emerald-500"
+                    : "bg-slate-50 dark:bg-slate-700 border-slate-100 dark:border-slate-600"
+                    }`}
                 >
                   <Text
-                    className={`text-xl font-bold ${
-                      selectedSem === sem
-                        ? "text-white"
-                        : "text-slate-700 dark:text-slate-300"
-                    }`}
+                    className={`text-xl font-bold ${selectedSem === sem
+                      ? "text-white"
+                      : "text-slate-700 dark:text-slate-300"
+                      }`}
                   >
                     {sem}
                   </Text>

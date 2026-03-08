@@ -13,6 +13,7 @@ export enum AttendanceStatus {
   ABSENT = "ABSENT",
   MEDICAL = "MEDICAL",
   CANCELLED = "CANCELLED",
+  UNMARKED = "UNMARKED"
 }
 
 export type TimeSlot =

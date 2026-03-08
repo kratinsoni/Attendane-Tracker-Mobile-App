@@ -6,6 +6,7 @@ import React from "react";
 import {
   Image,
   Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -19,12 +20,29 @@ import { useColorScheme } from "nativewind";
 import { ChevronLeft, Edit } from "lucide-react-native";
 
 export default function UserProfile() {
-  const { data } = useMe();
+  const { data, refetch } = useMe(); // Added refetch if your hook supports it
 
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
   const {mutate} = useLogout();
+
+  // Refresh Control State
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      if (refetch) {
+        await refetch();
+      } else {
+        // Fallback delay if refetch isn't available from useMe
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleLogout = () =>{
     if(Platform.OS === "android") {
@@ -85,6 +103,14 @@ export default function UserProfile() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={isDark ? "#e5e7eb" : "#111318"} // iOS spinner color
+            colors={["#135bec"]} // Android spinner color
+          />
+        }
       >
         {/* Profile Header */}
         <View className="flex-col items-center pt-6 pb-6 px-4">
@@ -119,9 +145,10 @@ export default function UserProfile() {
           </Text>
 
           <View className="bg-white dark:bg-[#1a2230] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <View className="flex-row flex-wrap">
-              {/* Grid Item 1: ID */}
-              <View className="w-1/2 p-4 border-b border-r border-gray-100 dark:border-gray-700">
+            <View className="flex-col">
+              
+              {/* Row 1: Institute ID (Full Width for maximum space) */}
+              <View className="w-full p-4 border-b border-gray-100 dark:border-gray-700">
                 <View className="flex-row items-center gap-2 mb-1">
                   <MaterialIcons name="badge" size={20} color="#135bec" />
                   <Text className="text-[#616f89] dark:text-gray-400 text-xs font-medium">
@@ -133,8 +160,8 @@ export default function UserProfile() {
                 </Text>
               </View>
 
-              {/* Grid Item 2: Roll No */}
-              <View className="w-1/2 p-4 border-b border-gray-100 dark:border-gray-700">
+              {/* Row 2: Roll No (Full Width for maximum space) */}
+              <View className="w-full p-4 border-b border-gray-100 dark:border-gray-700">
                 <View className="flex-row items-center gap-2 mb-1">
                   <MaterialIcons name="push-pin" size={20} color="#135bec" />
                   <Text className="text-[#616f89] dark:text-gray-400 text-xs font-medium">
@@ -146,31 +173,33 @@ export default function UserProfile() {
                 </Text>
               </View>
 
-              {/* Grid Item 3: Dept */}
-              <View className="w-1/2 p-4 border-r border-gray-100 dark:border-gray-700">
-                <View className="flex-row items-center gap-2 mb-1">
-                  <MaterialIcons name="school" size={20} color="#135bec" />
-                  <Text className="text-[#616f89] dark:text-gray-400 text-xs font-medium">
-                    Department
+              {/* Row 3: Department & Year (Split 50/50 horizontally) */}
+              <View className="flex-row w-full">
+                <View className="w-1/2 p-4 border-r border-gray-100 dark:border-gray-700">
+                  <View className="flex-row items-center gap-2 mb-1">
+                    <MaterialIcons name="school" size={20} color="#135bec" />
+                    <Text className="text-[#616f89] dark:text-gray-400 text-xs font-medium">
+                      Department
+                    </Text>
+                  </View>
+                  <Text className="text-[#111318] dark:text-white text-base font-semibold">
+                    {data.department}
                   </Text>
                 </View>
-                <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  {data.department}
-                </Text>
+
+                <View className="w-1/2 p-4">
+                  <View className="flex-row items-center gap-2 mb-1">
+                    <MaterialIcons name="history-edu" size={20} color="#135bec" />
+                    <Text className="text-[#616f89] dark:text-gray-400 text-xs font-medium">
+                      Graduation Year
+                    </Text>
+                  </View>
+                  <Text className="text-[#111318] dark:text-white text-base font-semibold">
+                    {data.graduationYear}
+                  </Text>
+                </View>
               </View>
 
-              {/* Grid Item 4: Year */}
-              <View className="w-1/2 p-4">
-                <View className="flex-row items-center gap-2 mb-1">
-                  <MaterialIcons name="history-edu" size={20} color="#135bec" />
-                  <Text className="text-[#616f89] dark:text-gray-400 text-xs font-medium">
-                    Graduation Year
-                  </Text>
-                </View>
-                <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  {data.graduationYear}
-                </Text>
-              </View>
             </View>
           </View>
         </View>
@@ -186,7 +215,7 @@ export default function UserProfile() {
               className="flex-row items-center w-full p-4 border-b border-gray-100 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800"
               onPress={() => {
                 Vibration.vibrate(20);
-                router.push("/timetable/timetableHomePage");
+                router.push("/timetable");
               }}
             >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#135bec]/10 mr-4">
@@ -275,7 +304,7 @@ export default function UserProfile() {
             </Text>
           </TouchableOpacity>
           <Text className="text-center text-gray-400 text-xs mt-6 mb-8">
-            Version 2.4.0
+            Version 0.8
           </Text>
         </View>
       </ScrollView>

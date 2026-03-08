@@ -11,11 +11,11 @@ export const useGetAttendanceStatBySemester = (semester: number) => {
   });
 };
 
-export const useGetAttendanceStatOfAllSubjects = () => {
+export const useGetAttendanceStatOfAllSubjects = (semester: number) => {
   return useQuery({
-    queryKey: ["attendanceStat", "allSubjects"],
+    queryKey: ["attendanceStat", "allSubjects", semester],
     queryFn: async () => {
-      return detailsApi.getAttendanceStatOfAllSubjects(api);
+      return detailsApi.getAttendanceStatOfAllSubjects(api, semester);
     },
   });
 };

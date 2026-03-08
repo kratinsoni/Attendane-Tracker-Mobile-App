@@ -195,8 +195,8 @@ export default function SubjectDetailsPage() {
   const { data: subject, isLoading: isSubjectLoading } = useGetSubjectById(id);
   const { data: semesters, isLoading: isSemestersLoading } = useGetAttendanceBySubject(id, -1);
   const { data: attendanceData, isLoading: isAttendanceLoading, refetch: refetchAttendance } = useGetAttendanceBySubject(id, semester);
-  console.log("Subject Data:", subject);
-  console.log("Attendance Data:", attendanceData);
+  // console.log("Subject Data:", subject);
+  // console.log("Attendance Data:", attendanceData);
 
   // --- Mutations ---
   const {mutate: createAttendance, isPending} = useCreateAttendanceForSubjectPage({ date: new Date().toISOString() });
@@ -211,20 +211,13 @@ export default function SubjectDetailsPage() {
 
   const stats = useMemo(() => {
     if (!attendanceData) return { percentage: 0, attended: 0, total: 0 };
-    
-    // Total classes = Present + Absent + Medical (excluding cancelled/unmarked for denominator usually, 
-    // but based on UI "12/15", it implies Unmarked might count as "Total" but not "Attended")
-    // Let's assume Total = All records that are not Cancelled.
-    const validRecords = attendanceData.filter((r: any) => r.type !== AttendanceStatus.CANCELLED);
-    
-    // Attended = Present + Medical
+
+    const validRecords = attendanceData.filter((r: any) => (r.type !== AttendanceStatus.CANCELLED && r.type !== AttendanceStatus.UNMARKED));
+
     const attended = validRecords.filter((r: any) => 
       r.type === AttendanceStatus.PRESENT || r.type === AttendanceStatus.MEDICAL
     )?.length;
-    
-    // In many systems, "Unmarked" counts towards total (lowering percentage until marked).
-    // If you want "Unmarked" to NOT count yet, filter them out of 'validRecords'.
-    // Here we include them in total to match standard strict attendance policies.
+
     const total = validRecords?.length;
     
     return {
