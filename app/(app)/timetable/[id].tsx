@@ -307,10 +307,14 @@ export default function TimetableScreen() {
                 );
 
                 return (
-                  <View
+                  <TouchableOpacity
                     key={subject._id}
                     className="w-36 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex-col justify-between"
                     style={{ minHeight: 110 }}
+                    onPress={() => {
+                      Vibration.vibrate(20)
+                      router.push(`/subject/details/${subject._id}`)
+                    }}
                   >
                     <View
                       className={`w-8 h-8 rounded-lg items-center justify-center mb-2 ${theme.bg}`}
@@ -338,7 +342,7 @@ export default function TimetableScreen() {
                         style={{ width: `${progressWidth}%` }}
                       />
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               },
             )}

@@ -4,13 +4,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
   useColorScheme,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useChangeForgotPasswordInit, useChangeForgotPassword } from '@/hooks/useChangePassword';
@@ -93,6 +93,7 @@ const PasswordInput = ({ label, placeholder, value, onChangeText, iconName }: Pa
           value={value}
           onChangeText={onChangeText}
           autoCapitalize="none"
+          autoFocus={placeholder === "Enter your registered ID"}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-1">
           <MaterialIcons
