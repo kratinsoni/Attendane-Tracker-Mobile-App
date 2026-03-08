@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,9 +17,11 @@ import {
   TextInput,
   TouchableOpacity,
   useColorScheme,
+  Vibration,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 
 export default function AttendanceDetails() {
   const [selectedSem, setSelectedSem] = useState<number>(6);
@@ -159,14 +162,23 @@ export default function AttendanceDetails() {
 
       {/* HEADER */}
       <View className="flex-row items-center justify-between p-4 bg-white/90 dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 z-50 shadow-sm">
-        <TouchableOpacity className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => router.back()}>
+        <TouchableOpacity className=" rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => {
+          if (Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          router.back()}}>
           <MaterialIcons
-            name="arrow-back"
-            size={24}
+            name="chevron-left"
+            size={32}
             color={isDark ? "#f8fafc" : "#0f172a"}
           />
         </TouchableOpacity>
-        <Text className="text-lg font-bold text-slate-900 dark:text-white">
+        <Text className="text-xl font-bold text-slate-900 dark:text-white">
           Attendance Details
         </Text>
         <TouchableOpacity className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -365,7 +377,19 @@ export default function AttendanceDetails() {
                 subject?.attendedClasses,
               );
               return (
-                <View
+                <TouchableOpacity
+                onPress={() => {
+                  if (Platform.OS === "android") {
+                    // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                    // This creates a sharp "tick" rather than a soft buzz.
+                    Vibration.vibrate(20);
+                  } else {
+                    // iOS handles impacts much better natively, so stick to Expo here
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  }
+
+                  router.push(`/subject/details/${subject.subjectId}`)
+                }}
                   key={index}
                   className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
                 >
@@ -415,7 +439,7 @@ export default function AttendanceDetails() {
                       {status.text}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
 
@@ -431,7 +455,16 @@ export default function AttendanceDetails() {
           {filteredSubjects.length > 3 && (
             <TouchableOpacity
               className="mt-6 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl items-center border border-slate-200 dark:border-slate-700"
-              onPress={() => setIsSubjectsExpanded(!isSubjectsExpanded)}
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                setIsSubjectsExpanded(!isSubjectsExpanded)}}
             >
               <Text className="text-emerald-600 dark:text-emerald-400 font-semibold">
                 {isSubjectsExpanded
@@ -585,7 +618,16 @@ export default function AttendanceDetails() {
           {filteredTimetables.length > 3 && (
             <TouchableOpacity
               className="mt-6 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl items-center border border-slate-200 dark:border-slate-700"
-              onPress={() => setIsTimetablesExpanded(!isTimetablesExpanded)}
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                setIsTimetablesExpanded(!isTimetablesExpanded)}}
             >
               <Text className="text-emerald-600 dark:text-emerald-400 font-semibold">
                 {isTimetablesExpanded

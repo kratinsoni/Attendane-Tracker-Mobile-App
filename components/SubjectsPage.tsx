@@ -1,31 +1,33 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  TextInput,
   ActivityIndicator,
-  Modal,
-  TouchableWithoutFeedback,
   Alert,
-  useColorScheme,
   BackHandler,
+  FlatList,
+  Modal,
   RefreshControl,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  useColorScheme,
+  Vibration,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { router, useRouter } from "expo-router";
 
 // Hooks (Assuming these are exported from your hooks folder)
-import { useGetAllSubjects } from "@/hooks/useGetAllSubjects";
 import { useDeleteSubject } from "@/hooks/useDeleteSubject";
+import { useGetAllSubjects } from "@/hooks/useGetAllSubjects";
 import { useGetAllTimetablesOfUser } from "@/hooks/useGetAllTimetablesOfUser";
+import { useGetSubjectsBySemester } from "@/hooks/useGetSubjectBySemester";
+import { useGetSubjectsByTimetableId } from "@/hooks/useGetSubjectByTimetable";
 import { SubjectInterface } from "@/types/subjectTypes";
 import { TimetableInterface } from "@/types/timetableTypes";
-import { Subject } from "@/hooks/scheduleLogic";
-import { useGetSubjectsByTimetableId } from "@/hooks/useGetSubjectByTimetable";
-import { useGetSubjectsBySemester } from "@/hooks/useGetSubjectBySemester";
+import { Platform } from "react-native";
 
 interface FilterOptions {
   Semester: string[];
@@ -211,6 +213,14 @@ export default function SubjectsPage() {
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
 
   const openMenu = (id: string, event: any) => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     const { pageY, pageX } = event.nativeEvent;
     setMenuPosition({ top: pageY - 50, right: 60 });
     setActiveCardMenuId(id);
@@ -237,22 +247,54 @@ export default function SubjectsPage() {
   // --- Actions ---
 
   const handleLongPress = (id: string) => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     if (!selectedIds.includes(id)) {
       setSelectedIds([...selectedIds, id]);
     }
   };
 
   const toggleSelection = (id: string) => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
   const clearSelection = () => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     setSelectedIds([]);
   };
 
   const handleSelectAll = () => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     const allIds = filteredSubjects.map((s) => s._id);
     const areAllSelected = allIds.every((id) => selectedIds.includes(id));
     if (areAllSelected) {
@@ -263,6 +305,14 @@ export default function SubjectsPage() {
   };
 
   const handleDeleteSelected = () => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     Alert.alert(
       "Delete Subjects",
       "Are you sure you want to delete the selected subject(s)?",
@@ -281,12 +331,28 @@ export default function SubjectsPage() {
   };
 
   const handleEdit = (id: string) => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     router.push(`/subject/update/${id}`);
     clearSelection();
     setActiveCardMenuId(null);
   };
 
   const handleDeleteSingle = (id: string) => {
+    if (Platform.OS === "android") {
+      // Forces the motor to spin up and stop in exactly 20 milliseconds.
+      // This creates a sharp "tick" rather than a soft buzz.
+      Vibration.vibrate(20);
+    } else {
+      // iOS handles impacts much better natively, so stick to Expo here
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     Alert.alert(
       "Delete Subject",
       "Are you sure you want to delete this subject?",
@@ -506,6 +572,14 @@ export default function SubjectsPage() {
         activeOpacity={0.8}
         onLongPress={() => handleLongPress(item._id || "")}
         onPress={() => {
+          if (Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
           if (isSelectionMode) toggleSelection(item._id || "");
           else router.push(`/subject/details/${item._id}`);
         }}
@@ -719,7 +793,17 @@ export default function SubjectsPage() {
         <View className="flex-row justify-between items-center px-3 py-4 bg-gray-50 dark:bg-slate-950">
           <View className="flex-row items-center">
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                router.back();
+              }}
               className="mr-4 p-1"
             >
               <Ionicons
@@ -884,7 +968,16 @@ export default function SubjectsPage() {
       {/* Floating Action Button (FAB) - Hide when selecting items */}
       {!isSelectionMode && (
         <TouchableOpacity
-          onPress={() => router.push("/subject/create")}
+          onPress={() => {
+            if (Platform.OS === "android") {
+              // Forces the motor to spin up and stop in exactly 20 milliseconds.
+              // This creates a sharp "tick" rather than a soft buzz.
+              Vibration.vibrate(20);
+            } else {
+              // iOS handles impacts much better natively, so stick to Expo here
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            router.push("/subject/create")}}
           className="absolute bottom-40 right-6 bg-blue-600 w-14 h-14 rounded-full justify-center items-center shadow-lg shadow-blue-300 dark:shadow-none z-10"
         >
           <Ionicons name="add" size={30} color="white" />

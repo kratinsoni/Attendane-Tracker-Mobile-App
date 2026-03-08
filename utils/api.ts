@@ -107,6 +107,19 @@ export const userApi = {
   logout: async (api: AxiosInstance) => {
     await api.post("/users/logout");
   },
+  updateProfile: async (
+    api: AxiosInstance,
+    data: {
+      firstName: string;
+      lastName: string;
+      rollNo: string;
+      graduationYear: number;
+      department: string;
+    }
+  ) => {
+    const res = await api.patch("/users", data);
+    return res.data.data;
+  }
 };
 
 export const timetableApi = {

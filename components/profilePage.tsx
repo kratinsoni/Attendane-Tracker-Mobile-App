@@ -15,9 +15,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { useColorScheme } from "nativewind";
+import { ChevronLeft, Edit } from "lucide-react-native";
 
 export default function UserProfile() {
   const { data } = useMe();
+
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const {mutate} = useLogout();
 
@@ -34,28 +39,45 @@ export default function UserProfile() {
   }
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
-      <StatusBar barStyle="dark-content" />
+      <StatusBar
+              barStyle={isDark ? "light-content" : "dark-content"}
+              backgroundColor={isDark ? "#101622" : "#f6f6f8"}
+            />
 
       {/* Top App Bar - Sticky Effect by placing outside ScrollView */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-[#f6f6f8]/90 dark:bg-[#101622]/90 border-b border-transparent z-50">
         <TouchableOpacity
           className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-          onPress={() => router.back()}
+          onPress={() => {
+            if (Platform.OS === "android") {
+              // Forces the motor to spin up and stop in exactly 20 milliseconds.
+              // This creates a sharp "tick" rather than a soft buzz.
+              Vibration.vibrate(20);
+            } else {
+              // iOS handles impacts much better natively, so stick to Expo here
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            router.back()}}
         >
-          <MaterialIcons
-            name="arrow-back"
-            size={24}
-            className="text-[#111318] dark:text-white"
-            color="#111318"
-          />
+          <ChevronLeft size={28} color={isDark ? "#e5e7eb" : "#111318"} />
         </TouchableOpacity>
 
-        <Text className="text-lg font-bold text-[#111318] dark:text-white">
+        <Text className="text-2xl font-bold text-[#111318] dark:text-white">
           Profile
         </Text>
 
-        <TouchableOpacity className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 hover:bg-[#135bec]/10">
-          <MaterialIcons name="edit" size={20} color="#135bec" />
+        <TouchableOpacity className="flex h-10 w-10 items-center justify-center rounded-full" onPress={() => {
+          if (Platform.OS === "android") {
+            // Forces the motor to spin up and stop in exactly 20 milliseconds.
+            // This creates a sharp "tick" rather than a soft buzz.
+            Vibration.vibrate(20);
+          } else {
+            // iOS handles impacts much better natively, so stick to Expo here
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+          router.push("/profile/EditProfile");
+        }}>
+          <Edit size={24} color={isDark ? "#e5e7eb" : "#111318"} />
         </TouchableOpacity>
       </View>
 
@@ -146,7 +168,7 @@ export default function UserProfile() {
                   </Text>
                 </View>
                 <Text className="text-[#111318] dark:text-white text-base font-semibold">
-                  {20 + data.rollNo[0] + (Number(data.rollNo[1]) + 4)}
+                  {data.graduationYear}
                 </Text>
               </View>
             </View>

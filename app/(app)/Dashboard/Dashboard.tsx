@@ -10,14 +10,17 @@ import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Image,
+  Platform,
   RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
   useColorScheme,
+  Vibration,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 
 // 1. Setup Icons for NativeWind
 const Icon = ({ name, size = 24, color, className }: any) => (
@@ -159,7 +162,16 @@ export default function Dashboard() {
           </View>
           <TouchableOpacity
             className="relative"
-            onPress={() => router.push("/profile/profile")}
+            onPress={() => {
+              if (Platform.OS === "android") {
+                // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                // This creates a sharp "tick" rather than a soft buzz.
+                Vibration.vibrate(20);
+              } else {
+                // iOS handles impacts much better natively, so stick to Expo here
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              router.push("/profile/profile")}}
           >
             <Image
               source={{
@@ -341,7 +353,16 @@ export default function Dashboard() {
               title={tab.id}
               iconName={tab.icon}
               active={activeEventTab === tab.id}
-              onPress={() => setActiveEventTab(tab.id)}
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                setActiveEventTab(tab.id)}}
               isDark={isDark}
             />
           ))}

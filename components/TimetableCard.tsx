@@ -107,23 +107,39 @@ export const TimetableCard = ({
             <TouchableOpacity
               activeOpacity={0.8}
               className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
-              onPress={() =>
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
                 router.push({
                   pathname: "/timetable/editTimetable/[id]",
                   params: { id: _id },
-                })
-              }
+                });
+              }}
             >
               <Text className="text-sm font-semibold text-white">Edit</Text>
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.8}
               className="rounded-lg bg-blue-600 px-5 py-2 shadow-sm active:bg-blue-700"
-              onPress={() =>
+              onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
                 router.push({
                   pathname: "/timetable/[id]",
                   params: { id: _id },
-                })
+                })}
               }
             >
               <Text className="text-sm font-semibold text-white">View</Text>

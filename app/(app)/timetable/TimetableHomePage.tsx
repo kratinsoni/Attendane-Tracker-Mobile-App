@@ -3,7 +3,7 @@ import { TimetableCard } from "@/components/TimetableCard";
 import { useGetUserTimetables } from "@/hooks/useGetUserTimetables";
 import { TimetableCardType } from "@/types/timetableTypes";
 import { router } from "expo-router";
-import { ArrowBigLeft, ArrowLeft, Menu, Plus, Search, User, UserCircle } from "lucide-react-native";
+import { ArrowBigLeft, ArrowLeft, ChevronLeft, Menu, Plus, Search, User, UserCircle } from "lucide-react-native";
 import React, { useState, useCallback } from "react";
 import {
   ScrollView,
@@ -67,13 +67,31 @@ export default function TimetableScreen() {
       <View className="bg-white/80 dark:bg-slate-900/80 px-4 pt-4 pb-2">
         <View className="flex-row items-center justify-between mb-4">
           <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-            <ArrowLeft size={24} color="#135bec" onPress={() => router.back()}/>
+            <ChevronLeft size={24} color="#135bec" onPress={() => {
+              if (Platform.OS === "android") {
+                // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                // This creates a sharp "tick" rather than a soft buzz.
+                Vibration.vibrate(20);
+              } else {
+                // iOS handles impacts much better natively, so stick to Expo here
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              router.back()}}/>
           </TouchableOpacity>
           <Text className="text-xl font-bold text-slate-900 dark:text-white">
             My Timetables
           </Text>
           <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-            <User size={24} color="#135bec" onPress={() => router.push("/profile/profile")}/>
+            <User size={24} color="#135bec" onPress={() => {
+              if (Platform.OS === "android") {
+                // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                // This creates a sharp "tick" rather than a soft buzz.
+                Vibration.vibrate(20);
+              } else {
+                // iOS handles impacts much better natively, so stick to Expo here
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              router.push("/profile/profile")}}/>
           </TouchableOpacity>
         </View>
 
