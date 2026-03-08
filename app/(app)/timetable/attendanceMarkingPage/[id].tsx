@@ -9,6 +9,7 @@ import {
   MapPin,
   MoreVertical,
   Plus,
+  User,
   XCircle,
 } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
@@ -113,19 +114,24 @@ const ScheduleScreen = () => {
       {/* HEADER SECTION */}
       <View className="px-4 pt-4 pb-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <View className="flex-row items-center justify-between mb-6">
+          <View className="flex-row gap-4">
+            <TouchableOpacity onPress={() => {
+              Vibration.vibrate(20)
+              router.back()
+            }}>
+              <ChevronLeft size={28} color={"#139bec"}/>
+            </TouchableOpacity>
           <Text className="text-xl font-bold text-slate-900 dark:text-white">
             Schedule
           </Text>
+          </View>
           <View className="flex-row items-center">
-            <TouchableOpacity className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
-              <Bell size={22} color="#64748b" />
+            <TouchableOpacity className="h-9 w-9 ml-3 p-0.5" onPress={() => {
+              Vibration.vibrate(20)
+              router.push("/profile/profile")
+            }}>
+              <User size={28} color="#135bec"/>
             </TouchableOpacity>
-            <View className="h-9 w-9 ml-3 rounded-full border-2 border-blue-400 p-0.5">
-              <Image
-                source={{ uri: "https://via.placeholder.com/100" }}
-                className="h-full w-full rounded-full"
-              />
-            </View>
           </View>
         </View>
 

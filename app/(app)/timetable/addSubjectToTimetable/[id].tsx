@@ -166,10 +166,15 @@ export default function AddSubjectsScreen() {
 
       {/* Top App Bar */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100 dark:active:bg-slate-800">
+        <TouchableOpacity className="w-10 h-10 items-center justify-center rounded-full active:bg-slate-100 dark:active:bg-slate-800" 
+        onPress={() => {
+          Vibration.vibrate(20)
+          router.back()
+        }}
+        >
           <MaterialIcons
-            name="arrow-back"
-            size={24}
+            name="chevron-left"
+            size={28}
             color={isDark ? "#f8fafc" : "#334155"}
           />
         </TouchableOpacity>

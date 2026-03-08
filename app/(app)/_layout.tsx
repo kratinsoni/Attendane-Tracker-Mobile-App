@@ -19,6 +19,7 @@ export default function AppLayout() {
         <Stack.Screen name="event/eventCreateScreen" options={{headerShown: false}}/>
         <Stack.Screen name="password/changePassword" options={{headerShown: false}}/>
         <Stack.Screen name="profile/EditProfile" options={{headerShown: false}}/>
+        <Stack.Screen name="contactUs/contactPage" options={{headerShown: false}} />
       </Stack>
     </AuthLayout>
   );

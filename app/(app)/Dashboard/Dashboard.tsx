@@ -21,7 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { User } from "lucide-react-native";
+import { Contact, Headphones, User } from "lucide-react-native";
 
 // 1. Setup Icons for NativeWind
 const Icon = ({ name, size = 24, color, className }: any) => (
@@ -100,7 +100,7 @@ export default function Dashboard() {
     { id: "Test", icon: "quiz" },
     { id: "Other", icon: "event" },
   ] as const;
-  
+
   const [activeEventTab, setActiveEventTab] = useState<string>("All");
 
   const filteredEvents = useMemo(() => {
@@ -158,21 +158,37 @@ export default function Dashboard() {
               {dayName}, {shortMonth} {dateNumber}
             </Text>
             <Text className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-              Hello, {data?.firstName} {data?.lastName}
+              Hello, {data?.firstName}
             </Text>
           </View>
-          <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-            <User size={24} color="#135bec" onPress={() => {
-              if (Platform.OS === "android") {
-                // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                // This creates a sharp "tick" rather than a soft buzz.
-                Vibration.vibrate(20);
-              } else {
-                // iOS handles impacts much better natively, so stick to Expo here
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              }
-              router.push("/profile/profile")}}/>
-          </TouchableOpacity>
+          <View className="flex-row gap-4">
+            <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
+              <Headphones size={24} color="#135bec" onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                router.push("/contactUs/contactPage")
+              }} />
+            </TouchableOpacity>
+            <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
+              <User size={24} color="#135bec" onPress={() => {
+                if (Platform.OS === "android") {
+                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                  // This creates a sharp "tick" rather than a soft buzz.
+                  Vibration.vibrate(20);
+                } else {
+                  // iOS handles impacts much better natively, so stick to Expo here
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                router.push("/profile/profile")
+              }} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Stats Grid (Top Attendance & Needs Focus) */}
@@ -354,7 +370,8 @@ export default function Dashboard() {
                   // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
-                setActiveEventTab(tab.id)}}
+                setActiveEventTab(tab.id)
+              }}
               isDark={isDark}
             />
           ))}
