@@ -170,7 +170,7 @@ export default function Dashboard() {
                   // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
-                // router.push("/contactUs/contactPage")
+                router.push("/contactUs/contactPage")
               }} />
             </TouchableOpacity>
             <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
