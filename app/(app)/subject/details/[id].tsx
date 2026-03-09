@@ -3,22 +3,19 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Pre
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { format, parseISO, isToday, isFuture } from 'date-fns';
+import { format, parseISO, isToday } from 'date-fns';
 import { clsx } from 'clsx';
 import { 
   Check, 
   X, 
   Activity, 
   Ban, 
-  MoreVertical, 
-  MapPin, 
   User,
   Pencil,
-  ChevronRight,
   ChevronDown,
-  ArrowLeft,
+  ChevronUp,
+  ChevronLeft,
   Edit,
-  ChevronLeft
 } from 'lucide-react-native';
 
 // Hooks & Types
@@ -29,10 +26,6 @@ import { useUpdateAttendance } from '@/hooks/useUpdateAttendance';
 import { AttendanceStatus } from '@/types/attendanceTypes';
 
 // --- Types & Helpers ---
-
- interface AttendanceTypes {
-
-  };
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -54,34 +47,60 @@ const getStatusDot = (status: string) => {
       return <View className="bg-yellow-500 h-6 w-6 rounded-full items-center justify-center"><Activity size={14} color="white" strokeWidth={3} /></View>;
     case AttendanceStatus.CANCELLED: 
       return <View className="bg-slate-400 h-6 w-6 rounded-full items-center justify-center"><Ban size={14} color="white" strokeWidth={3} /></View>;
+    case 'MIXED': // Used when a grouped item has partial/mixed attendance
+      return <View className="bg-slate-200 dark:bg-slate-700 h-6 w-6 rounded-full items-center justify-center"><View className="bg-slate-400 dark:bg-slate-500 h-2 w-2 rounded-full" /></View>;
     default: // Unmarked / Future
       return <View className="bg-white dark:bg-slate-900 border-2 border-green-500 h-4 w-4 rounded-full" />;
   }
 };
 
+const formatGroupTime = (group: any[]) => {
+  if (!group || group.length === 0) return { timeString: '', hours: 0 };
+  const startSlot = group[0].timeSlot.split('_')[1].split('-')[0];
+  const endSlot = group[group.length - 1].timeSlot.split('_')[1].split('-')[1];
+  return {
+    timeString: `${startSlot} - ${endSlot}`,
+    hours: group.length
+  };
+};
+
 // --- Components ---
 
 /**
- * Modal for editing PAST attendance records
+ * Modal for editing PAST attendance records (Handles Group Bulk & Partial Edits)
  */
 const AttendanceEditModal = ({ 
   visible, 
   onClose, 
-  onSelect, 
-  currentStatus,
+  selectedGroup,
+  onUpdateBulk,
+  onUpdateSingle,
   isLoading 
 }: { 
   visible: boolean; 
   onClose: () => void; 
-  onSelect: (status: string) => void;
-  currentStatus: string;
+  selectedGroup: any[] | null;
+  onUpdateBulk: (group: any[], status: string) => void;
+  onUpdateSingle: (item: any, status: string) => void;
   isLoading: boolean;
 }) => {
-
   const { colorScheme } = useColorScheme();
   const iconColor = colorScheme === 'dark' ? 'white' : 'black';
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!visible) return null;
+  // Reset internal expand state whenever group changes
+  useEffect(() => {
+    if (!visible) {
+      setIsExpanded(false);
+    }
+  }, [visible]);
+
+  if (!visible || !selectedGroup) return null;
+
+  const isGroup = selectedGroup.length > 1;
+  const allTypes = selectedGroup.map(item => item.type);
+  const isUniform = allTypes.every(t => t === allTypes[0]);
+  const parentStatus = isUniform ? allTypes[0] : 'MIXED';
 
   const options = [
     { label: "Present", value: AttendanceStatus.PRESENT, color: "text-green-500", icon: Check },
@@ -93,56 +112,94 @@ const AttendanceEditModal = ({
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/60 justify-end sm:justify-center items-center" onPress={onClose}>
-        <Pressable className="bg-white dark:bg-[#1C1C1E] w-full sm:w-80 rounded-t-3xl sm:rounded-2xl p-6 pb-10 sm:pb-6 gap-4" onPress={(e) => e.stopPropagation()}>
+        <Pressable className="bg-white dark:bg-[#1C1C1E] w-full sm:w-80 rounded-t-3xl sm:rounded-2xl p-6 pb-10 sm:pb-6 gap-4 max-h-[90%]" onPress={(e) => e.stopPropagation()}>
           <View className="flex-row justify-between items-center mb-2">
-            <Text className="text-xl font-bold text-slate-900 dark:text-white">Edit Status</Text>
+            <Text className="text-xl font-bold text-slate-900 dark:text-white">
+              Edit Status {isGroup && `(${selectedGroup.length} Slots)`}
+            </Text>
             {isLoading && <ActivityIndicator size="small" />}
           </View>
-          
-          <View className="flex-row flex-wrap justify-between gap-y-4">
-            {options?.map((opt) => (
+
+          {/* Bulk Update Controls (Parent Level) */}
+          <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">
+            {isGroup ? "Apply to all slots:" : "Select status:"}
+          </Text>
+          <View className="flex-row flex-wrap justify-between gap-y-4 mb-2">
+            {options.map((opt) => (
               <TouchableOpacity
-                key={opt.value}
-                onPress={() => onSelect(opt.value)}
+                key={`bulk-${opt.value}`}
+                onPress={() => onUpdateBulk(selectedGroup, opt.value)}
                 disabled={isLoading}
                 className={clsx(
                   "w-[48%] items-center justify-center p-4 rounded-2xl border-2",
-                  currentStatus === opt.value 
+                  parentStatus === opt.value 
                     ? "bg-slate-50 dark:bg-slate-800 border-indigo-500" 
                     : "bg-slate-50 dark:bg-slate-800 border-transparent"
                 )}
               >
                 <opt.icon size={28} color={iconColor} />
-                <Text className={clsx("mt-2 font-semibold", currentStatus === opt.value ? "text-indigo-500" : "text-slate-600 dark:text-slate-300")}>
+                <Text className={clsx("mt-2 font-semibold", parentStatus === opt.value ? "text-indigo-500" : "text-slate-600 dark:text-slate-300")}>
                   {opt.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Expand for Partial Editing */}
+          {isGroup && (
+            <View className="border-t border-slate-200 dark:border-slate-800 pt-4 mt-2">
+              <TouchableOpacity 
+                onPress={() => setIsExpanded(!isExpanded)}
+                className="flex-row justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl"
+              >
+                <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Edit Slots Individually
+                </Text>
+                {isExpanded ? <ChevronUp size={18} color={iconColor} /> : <ChevronDown size={18} color={iconColor} />}
+              </TouchableOpacity>
+
+              {isExpanded && (
+                <ScrollView className="mt-4 max-h-60" showsVerticalScrollIndicator={false}>
+                  {selectedGroup.map((item, index) => (
+                    <View key={index} className="mb-4">
+                      <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
+                        {item.timeSlot.split('_')[1]}
+                      </Text>
+                      <View className="flex-row flex-wrap justify-between gap-y-2">
+                        {options.map((opt) => (
+                          <TouchableOpacity
+                            key={`${item._id}-${opt.value}`}
+                            onPress={() => onUpdateSingle(item, opt.value)}
+                            disabled={isLoading}
+                            className={clsx(
+                              "w-[23%] items-center justify-center p-2 rounded-xl border-2",
+                              item.type === opt.value 
+                                ? "bg-slate-100 dark:bg-slate-700 border-indigo-500" 
+                                : "bg-white dark:bg-[#151F32] border-transparent"
+                            )}
+                          >
+                            <opt.icon size={16} color={iconColor} />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          )}
         </Pressable>
       </Pressable>
     </Modal>
   );
 };
 
+
 /**
  * Modal for selecting Semester
  */
-const SemesterFilterModal = ({
-  visible,
-  onClose,
-  onSelect,
-  semesters,
-  currentSemester
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onSelect: (sem: number) => void;
-  semesters: number[],
-  currentSemester: number;
-}) => {
+const SemesterFilterModal = ({ visible, onClose, onSelect, semesters, currentSemester }: any) => {
   if (!visible) return null;
-
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
       <Pressable className="flex-1 bg-black/60 justify-end sm:justify-center items-center" onPress={onClose}>
@@ -152,13 +209,10 @@ const SemesterFilterModal = ({
           </View>
           <ScrollView className="max-h-96" showsVerticalScrollIndicator={false}>
             <View className="flex-row flex-wrap justify-between gap-y-3">
-              {semesters.map((sem) => (
+              {semesters.map((sem: number) => (
                 <TouchableOpacity
                   key={sem}
-                  onPress={() => {
-                    onSelect(sem);
-                    onClose();
-                  }}
+                  onPress={() => { onSelect(sem); onClose(); }}
                   className={clsx(
                     "w-[48%] items-center justify-center p-3 rounded-xl border-2",
                     currentSemester === sem
@@ -182,27 +236,29 @@ const SemesterFilterModal = ({
 export default function SubjectDetailsPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const iconColor = colorScheme === 'dark' ? 'white' : 'black';
 
   const [modalVisible, setModalVisible] = useState(false);
   const [semesterModalVisible, setSemesterModalVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<any[] | null>(null);
+  const [expandedTimelineGroups, setExpandedTimelineGroups] = useState<Record<number, boolean>>({});
   const [isShowMore, setIsShowMore] = useState(false);
   const [semester, setSemester] = useState<number>(0);
 
   // --- Data Fetching ---
   const { data: subject, isLoading: isSubjectLoading } = useGetSubjectById(id);
   const { data: semesters, isLoading: isSemestersLoading } = useGetAttendanceBySubject(id, -1);
-  const { data: attendanceData, isLoading: isAttendanceLoading, refetch: refetchAttendance } = useGetAttendanceBySubject(id, semester);
-  // console.log("Subject Data:", subject);
-  // console.log("Attendance Data:", attendanceData);
+  const { data: attendanceDataGrouped, isLoading: isAttendanceLoading, refetch: refetchAttendance } = useGetAttendanceBySubject(id, semester);
 
   // --- Mutations ---
-  const {mutate: createAttendance, isPending} = useCreateAttendanceForSubjectPage({ date: new Date().toISOString() });
+  const {mutate: createAttendance, isPending: isCreatePending} = useCreateAttendanceForSubjectPage({ date: new Date().toISOString() });
   const updateMutation = useUpdateAttendance();
 
-  // --- Statistics Logic ---
+  // --- Flatten Data for logic & stats ---
+  const flatAttendance = useMemo(() => {
+    return attendanceDataGrouped?.flat() || [];
+  }, [attendanceDataGrouped]);
+
   useEffect(() => {
     if (semesters?.length > 0) {
       setSemester(semesters.at(-1));
@@ -210,14 +266,10 @@ export default function SubjectDetailsPage() {
   }, [semesters]);
 
   const stats = useMemo(() => {
-    if (!attendanceData) return { percentage: 0, attended: 0, total: 0 };
+    if (flatAttendance.length === 0) return { percentage: 0, attended: 0, total: 0 };
 
-    const validRecords = attendanceData.filter((r: any) => (r.type !== AttendanceStatus.CANCELLED && r.type !== AttendanceStatus.UNMARKED));
-
-    const attended = validRecords.filter((r: any) => 
-      r.type === AttendanceStatus.PRESENT || r.type === AttendanceStatus.MEDICAL
-    )?.length;
-
+    const validRecords = flatAttendance.filter((r: any) => (r.type !== AttendanceStatus.CANCELLED && r.type !== AttendanceStatus.UNMARKED));
+    const attended = validRecords.filter((r: any) => r.type === AttendanceStatus.PRESENT || r.type === AttendanceStatus.MEDICAL)?.length;
     const total = validRecords?.length;
     
     return {
@@ -225,19 +277,33 @@ export default function SubjectDetailsPage() {
       total,
       percentage: total > 0 ? Math.round((attended / total) * 100) : 0
     };
-  }, [attendanceData]);
+  }, [flatAttendance]);
 
   const filteredProfessors = useMemo(() => {
-    if (isShowMore)
-      return subject?.professors;  
-    else 
-      return subject?.professors?.slice(0, 2);
+    if (isShowMore) return subject?.professors;  
+    else return subject?.professors?.slice(0, 2);
   }, [isShowMore, subject?.professors]);
 
   // --- Handlers ---
+  const toggleTimelineExpand = (index: number) => {
+    setExpandedTimelineGroups(prev => ({ ...prev, [index]: !prev[index] }));
+  };
 
-  const handleCreateAttendance = (item: any, status: string) => {
-    console.log("Creating attendance with data:", item, status);
+  const handleCreateAttendanceBulk = (group: any[], status: string) => {
+    group.forEach(item => {
+      createAttendance({
+        subjectId: item.subject || id,
+        day: item.day,
+        type: status,
+        timeSlot: item.timeSlot,
+        date: item.date,
+        semester: item.semester || subject?.semester || 0,
+      });
+    });
+    setTimeout(() => refetchAttendance(), 300); // Trigger refetch after loop finishes
+  };
+
+  const handleCreateAttendanceSingle = (item: any, status: string) => {
     createAttendance({
       subjectId: item.subject || id,
       day: item.day,
@@ -246,31 +312,45 @@ export default function SubjectDetailsPage() {
       date: item.date,
       semester: item.semester || subject?.semester || 0,
     });
-
-    refetchAttendance();
+    setTimeout(() => refetchAttendance(), 300);
   };
 
-  const handleEditPress = (item: any) => {
-    setSelectedItem(item);
+  const handleEditGroupPress = (group: any[]) => {
+    setSelectedGroup(group);
     setModalVisible(true);
   };
 
-  const handleUpdateStatus = (newStatus: string) => {
-    if (!selectedItem) return;
-    updateMutation.mutate({
-      attendanceId: selectedItem._id,
-      type: newStatus,
-      subjectId: id,
-    }, {
-      onSuccess: () => setModalVisible(false)
+  const handleUpdateStatusBulk = (group: any[], newStatus: string) => {
+    group.forEach(item => {
+      updateMutation.mutate({
+        attendanceId: item._id,
+        type: newStatus,
+        subjectId: id,
+      });
     });
+    setModalVisible(false);
   };
 
-  // --- Sorting ---
+  const handleUpdateStatusSingle = (item: any, newStatus: string) => {
+    setSelectedGroup((prevGroup) => {
+      if (!prevGroup) return null;
+      return prevGroup.map((g) => 
+        g._id === item._id ? { ...g, type: newStatus } : g
+      );
+    });
+    
+    updateMutation.mutate({
+      attendanceId: item._id,
+      type: newStatus,
+      subjectId: id,
+    });
+    // Let user stay in modal to edit others if expanded
+  };
 
+  // --- Sorting / Loading ---
   if (isSubjectLoading || isAttendanceLoading || isSemestersLoading) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50 dark:bg-[#0f172a]">
+      <View className="flex-1 justify-center items-center bg-[#F5F7FA] dark:bg-[#09101f]">
         <ActivityIndicator size="large" color="#4f46e5" />
       </View>
     );
@@ -280,15 +360,25 @@ export default function SubjectDetailsPage() {
     <SafeAreaView className="flex-1 bg-[#F5F7FA] dark:bg-[#09101f]">
 
       {/* ================= TOP ACTION BUTTONS ================= */}
-      <View className="flex-row justify-between items-center px-8 pt-4 pb-3">
-        <TouchableOpacity onPress={() => router.back()}>
-          <ChevronLeft size={24} color={iconColor} />
+      <View className="flex-row justify-between items-center px-6 pt-4 pb-4">
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          className="w-10 h-10 rounded-full bg-white dark:bg-[#151F32] items-center justify-center shadow-sm shadow-slate-200 dark:shadow-none"
+        >
+          <ChevronLeft size={24} color={iconColor} className="mr-0.5" />
         </TouchableOpacity>
-        <View>
-          <Text className='text-black dark:text-white text-2xl font-bold'>Subject Details</Text>
+        
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-slate-900 dark:text-white text-xl font-bold tracking-tight">
+            Subject Details
+          </Text>
         </View>
-        <TouchableOpacity onPress={() => router.push(`/subject/update/${id}`)}>
-          <Edit size={20} color={iconColor} />
+
+        <TouchableOpacity 
+          onPress={() => router.push(`/subject/update/${id}`)}
+          className="w-10 h-10 rounded-full bg-white dark:bg-[#151F32] items-center justify-center shadow-sm shadow-slate-200 dark:shadow-none"
+        >
+          <Edit size={22} color={iconColor} className="ml-0.5" />
         </TouchableOpacity>
       </View>
 
@@ -354,40 +444,31 @@ export default function SubjectDetailsPage() {
           </View>
 
           {/* Attendance Stats */}
-          <View className="border-t border-slate-100 dark:border-slate-700 pt-4">
-            <View className="flex-row justify-between items-end mb-2">
-              <View>
-                 <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">ATTENDANCE</Text>
-                 <Text className="text-4xl font-black text-slate-900 dark:text-white">{stats.percentage}%</Text>
-              </View>
-              <View className="items-end mb-1">
-                 <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">CLASSES</Text>
-                 <Text className="text-xl font-bold text-slate-700 dark:text-slate-300">
-                    {stats.attended} <Text className="text-slate-400 text-base">/ {stats.total}</Text>
-                 </Text>
-              </View>
-            </View>
-            {/* Progress Bar */}
-            <View className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-               <View 
-                  className="h-full bg-green-500 rounded-full" 
-                  style={{ width: `${stats.percentage}%` }}
-               />
-            </View>
-          </View>
+           <View className="border-t border-slate-100 dark:border-slate-700 pt-4 mt-6">
+             <View className="flex-row justify-between items-end mb-2">
+               <View>
+                  <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">ATTENDANCE</Text>
+                  <Text className="text-4xl font-black text-slate-900 dark:text-white">{stats.percentage}%</Text>
+               </View>
+               <View className="items-end mb-1">
+                  <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">CLASSES</Text>
+                  <Text className="text-xl font-bold text-slate-700 dark:text-slate-300">
+                     {stats.attended} <Text className="text-slate-400 text-base">/ {stats.total}</Text>
+                  </Text>
+               </View>
+             </View>
+             <View className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <View className="h-full bg-green-500 rounded-full" style={{ width: `${stats.percentage}%` }}/>
+             </View>
+           </View>
         </View>
 
         {/* ================= HISTORY SECTION ================= */}
         <View className="px-6 mt-8 mb-4 flex-row justify-between items-center">
           <Text className="text-lg font-bold text-slate-900 dark:text-white">Attendance History</Text>
           {semester !== 0 && (
-            <TouchableOpacity 
-             onPress={() => setSemesterModalVisible(true)}
-             className="flex-row items-center bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5 rounded-full"
-            >
-             <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300 mr-1">
-                Semester {semester}
-             </Text>
+            <TouchableOpacity onPress={() => setSemesterModalVisible(true)} className="flex-row items-center bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5 rounded-full">
+             <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300 mr-1">Semester {semester}</Text>
              <ChevronDown size={14} color={iconColor} />
             </TouchableOpacity>
           )}
@@ -395,126 +476,174 @@ export default function SubjectDetailsPage() {
 
         {semester === 0 ? (
           <View className="px-6 py-8 items-center justify-center">
-            <Text className="text-base text-slate-500 dark:text-slate-400 font-medium text-center">
-              This subject is not added to any timetables yet.
-            </Text>
+            <Text className="text-base text-slate-500 dark:text-slate-400 font-medium text-center">This subject is not added to any timetables yet.</Text>
           </View>
-        ) : !attendanceData || attendanceData.length === 0 ? (
+        ) : !attendanceDataGrouped || attendanceDataGrouped.length === 0 ? (
           <View className="px-6 py-8 items-center justify-center">
-            <Text className="text-base text-slate-500 dark:text-slate-400 font-medium text-center">
-              No attendance marked yet.
-            </Text>
+            <Text className="text-base text-slate-500 dark:text-slate-400 font-medium text-center">No attendance marked yet.</Text>
           </View>
         ) : (
           <View className="px-4">
-            {attendanceData?.map((item: any, index: number) => {
-              console.log("Semester:",)
-              const date = parseISO(item.date);
-              const isUnmarked = item.type === 'UNMARKED';
-              const isLast = index === attendanceData?.length - 1;
+            {attendanceDataGrouped?.map((group: any[], groupIndex: number) => {
+              
+              const isLastGroup = groupIndex === attendanceDataGrouped.length - 1;
+              const firstItem = group[0];
+              const date = parseISO(firstItem.date);
+              
+              // Group Evaluations
+              const allTypes = group.map(g => g.type);
+              const isUniform = allTypes.every(t => t === allTypes[0]);
+              const overallType = isUniform ? allTypes[0] : 'MIXED';
+              const isUnmarked = overallType === 'UNMARKED';
 
-              // Generate a Lecture Title since API doesn't have it (Simulated)
-              const lectureNumber = attendanceData?.length - index;
-              // Basic logic: If Unmarked, assume it's the current/next class
-              const title = isUnmarked 
-                ? `Lecture ${lectureNumber}: Current Session` 
-                : `Lecture ${lectureNumber}: Class Session`; 
-
-              const dateString = isToday(date) ? `Today, ${item.timeSlot?.split('_')[1] || '10:00 AM'}` : format(date, 'EEEE, dd MMM');
+              const { timeString, hours } = formatGroupTime(group);
+              const lectureNumber = attendanceDataGrouped.length - groupIndex;
+              const title = `Class ${lectureNumber}`; 
+              const dateString = isToday(date) ? `Today` : format(date, 'EEEE, dd MMM');
+              const isTimelineExpanded = expandedTimelineGroups[groupIndex] || overallType === 'MIXED';
 
               return (
-                <View key={index} className="flex-row">
+                <View key={groupIndex} className="flex-row">
                   
                   {/* Timeline Column */}
                   <View className="w-8 items-center mr-3">
-                    {/* Vertical Line */}
                     <View className={clsx(
                       "absolute top-0 bottom-0 w-[2px]",
-                      isLast ? "h-6" : "h-full", // Cut line short for last item
-                      index === 0 && isUnmarked ? "bg-green-200 dark:bg-green-900" : "bg-slate-200 dark:bg-slate-700",
-                      index === 0 && !isUnmarked ? "mt-4" : "" // Adjust top for first item
+                      isLastGroup ? "h-6" : "h-full", 
+                      groupIndex === 0 && isUnmarked ? "bg-green-200 dark:bg-green-900" : "bg-slate-200 dark:bg-slate-700",
+                      groupIndex === 0 && !isUnmarked ? "mt-4" : "" 
                     )} />
                     
-                    {/* Dot */}
+                    {/* Dot Parent: Show dot only if Uniform (Not MIXED). If Mixed, show neutral grouping indicator */}
                     <View className="mt-1 relative z-10">
-                      {getStatusDot(item.type)}
+                      {getStatusDot(overallType)}
                     </View>
                   </View>
 
                   {/* Content Column */}
                   <View className="flex-1 pb-6">
                     
-                    {/* Case 1: UNMARKED (Active Card with Buttons) */}
-                    {isUnmarked ? (
-                      <View>
-                        <View className="flex-row justify-between items-start">
-                          <View>
-                              <Text className="text-base font-bold text-slate-800 dark:text-white mb-0.5">
-                                {title}
-                              </Text>
-                              <Text className="text-xs text-slate-400 font-medium mb-3">{dateString}</Text>
-                          </View>
-                          <View className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                              <Text className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Unmarked</Text>
-                          </View>
-                        </View>
-
-                        {/* Action Buttons Row */}
-                        <View className="flex-row justify-between mt-1">
-                          {[
-                            { label: 'PRESENT', icon: Check, status: 'PRESENT', color: 'text-green-500' },
-                            { label: 'ABSENT', icon: X, status: 'ABSENT', color: 'text-red-500' },
-                            { label: 'MEDICAL', icon: Activity, status: 'MEDICAL', color: 'text-yellow-500' },
-                            { label: 'CANCEL', icon: Ban, status: 'CANCELLED', color: 'text-slate-400' },
-                          ]?.map((btn) => (
-                            <TouchableOpacity 
-                              key={btn.status}
-                              onPress={() => handleCreateAttendance(item, btn.status)}
-                              disabled={isPending}
-                              className="items-center bg-white dark:bg-[#151F32] border border-slate-100 dark:border-slate-700 rounded-xl p-2 w-[23%] shadow-sm"
-                            >
-                              <View className={clsx("w-8 h-8 rounded-full items-center justify-center mb-1", 
-                                btn.status === 'PRESENT' && "bg-green-500",
-                                btn.status === 'ABSENT' && "bg-red-500",
-                                btn.status === 'MEDICAL' && "bg-yellow-500",
-                                btn.status === 'CANCELLED' && "bg-slate-500",
-                              )}>
-                                <btn.icon size={16} className={btn.color} strokeWidth={2.5} color={"white"}/>
-                              </View>
-                              <Text className={clsx("text-[9px] font-bold uppercase", btn.color)}>
-                                {btn.label}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      </View>
-                    ) : (
-                      // Case 2: HISTORY (Past Record)
-                      <View className="flex-row items-center justify-between">
-                        <View>
-                            <Text className="text-base font-bold text-slate-800 dark:text-white">
-                              {title}
-                            </Text>
-                            <View className="flex-row items-center mt-1">
-                              <Text className="text-xs text-slate-500 dark:text-slate-400 mr-2">{dateString}</Text>
+                    {/* --- PARENT HEADER --- */}
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-1">
+                          <Text className="text-base font-bold text-slate-800 dark:text-white mb-0.5">
+                            {title}
+                          </Text>
+                          <View className="flex-row items-center mt-1 mb-2">
+                            <Text className="text-xs text-slate-500 dark:text-slate-400 mr-2">{dateString} • {timeString} ({hours} hr{hours>1 ? 's':''}) </Text>
+                            
+                            {/* Uniform Status label (Only shown if uniform past record) */}
+                            {!isUnmarked && isUniform && overallType !== 'MIXED' && (
                               <View className="flex-row items-center">
                                   <View className={clsx("w-1.5 h-1.5 rounded-full mr-1", 
-                                    item.type === 'PRESENT' ? "bg-green-500" : 
-                                    item.type === 'ABSENT' ? "bg-red-500" : "bg-slate-400"
+                                    overallType === 'PRESENT' ? "bg-green-500" : 
+                                    overallType === 'ABSENT' ? "bg-red-500" : "bg-slate-400"
                                   )} />
-                                  <Text className={clsx("text-xs font-semibold capitalize", getStatusColor(item.type))}>
-                                    {item.type.toLowerCase()}
+                                  <Text className={clsx("text-xs font-semibold capitalize", getStatusColor(overallType))}>
+                                    {overallType.toLowerCase()}
                                   </Text>
                               </View>
+                            )}
+                          </View>
+                      </View>
+                      
+                      {/* Expansion & Edit Actions */}
+                      <View className="flex-row items-center gap-x-2">
+                        {/* Expand Button for Unmarked/Uniform Groups (Mixed groups auto-expand) */}
+                        {group.length > 1 && overallType !== 'MIXED' && (
+                          <TouchableOpacity 
+                            onPress={() => toggleTimelineExpand(groupIndex)}
+                            className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"
+                          >
+                            {isTimelineExpanded ? <ChevronUp size={16} color={iconColor} /> : <ChevronDown size={16} color={iconColor} />}
+                          </TouchableOpacity>
+                        )}
+
+                        {/* Edit Button for any past group (uniform or mixed) */}
+                        {!isUnmarked && (
+                          <TouchableOpacity onPress={() => handleEditGroupPress(group)} className="p-2">
+                              <Pencil size={16} color={iconColor}/>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* --- MAIN UNMARKED CONTROLS (BULK) --- */}
+                    {isUnmarked && !isTimelineExpanded && (
+                      <View className="flex-row justify-between mt-1">
+                        {[
+                          { label: 'PRESENT', icon: Check, status: 'PRESENT', color: 'text-green-500' },
+                          { label: 'ABSENT', icon: X, status: 'ABSENT', color: 'text-red-500' },
+                          { label: 'MEDICAL', icon: Activity, status: 'MEDICAL', color: 'text-yellow-500' },
+                          { label: 'CANCEL', icon: Ban, status: 'CANCELLED', color: 'text-slate-400' },
+                        ].map((btn) => (
+                          <TouchableOpacity 
+                            key={btn.status}
+                            onPress={() => handleCreateAttendanceBulk(group, btn.status)}
+                            disabled={isCreatePending}
+                            className="items-center bg-white dark:bg-[#151F32] border border-slate-100 dark:border-slate-700 rounded-xl p-2 w-[23%] shadow-sm"
+                          >
+                            <View className={clsx("w-8 h-8 rounded-full items-center justify-center mb-1", 
+                              btn.status === 'PRESENT' && "bg-green-500",
+                              btn.status === 'ABSENT' && "bg-red-500",
+                              btn.status === 'MEDICAL' && "bg-yellow-500",
+                              btn.status === 'CANCELLED' && "bg-slate-500",
+                            )}>
+                              <btn.icon size={16} className={btn.color} strokeWidth={2.5} color={"white"}/>
                             </View>
-                        </View>
-                        
-                        <TouchableOpacity 
-                            onPress={() => handleEditPress(item)}
-                            className="p-2 text-black dark:text-white"
-                        >
-                            <Pencil size={16} color={iconColor}/>
-                        </TouchableOpacity>
+                            <Text className={clsx("text-[9px] font-bold uppercase", btn.color)}>{btn.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* --- SUB-TIMELINE (For Mixed or Expanded Views) --- */}
+                    {isTimelineExpanded && (
+                      <View className="mt-2 pl-3 border-l-2 border-slate-100 dark:border-slate-800 gap-y-3">
+                        {group.map((child, childIndex) => {
+                           const childUnmarked = child.type === 'UNMARKED';
+                           return (
+                             <View key={childIndex} className="bg-slate-50 dark:bg-[#151F32] p-3 rounded-2xl flex-row items-center justify-between">
+                                <View className="flex-row items-center">
+                                  {getStatusDot(child.type)}
+                                  <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-3">
+                                    {child.timeSlot.split('_')[1]}
+                                  </Text>
+                                </View>
+
+                                {/* Partial Unmarked Marking Logic */}
+                                {childUnmarked ? (
+                                  <View className="flex-row gap-x-1">
+                                    {['PRESENT', 'ABSENT', 'MEDICAL', 'CANCELLED'].map((stat) => (
+                                      <TouchableOpacity 
+                                        key={stat}
+                                        onPress={() => handleCreateAttendanceSingle(child, stat)}
+                                        className={clsx(
+                                          "w-8 h-8 rounded-lg items-center justify-center border mx-1",
+                                          stat === 'PRESENT' ? 'bg-green-100 border-green-500 dark:bg-green-900/30 dark:border-green-700' :
+                                          stat === 'ABSENT' ? 'bg-red-100 border-red-500 dark:bg-red-900/30 dark:border-red-700' :
+                                          stat === 'MEDICAL' ? 'bg-yellow-100 border-yellow-500 dark:bg-yellow-900/30 dark:border-yellow-700' :
+                                          /* Styling for CANCELLED */
+                                          'bg-slate-100 border-slate-500 dark:bg-slate-900/30 dark:border-slate-700' 
+                                        )}
+                                      >
+                                        {stat === 'PRESENT' && <Check size={14} color={colorScheme==='dark'?'#4ade80':'#22c55e'} />}
+                                        {stat === 'ABSENT' && <X size={14} color={colorScheme==='dark'?'#f87171':'#ef4444'} />}
+                                        {stat === 'MEDICAL' && <Activity size={14} color={colorScheme==='dark'?'#facc15':'#eab308'} />}
+                                        {stat === 'CANCELLED' && <Ban size={14} color={colorScheme==='dark'?'#94a3b8':'#64748b'} />}
+                                      </TouchableOpacity>
+                                    ))}
+                                  </View>
+                                ) : (
+                                  <View className="flex-row items-center">
+                                    <Text className={clsx("text-xs font-bold mr-3", getStatusColor(child.type))}>
+                                      {child.type}
+                                    </Text>
+                                  </View>
+                                )}
+                             </View>
+                           )
+                        })}
                       </View>
                     )}
                   </View>
@@ -523,26 +652,27 @@ export default function SubjectDetailsPage() {
             })}
           </View>
         )}
-
       </ScrollView>
 
-      {/* --- Action Modal (For Editing) --- */}
+      {/* --- Group Actions Modal (For Editing) --- */}
       <AttendanceEditModal 
         visible={modalVisible} 
         onClose={() => setModalVisible(false)}
-        onSelect={handleUpdateStatus}
-        currentStatus={selectedItem?.type}
+        selectedGroup={selectedGroup}
+        onUpdateBulk={handleUpdateStatusBulk}
+        onUpdateSingle={handleUpdateStatusSingle}
         isLoading={updateMutation.isPending}
       />
 
-      {/* --- Filter Modal (For Semester Selection) --- */}
+      {/* --- Filter Modal --- */}
       <SemesterFilterModal 
         visible={semesterModalVisible}
         onClose={() => setSemesterModalVisible(false)}
-        onSelect={(sem) => setSemester(sem)}
+        onSelect={(sem: number) => setSemester(sem)}
         semesters={semesters}
         currentSemester={semester}
       />
     </SafeAreaView>
   );
 }
+
