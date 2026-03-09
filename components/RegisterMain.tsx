@@ -34,7 +34,8 @@ export default function RegisterMain() {
     onChangeText, 
     isPassword = false, 
     isVisible = false, 
-    onToggleVisibility 
+    onToggleVisibility,
+    autoFocus = false
   }: any) => (
     <View className="mb-4">
       <Text className="text-[#111318] dark:text-white text-sm font-semibold mb-2">{label}</Text>
@@ -47,6 +48,7 @@ export default function RegisterMain() {
           secureTextEntry={isPassword ? !isVisible : false}
           placeholder={`Enter ${label.toLowerCase()}`}
           placeholderTextColor="#616f89"
+          autoFocus={autoFocus}
         />
         
         {/* 3. The Toggle Icon Button */}
@@ -68,7 +70,10 @@ export default function RegisterMain() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View className="flex-row items-center px-4 py-4">
           <TouchableOpacity onPress={() => router.back()} className="p-2">
             <ChevronLeft color="#111318" size={28} />
@@ -86,10 +91,10 @@ export default function RegisterMain() {
           </TouchableOpacity>
         </View>
 
-        <View className="px-4">
+        <View className="px-4 pb-[320px]">
           <View className="flex-row gap-x-4">
             <View className="flex-1">
-              <InputField label="First Name" value={form.firstName} onChangeText={(t: string) => setForm({...form, firstName: t})} />
+              <InputField label="First Name" value={form.firstName} onChangeText={(t: string) => setForm({...form, firstName: t})} autoFocus={true}/>
             </View>
             <View className="flex-1">
               <InputField label="Last Name" value={form.lastName} onChangeText={(t: string) => setForm({...form, lastName: t})} />

@@ -189,6 +189,7 @@ export default function CreateSubjectPage() {
                   onChangeText={setSubjectCode}
                   autoCapitalize="characters"
                   placeholderTextColor={placeholderColor}
+                  autoFocus={true}
                 />
                 {isSearching && (
                   <View className="absolute right-4 top-4">

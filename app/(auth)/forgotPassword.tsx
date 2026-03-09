@@ -26,7 +26,8 @@ interface InputFieldProps {
   iconName: keyof typeof MaterialIcons.glyphMap;
   keyboardType?: 'default' | 'email-address' | 'numeric';
   maxLength?: number;
-  editable?: boolean;
+  editable?: boolean; 
+  autoFocus?: boolean;
 }
 
 const InputField = ({
@@ -38,6 +39,7 @@ const InputField = ({
   keyboardType = 'default',
   maxLength,
   editable = true,
+  autoFocus = false
 }: InputFieldProps) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -59,6 +61,7 @@ const InputField = ({
           keyboardType={keyboardType}
           maxLength={maxLength}
           editable={editable}
+          autoFocus={autoFocus}
         />
       </View>
     </View>
@@ -93,7 +96,6 @@ const PasswordInput = ({ label, placeholder, value, onChangeText, iconName }: Pa
           value={value}
           onChangeText={onChangeText}
           autoCapitalize="none"
-          autoFocus={placeholder === "Enter your registered ID"}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-1">
           <MaterialIcons
@@ -190,6 +192,7 @@ export default function ForgotPasswordScreen() {
               onChangeText={setInstituteId}
               iconName="email"
               editable={step === 'EMAIL'}
+              autoFocus={true}
             />
 
             {/* Step 2: OTP Input (Visible after getting OTP) */}

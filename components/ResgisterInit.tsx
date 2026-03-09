@@ -85,7 +85,10 @@ export default function RegisterInit() {
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
           
           {/* Header */}
           <View className="flex-row items-center px-4 py-4">
@@ -142,6 +145,7 @@ export default function RegisterInit() {
                 }`}
                 value={instituteId}
                 onChangeText={setInstituteId}
+                autoFocus={true}
               />
             </View>
 
