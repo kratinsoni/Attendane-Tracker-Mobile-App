@@ -35,7 +35,6 @@ export default function EventCreateScreen() {
   const [showTypeMenu, setShowTypeMenu] = useState(false);
 
   const handleDateChange = (event: any, selectedDate: any) => {
-    // Android automatically closes the picker, iOS needs manual handling
     if (Platform.OS === "android") {
       setShowDatePicker(false);
     }
@@ -51,11 +50,21 @@ export default function EventCreateScreen() {
     }
 
     try {
+      // NEW LINE: Create a copy of the date state to modify
+      const dateToSend = new Date(date);
+      
+      // NEW LINE: Set time to 12:00 PM (Noon) local time.
+      // Setting it to the middle of the day prevents late-night (11:57 PM) 
+      // or early-morning timestamps from rolling over to incorrect dates 
+      // when converted to UTC for the backend.
+      dateToSend.setHours(12, 0, 0, 0);
+
       await addEvent({
         name,
         location,
         type,
-        date: date.toISOString(), // Convert to ISO string for the backend
+        // MODIFIED LINE: Send the normalized noon date to backend
+        date: dateToSend.toISOString(), 
         description,
       });
 
@@ -68,22 +77,25 @@ export default function EventCreateScreen() {
 
   return (
     <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+      
       {/* Top App Bar */}
-      <View className="flex-row items-center p-4 pb-2 justify-between bg-zinc-50/80 dark:bg-zinc-950/80 border-b border-zinc-200 dark:border-zinc-800">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="h-12 w-12 items-center justify-center rounded-full hover:bg-sky-500/10"
-        >
-          <MaterialIcons
-            name="arrow-back"
-            size={24}
-            color="#0f172a"
-            className="dark:text-zinc-100"
-          />
-        </TouchableOpacity>
-        <Text className="text-zinc-900 dark:text-zinc-100 text-lg font-bold flex-1 text-center pr-12">
-          Add New Event
-        </Text>
+      <View className="flex-row items-center justify-between px-4 mt-12 mb-6">
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MaterialIcons
+              name="arrow-back"
+              size={28}
+              color="#0f172a"
+              className="dark:text-zinc-100"
+            />
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-slate-900 dark:text-white">
+            Add New Event
+          </Text>
+        </View>
       </View>
 
       <ScrollView
@@ -177,11 +189,12 @@ export default function EventCreateScreen() {
             value={date}
             mode="date"
             display={Platform.OS === "ios" ? "inline" : "default"}
+            minimumDate={new Date()} 
             onChange={handleDateChange}
           />
         )}
 
-        {/* iOS needs a "Done" button for the picker if not using inline. 'inline' is generally better for modern iOS. */}
+        {/* iOS Done button */}
         {Platform.OS === "ios" && showDatePicker && (
           <TouchableOpacity
             onPress={() => setShowDatePicker(false)}

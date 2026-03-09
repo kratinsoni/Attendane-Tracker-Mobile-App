@@ -4,13 +4,14 @@ import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   Modal,
+  Platform,
   SectionList,
   StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
+  Vibration,
   View,
   useColorScheme,
 } from "react-native";
@@ -19,8 +20,9 @@ import { EmptyState } from "../components/EmptyState";
 import { EventCard } from "../components/EventCard";
 import { useEvents } from "../hooks/useEvents";
 import { AppEvent, EventType } from "../types/event";
+import { ChevronLeft, User } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
-// Helper to create grouping headers like "Today, Oct 24"
 const formatDateGroup = (isoString: string) => {
   const date = new Date(isoString);
   const today = new Date();
@@ -38,37 +40,31 @@ const formatDateGroup = (isoString: string) => {
 
   if (isToday) return `Today, ${formattedDate}`;
   if (isTomorrow) return `Tomorrow, ${formattedDate}`;
-  return formattedDate; // e.g., "Oct 26"
+  return formattedDate;
 };
 
-// Available event types based on your payload
 const EVENT_TYPES = ["All", "Exam", "Assignment", "Test", "Other"];
 
 export const EventsScreen = () => {
   const { data } = useMe();
   const { data: events, isLoading, isError } = useEvents();
   
-  // Theme hook for items that don't support Tailwind classes directly (like Icon colors)
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  // States for filtering
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<EventType | "All">("All");
   const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
 
-  // Process data: Sort -> Search Filter -> Type Filter -> Group
   const sectionedEvents = useMemo(() => {
     if (!events || events.length === 0) return [];
 
-    // 1. ALWAYS sort all events chronologically first (earliest date first)
     const sortedEvents = [...events].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
     let eventsToDisplay = sortedEvents;
 
-    // 2. Filter by Search Query
     if (searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase();
       eventsToDisplay = eventsToDisplay.filter(
@@ -79,14 +75,12 @@ export const EventsScreen = () => {
       );
     }
 
-    // 3. Filter by Event Type
     if (selectedType !== "All") {
       eventsToDisplay = eventsToDisplay.filter(
         (event) => event.type === selectedType,
       );
     }
 
-    // 4. Group the processed events by date for the SectionList
     return eventsToDisplay.reduce(
       (acc, event) => {
         const groupTitle = formatDateGroup(event.date);
@@ -103,106 +97,96 @@ export const EventsScreen = () => {
     );
   }, [events, searchQuery, selectedType]);
 
+  const handleBack = () => {
+    if (Platform.OS === "android") Vibration.vibrate(20);
+    else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.back();
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+    <SafeAreaView className="flex-1 bg-[#F8FAFC] dark:bg-background-dark">
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
-      {/* Header */}
-      <View className="px-5 pt-4 pb-6">
-        <View className="flex-row items-center justify-between mb-4">
-          <TouchableOpacity
-            className="flex h-10 w-10 items-center justify-center rounded-full"
-            onPress={() => router.back()}
-          >
-            <MaterialIcons 
-              name="arrow-back" 
-              size={24} 
-              color={isDark ? "#F8FAFC" : "#111318"} 
-            />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-slate-900 dark:text-white">
-            Events
-          </Text>
-          <TouchableOpacity
-            className="relative"
-            onPress={() => router.push("/profile/profile")}
-          >
-            <Image
-              source={{
-                uri: `https://picsum.photos/seed/${data?._id}/400/200`,
-              }}
-              className="w-12 h-12 rounded-full border-2 border-primary"
-            />
-            <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full" />
+      <View className="px-5 pt-2 pb-2">
+        {/* Header matching the photo */}
+        <View className="flex-row items-center justify-between mb-6 mt-2">
+          <View className="flex-row items-center gap-4">
+            <TouchableOpacity onPress={handleBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <ChevronLeft size={28} color="#135bec" />
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold text-slate-900 dark:text-white">
+              Events
+            </Text>
+          </View>
+          <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
+
+            <User size={24} color="#135bec" onPress={() => {
+
+              if (Platform.OS === "android") {
+
+                // Forces the motor to spin up and stop in exactly 20 milliseconds.
+
+                // This creates a sharp "tick" rather than a soft buzz.
+
+                Vibration.vibrate(20);
+
+              } else {
+
+                // iOS handles impacts much better natively, so stick to Expo here
+
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+              }
+
+              router.push("/profile/profile")}}/>
           </TouchableOpacity>
         </View>
 
-        {/* Search & Filters */}
-        <View className="flex-col gap-4">
+        {/* Large Search Bar */}
+        <View className="mb-4 shadow-sm">
           <View className="relative w-full justify-center">
             <MaterialIcons
               name="search"
-              size={18}
+              size={22}
               color={isDark ? "#64748B" : "#94A3B8"}
-              style={{ position: "absolute", left: 14, zIndex: 10 }}
+              style={{ position: "absolute", left: 16, zIndex: 10 }}
             />
             <TextInput
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-sm font-medium text-slate-900 dark:text-slate-100"
-              placeholder="Search events..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-base font-medium text-slate-900 dark:text-slate-100"
+              placeholder="Search by name or location"
               placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
+        </View>
 
-          <View className="flex-row items-center gap-2">
-            {/* Type Filter Dropdown Trigger */}
-            <TouchableOpacity
-              onPress={() => setIsTypeMenuOpen(true)}
-              className={`flex-row items-center gap-1 px-3 py-1.5 rounded-md border ${
-                selectedType !== "All"
-                  ? "bg-blue-100 border-blue-200 dark:bg-blue-900/40 dark:border-blue-800"
-                  : "bg-blue-50 border-transparent dark:bg-slate-800 dark:border-slate-700"
-              }`}
-            >
-              <MaterialIcons 
-                name="filter-list" 
-                size={14} 
-                color={isDark ? "#60A5FA" : "#2563EB"} 
-              />
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-blue-600 dark:text-blue-400 ml-1">
-                Type: {selectedType}
-              </Text>
-              <MaterialIcons 
-                name="expand-more" 
-                size={14} 
-                color={isDark ? "#60A5FA" : "#2563EB"} 
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity className="px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-slate-400">
-                Upcoming
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity className="px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-slate-400">
-                Past
-              </Text>
-            </TouchableOpacity>
-          </View>
+        {/* Pill-shaped Filters */}
+        <View className="flex-row items-center gap-3 mb-2">
+          <TouchableOpacity
+            onPress={() => setIsTypeMenuOpen(true)}
+            className="flex-row items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm"
+          >
+            <Text className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              {selectedType === "All" ? "Type" : selectedType}
+            </Text>
+            <MaterialIcons 
+              name="expand-more" 
+              size={18} 
+              color={isDark ? "#94A3B8" : "#64748B"} 
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Main Content Area */}
       {isLoading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={isDark ? "#60A5FA" : "#2563EB"} />
+          <ActivityIndicator size="large" color="#2563EB" />
         </View>
       ) : isError ? (
         <View className="flex-1 justify-center items-center px-5">
-          <Text className="text-red-500 dark:text-red-400 font-medium text-center">
+          <Text className="text-red-500 font-medium text-center">
             Failed to load events. Please try again later.
           </Text>
         </View>
@@ -210,21 +194,20 @@ export const EventsScreen = () => {
         <SectionList
           sections={sectionedEvents}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
           ListEmptyComponent={<EmptyState />}
           renderSectionHeader={({ section: { title } }) => (
-            <View className="flex-row items-center gap-3 mb-4 mt-2">
-              <Text className="text-[10px] font-bold tracking-widest uppercase text-gray-400 dark:text-slate-400">
+            <View className="flex-row items-center gap-3 mb-4 mt-4">
+              <Text className="text-xs font-bold tracking-wider uppercase text-slate-400">
                 {title}
               </Text>
-              <View className="h-[1px] bg-gray-100 dark:bg-slate-700 flex-1" />
             </View>
           )}
           renderItem={({ item }) => <EventCard event={item} />}
         />
       )}
 
-      {/* Type Selection Modal (Acts as Dropdown) */}
+      {/* Dropdown Menu Modal */}
       <Modal
         visible={isTypeMenuOpen}
         transparent={true}
@@ -232,22 +215,22 @@ export const EventsScreen = () => {
         onRequestClose={() => setIsTypeMenuOpen(false)}
       >
         <TouchableOpacity
-          className="flex-1 bg-black/40 dark:bg-black/60 justify-center items-center px-10"
+          className="flex-1 bg-black/50 justify-center items-center px-10"
           activeOpacity={1}
           onPress={() => setIsTypeMenuOpen(false)}
         >
-          <View className="bg-white dark:bg-slate-900 w-full rounded-2xl overflow-hidden shadow-lg">
+          <View className="bg-white dark:bg-slate-900 w-full rounded-2xl overflow-hidden shadow-xl">
             <View className="p-4 bg-slate-50 dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700">
-              <Text className="text-sm font-bold text-slate-800 dark:text-slate-200 text-center">
+              <Text className="text-base font-bold text-slate-800 dark:text-slate-200 text-center">
                 Select Event Type
               </Text>
             </View>
             {EVENT_TYPES.map((type, index) => (
               <TouchableOpacity
                 key={type}
-                className={`py-4 border-b border-gray-50 dark:border-slate-800 ${
+                className={`py-4 border-b border-gray-100 dark:border-slate-800 ${
                   selectedType === type 
-                    ? "bg-blue-50 dark:bg-blue-900/30" 
+                    ? "bg-blue-50/50 dark:bg-blue-900/20" 
                     : "bg-white dark:bg-slate-900"
                 } ${index === EVENT_TYPES.length - 1 ? "border-b-0" : ""}`}
                 onPress={() => {
@@ -258,8 +241,8 @@ export const EventsScreen = () => {
                 <Text
                   className={`text-center font-medium ${
                     selectedType === type 
-                      ? "text-blue-600 dark:text-blue-400" 
-                      : "text-slate-600 dark:text-slate-400"
+                      ? "text-[#135bec] dark:text-blue-400" 
+                      : "text-slate-600 dark:text-slate-300"
                   }`}
                 >
                   {type}
@@ -273,10 +256,10 @@ export const EventsScreen = () => {
       {/* Floating Action Button */}
       <TouchableOpacity
         activeOpacity={0.9}
-        className="absolute bottom-36 right-6 h-14 w-14 bg-blue-600 dark:bg-blue-500 rounded-full shadow-sm items-center justify-center z-30 border-2 border-white dark:border-background-dark"
+        className="absolute bottom-40 right-6 bg-blue-600 w-14 h-14 rounded-full justify-center items-center shadow-lg shadow-blue-300 dark:shadow-none z-10"
         onPress={() => router.push("/event/eventCreateScreen")}
       >
-        <MaterialIcons name="add" size={28} color="#ffffff" />
+        <MaterialIcons name="add" size={30} color="#ffffff" />
       </TouchableOpacity>
     </SafeAreaView>
   );

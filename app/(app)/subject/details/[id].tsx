@@ -24,6 +24,7 @@ import { useGetAttendanceBySubject } from '@/hooks/useGetAttendanceBySubject';
 import { useCreateAttendanceForSubjectPage } from '@/hooks/useCreateAttendance';
 import { useUpdateAttendance } from '@/hooks/useUpdateAttendance';
 import { AttendanceStatus } from '@/types/attendanceTypes';
+import { useQueryClient } from '@tanstack/react-query';
 
 // --- Types & Helpers ---
 
@@ -254,6 +255,8 @@ export default function SubjectDetailsPage() {
   const {mutate: createAttendance, isPending: isCreatePending} = useCreateAttendanceForSubjectPage({ date: new Date().toISOString() });
   const updateMutation = useUpdateAttendance();
 
+  const queryClient = useQueryClient();
+  
   // --- Flatten Data for logic & stats ---
   const flatAttendance = useMemo(() => {
     return attendanceDataGrouped?.flat() || [];
@@ -343,6 +346,11 @@ export default function SubjectDetailsPage() {
       attendanceId: item._id,
       type: newStatus,
       subjectId: id,
+    }, {
+      onSuccess: () => {
+        setModalVisible(false)
+        queryClient.invalidateQueries({ queryKey: ["attendanceStats"]})
+      }
     });
     // Let user stay in modal to edit others if expanded
   };

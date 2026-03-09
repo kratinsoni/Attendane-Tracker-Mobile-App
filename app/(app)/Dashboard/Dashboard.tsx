@@ -1,6 +1,5 @@
 import {
-  useGetLeastAttendance,
-  useGetTopAttendance,
+  useGetAttendanceStats,
   useGetUpcomingClasses,
 } from "@/hooks/useDashboardAttendanceStat";
 import { useEvents } from "@/hooks/useEvents";
@@ -26,12 +25,11 @@ import { Contact, Headphones, User } from "lucide-react-native";
 // 1. Setup Icons for NativeWind
 const Icon = ({ name, size = 24, color, className }: any) => (
   <MaterialIcons name={name} size={size} color={color} className={className} />
-);
+);  
 
 export default function Dashboard() {
   const { data } = useMe();
-  const { data: topAttendance } = useGetTopAttendance();
-  const { data: leastAttendance } = useGetLeastAttendance();
+  const { data :attendstats = {} } = useGetAttendanceStats();
   const { data: upcomingClasses } = useGetUpcomingClasses();
   const { data: allEvents } = useEvents();
 
@@ -172,7 +170,7 @@ export default function Dashboard() {
                   // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
-                router.push("/contactUs/contactPage")
+                // router.push("/contactUs/contactPage")
               }} />
             </TouchableOpacity>
             <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
@@ -203,7 +201,7 @@ export default function Dashboard() {
             </View>
 
             <View className="gap-3">
-              {topAttendance?.map((item: any, index: any) => {
+              {attendstats?.topAttended?.map((item: any, index: any) => {
                 const barOpacity =
                   index === 0
                     ? "bg-primary"
@@ -237,7 +235,7 @@ export default function Dashboard() {
                 );
               })}
 
-              {topAttendance?.length === 0 && (
+              {attendstats?.topAttended?.length === 0 && (
                 <Text className="text-slate-400 text-center py-2">
                   No attendance data available
                 </Text>
@@ -255,7 +253,7 @@ export default function Dashboard() {
             </View>
 
             <View className="gap-3">
-              {leastAttendance?.map((item: any, index: any) => {
+              {attendstats?.leastAttended?.map((item: any, index: any) => {
                 const isLowest = index === 0;
                 const barColor = isLowest
                   ? "bg-red-400"
@@ -288,7 +286,7 @@ export default function Dashboard() {
                 );
               })}
 
-              {leastAttendance?.length === 0 && (
+              {attendstats?.leastAttended?.length === 0 && (
                 <Text className="text-slate-400 text-center py-2">
                   No attendance data available
                 </Text>

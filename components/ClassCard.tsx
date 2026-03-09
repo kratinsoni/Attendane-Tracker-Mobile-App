@@ -231,6 +231,7 @@ export const ClassCard = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendanceStats"]})
     },
     onError: (error) => {
       console.error("Failed to update attendance:", error);
@@ -276,6 +277,7 @@ export const ClassCard = ({
           );
         },
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["attendanceStats"]})
           // Optional: You can trigger a background refetch here if your
           // useCreateAttendance hook doesn't already do it.
           // queryClient.invalidateQueries({ queryKey: ["attendance"] });

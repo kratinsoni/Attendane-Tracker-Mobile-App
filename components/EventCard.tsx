@@ -66,9 +66,6 @@ export const EventCard = ({ event }: EventCardProps) => {
               {event.type}
             </Text>
           </View>
-          <Text className="text-xs text-zinc-500 dark:text-zinc-400">
-            {formatTime(event.date)}
-          </Text>
         </View>
         <TouchableOpacity>
           <MaterialIcons 

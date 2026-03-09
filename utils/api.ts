@@ -296,12 +296,8 @@ export const subjectApi = {
 };
 
 export const dashboardApi = {
-  getTopAttendance: async (api: AxiosInstance) => {
-    const res = await api.get("/dashboard/stat/most-attended");
-    return res.data.data;
-  },
-  getLeastAttendance: async (api: AxiosInstance) => {
-    const res = await api.get("/dashboard/stat/least-attended");
+  getAttendanceStats: async (api: AxiosInstance) => {
+    const res = await api.get("/dashboard/stats/attendance");
     return res.data.data;
   },
   getUpcomingClasses: async (api: AxiosInstance) => {
