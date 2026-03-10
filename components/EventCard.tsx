@@ -2,6 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View, useColorScheme, Platform } from "react-native";
+import Toast from "react-native-toast-message";
 import { AppEvent, EventType } from "../types/event";
 import { scheduleEventReminders, cancelReminders } from "../utils/notificationHelper";
 import { useToggleReminders, useEditEvent, useDeleteEvent } from "../hooks/useEvents"; 
@@ -83,57 +84,79 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
         await cancelReminders(scheduledNotifIds);
         await toggleRemindersMutation({ eventId: event._id, notificationIds: [] }); 
         setScheduledNotifIds([]);
+        
+        // Success Toast for turning OFF
+        Toast.show({
+          type: 'success',
+          text1: 'Reminders Disabled 🔕',
+          text2: 'You will no longer receive notifications for this event.',
+        });
       } else {
         const newIds = await scheduleEventReminders(event);
         if (newIds.length > 0) {
           await toggleRemindersMutation({ eventId: event._id, notificationIds: newIds });
           setScheduledNotifIds(newIds);
+          
+          // Success Toast for turning ON
+          Toast.show({
+            type: 'success',
+            text1: 'Reminders Enabled 🔔',
+            text2: 'You will be notified before this event begins.',
+          });
         } else {
-          Alert.alert("Notice", "This event is too soon or in the past for reminders.");
+          Toast.show({
+            type: 'info',
+            text1: 'Cannot Set Reminder',
+            text2: 'This event is too soon or in the past.',
+          });
         }
       }
     } catch (error) {
-      Alert.alert("Error", "Could not update reminders. Please try again.");
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Could not update reminders. Please try again.',
+      });
       console.error(error);
     }
   };
 
   const handleSave = async () => {
     if (!editData.name.trim()) {
-      Alert.alert("Validation", "Event name cannot be empty.");
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Event name cannot be empty.',
+      });
       return;
     }
 
     try {
       let finalNotificationIds = scheduledNotifIds;
-      
-      // Check if the date has changed
       const originalDate = new Date(event.date).getTime();
       const newDate = editData.date.getTime();
       const dateChanged = originalDate !== newDate;
 
-      // If the date changed AND reminders are currently set, reschedule them
       if (dateChanged && isReminderSet) {
-        // 1. Cancel old notifications in the OS
         await cancelReminders(scheduledNotifIds);
-        
-        // 2. Create a temporary event object to pass to the scheduler
         const tempUpdatedEvent: AppEvent = {
           ...event,
           ...editData,
           date: editData.date.toISOString(),
         };
 
-        // 3. Schedule new notifications based on the new date
         finalNotificationIds = await scheduleEventReminders(tempUpdatedEvent);
         setScheduledNotifIds(finalNotificationIds);
         
         if (finalNotificationIds.length === 0) {
-             Alert.alert("Notice", "The new date is too soon or in the past. Reminders were removed.");
+             Toast.show({
+               type: 'info',
+               text1: 'Reminders Removed',
+               text2: 'The new date is too soon or in the past.',
+             });
         }
       }
 
-      // Send the updated data AND the updated notification IDs to the backend
       await editEventMutation({
         eventId: event._id,
         updates: {
@@ -142,12 +165,24 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
           description: editData.description,
           type: editData.type,
           date: editData.date.toISOString(),
-          notificationIds: finalNotificationIds, // <--- New IDs go here
+          notificationIds: finalNotificationIds,
         },
       });
       setIsEditing(false);
+      
+      // Success Toast for Saving
+      Toast.show({
+        type: 'success',
+        text1: 'Event Updated ✨',
+        text2: 'Your changes have been saved successfully.',
+      });
+
     } catch (error) {
-      Alert.alert("Error", "Could not save event. Please try again.");
+      Toast.show({
+        type: 'error',
+        text1: 'Save Failed',
+        text2: 'Could not save event. Please try again.',
+      });
       console.error(error);
     }
   };
@@ -185,8 +220,20 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
               }
               await deleteEventMutation(event._id);
               onDelete?.(event); 
+              
+              // Success Toast for Deleting
+              Toast.show({
+                type: 'success',
+                text1: 'Event Deleted 🗑️',
+                text2: 'The event was permanently removed.',
+              });
+
             } catch (error) {
-              Alert.alert("Error", "Could not delete the event. Please try again.");
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: 'Could not delete the event. Please try again.',
+              });
               console.error(error);
             }
           },
