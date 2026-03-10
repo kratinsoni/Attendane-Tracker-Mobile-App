@@ -1,9 +1,10 @@
 import { RegisterPayload } from "@/hooks/useRegister";
 import { UserInterface } from "@/types/userTypes";
 import { getToken } from "@/utils/token";
-import axios, { AxiosInstance } from "axios";
+import axios, { Axios, AxiosInstance } from "axios";
 import { CreateSubjectPayload } from "../types/subjectTypes";
 import { CreateEventPayload } from '../types/event';
+import { RecordInterface } from "@/types/recordTypes";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -19,6 +20,8 @@ export const createApiClient = (): AxiosInstance => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      console.log(`[AXIOS] Sending ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
 
       return config;
     },
@@ -293,6 +296,30 @@ export const subjectApi = {
     const res = await api.get(`/subjects/notInTimetable/${timetableId}`);
     return res.data.data;
   },
+};
+
+export const recordApi = {
+  createRecord: async (api: AxiosInstance, data: Omit<RecordInterface, "_id">) => {
+    console.log("check");
+    const res = await api.post("/records/", data);
+    return res.data.data;
+  },
+  updateRecord: async(api: AxiosInstance, data: Omit<RecordInterface, "_id">, recordId: string) => {
+    const res = await api.patch(`/records/${recordId}`, data);
+    return res.data.data;
+  },
+  deleteRecord: async(api: AxiosInstance, recordId: string) => {
+    const res = await api.delete(`/records/${recordId}`);
+    return res.data.data;
+  },
+  getAllRecordsBySubjectAndSemester: async(
+    api: AxiosInstance,
+    subjectId: string,
+    semester: number
+  ) => {
+    const res = await api.get(`/records/subject/${subjectId}/semester/${semester}`);
+    return res.data.data;
+  }
 };
 
 export const dashboardApi = {
