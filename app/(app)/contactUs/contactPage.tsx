@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Users, Mail, AtSign, ChevronRight, ChevronLeft, Linkedin } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 // Get screen width for carousel calculations
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -128,31 +128,25 @@ const TeamMember: React.FC<TeamMemberData> = ({ name, role, handle, linkedin, em
 };
 
 // 2. Carousel Component with Infinite Looping
-const MULTIPLIER = 200; // Multiplies array to create an "infinite" scroll illusion
+const MULTIPLIER = 200; 
 const ITEM_COUNT = INITIAL_TEAM_DATA.length;
-const INITIAL_INDEX = Math.floor(MULTIPLIER / 2) * ITEM_COUNT; // Start exactly in the middle
+const INITIAL_INDEX = Math.floor(MULTIPLIER / 2) * ITEM_COUNT; 
 
 const TeamCarousel: React.FC = () => {
   const [teamData, setTeamData] = useState<LoopedTeamMember[]>([]);
   const flatListRef = useRef<FlatList<LoopedTeamMember>>(null);
   const currentIndexRef = useRef<number>(INITIAL_INDEX);
   
-  // Using ReturnType ensures it works across Node and Browser environments seamlessly
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Helper function to start or restart the auto-swipe timer
   const startAutoSwipe = (): void => {
-    // Clear any existing timer first to avoid overlapping intervals
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+    if (timerRef.current) clearInterval(timerRef.current);
 
     timerRef.current = setInterval(() => {
       if (teamData.length === 0) return;
 
       currentIndexRef.current += 1;
       
-      // Safety net: silently jump back to the center if we get dangerously close to the end
       if (currentIndexRef.current >= teamData.length - ITEM_COUNT) {
         currentIndexRef.current = INITIAL_INDEX;
         flatListRef.current?.scrollToIndex({ index: currentIndexRef.current, animated: false });
@@ -166,42 +160,51 @@ const TeamCarousel: React.FC = () => {
     }, 2000);
   };
 
-  // Generate randomized, looped data on mount
-  useEffect(() => {
-    const shuffled = [...INITIAL_TEAM_DATA].sort(() => Math.random() - 0.5);
-    const loopedData: LoopedTeamMember[] = [];
-    
-    for (let i = 0; i < MULTIPLIER; i++) {
-      shuffled.forEach((item) => {
-        loopedData.push({ ...item, uniqueId: `${item.id}-${i}` });
-      });
-    }
-    
-    setTeamData(loopedData);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      // 1. Standard Fisher-Yates shuffle (cleaner than hardcoded permutations)
+      const shuffled = [...INITIAL_TEAM_DATA];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
 
-  // Initialize auto-swipe when data is ready
+      const loopedData: LoopedTeamMember[] = [];
+      for (let i = 0; i < MULTIPLIER; i++) {
+        shuffled.forEach((item) => {
+          // Added a timestamp to the uniqueId to force FlatList to see it as "new" data on quick re-entries
+          loopedData.push({ ...item, uniqueId: `${item.id}-${i}-${Date.now()}` });
+        });
+      }
+      
+      setTeamData(loopedData);
+      currentIndexRef.current = INITIAL_INDEX;
+
+      // 2. Force the FlatList to jump to the newly randomized starting index
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({ index: INITIAL_INDEX, animated: false });
+      }, 50);
+
+      // Cleanup function
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+    }, [])
+  );
+
+  // Initialize auto-swipe when data changes
   useEffect(() => {
     if (teamData.length > 0) {
       startAutoSwipe();
     }
-
-    // Cleanup interval on unmount
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
   }, [teamData]);
 
-  // Track manual swipes
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0 && viewableItems[0].index !== null) {
       currentIndexRef.current = viewableItems[0].index;
     }
   }).current;
 
-  // Replaced `any` with `ArrayLike<LoopedTeamMember> | null | undefined` for strict typing
   const getItemLayout = (
     data: ArrayLike<LoopedTeamMember> | null | undefined, 
     index: number
@@ -233,15 +236,9 @@ const TeamCarousel: React.FC = () => {
       renderItem={({ item }) => <TeamMember {...item} />}
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-      
-      // Stop timer when user touches and starts dragging
       onScrollBeginDrag={() => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
+        if (timerRef.current) clearInterval(timerRef.current);
       }}
-      
-      // Restart timer when the manual swipe momentum finishes
       onMomentumScrollEnd={() => {
         startAutoSwipe();
       }}
