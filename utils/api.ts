@@ -300,7 +300,6 @@ export const subjectApi = {
 
 export const recordApi = {
   createRecord: async (api: AxiosInstance, data: Omit<RecordInterface, "_id">) => {
-    console.log("check");
     const res = await api.post("/records/", data);
     return res.data.data;
   },

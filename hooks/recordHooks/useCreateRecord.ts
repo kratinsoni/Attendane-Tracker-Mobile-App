@@ -10,7 +10,6 @@ export const useCreateRecord = () => {
 
   return useMutation({
     mutationFn: async (data: Omit<RecordInterface, "_id">) => {
-      console.log(data);
       return recordApi.createRecord(api, data);
     },
     onSuccess: async () => {

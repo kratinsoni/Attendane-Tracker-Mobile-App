@@ -11,6 +11,7 @@ export const useUpdateRecord = () => {
   return useMutation({
     // React Query's mutationFn only accepts a single variable, so we wrap them in an object
     mutationFn: async ({ data, recordId }: { data: Omit<RecordInterface, "_id">; recordId: string }) => {
+      return recordApi.updateRecord(api, data, recordId);
     },
     onSuccess: async () => {
       // 🔄 Invalidate 'records' cache
