@@ -48,9 +48,11 @@ export default function UpdateSubjectPage() {
   const [subjectCode, setSubjectCode] = useState('');
   const [subjectName, setSubjectName] = useState('');
   const [credits, setCredits] = useState(3);
-  const [grading, setGrading] = useState<'ABSOLUTE' | 'RELATIVE'>('ABSOLUTE');
+  const [grading, setGrading] = useState<'ABSOLUTE' | 'RELATIVE' | 'UNKNOWN'>('UNKNOWN');
   const [professors, setProfessors] = useState<string[]>([]);
   const [currentProf, setCurrentProf] = useState('');
+  const [venues, setVenues] = useState<string[]>([]);
+  const [currentVenue, setCurrentVenue] = useState('');
   const [selectedDay, setSelectedDay] = useState('Mon');
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [type, setType] = useState<'THEORY' | 'LAB' | 'OTHER'>('OTHER');
@@ -71,6 +73,7 @@ export default function UpdateSubjectPage() {
       setCredits(Number(fetchedSubject.credits) || 0);
       setGrading(fetchedSubject.grading || 'ABSOLUTE');
       setProfessors(fetchedSubject.professors || []);
+      setVenues(fetchedSubject.venues || []); // Assumes standard structured array from DB
       setSelectedSlots(fetchedSubject.slots || []);
       setType(fetchedSubject.type || 'OTHER');  
     }
@@ -116,12 +119,14 @@ export default function UpdateSubjectPage() {
   };
 
   const handleUpdate = () => {
+    if (venues.length === 0) setVenues(['Unknown']);
     const payload = {
       code: subjectCode.toUpperCase(),
       name: subjectName,
       credits,
       grading,
       professors,
+      venues: venues.length ? venues: ['Unknown'],
       slots: selectedSlots,
       type,
     };
@@ -338,17 +343,17 @@ export default function UpdateSubjectPage() {
               <View className="w-[45%]">
                 <Text className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Grading</Text>
                 <View className="flex-row bg-gray-50 dark:bg-gray-800 rounded-xl p-1 h-full items-center">
-                  {(['ABSOLUTE', 'RELATIVE'] as const).map((type) => {
-                    const isActive = grading === type;
+                  {(['ABSOLUTE', 'RELATIVE'] as const).map((gradeType) => {
+                    const isActive = grading === gradeType;
                     return (
                       <TouchableOpacity
-                        key={type}
-                        onPress={() => setGrading(type)}
+                        key={gradeType}
+                        onPress={() => grading === gradeType ? setGrading('UNKNOWN') : setGrading(gradeType)}
                         className={`flex-1 py-[13px] rounded-lg items-center ${isActive ? 'bg-white dark:bg-gray-700' : 'bg-transparent'}`}
                         style={isActive ? { shadowColor: '#000', shadowOpacity: 0.1 } : {}}
                       >
-                        <Text className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}>
-                          {type}
+                        <Text className={isActive ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-400 dark:text-gray-500'}>
+                          {gradeType}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -357,8 +362,30 @@ export default function UpdateSubjectPage() {
               </View>
             </View>
 
+            {/* Subject Type */}
+            <View className="mb-6">
+              <Text className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Subject Type</Text>
+              <View className="flex-row bg-gray-50 dark:bg-gray-800 rounded-xl p-1 h-14 items-center">
+                {(['THEORY', 'LAB', 'OTHER'] as const).map((subjectType) => {
+                  const isActive = type === subjectType;
+                  return (
+                    <TouchableOpacity
+                      key={subjectType}
+                      onPress={() => setType(subjectType)}
+                      className={`flex-1 py-[13px] rounded-lg items-center ${isActive ? 'bg-white dark:bg-gray-700' : 'bg-transparent'}`}
+                      style={isActive ? { shadowColor: '#000', shadowOpacity: 0.1 } : {}}
+                    >
+                      <Text className={isActive ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-400 dark:text-gray-500'}>
+                        {subjectType}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             {/* Professors */}
-            <View className="mt-8 mb-6">
+            <View className="mt-2 mb-6">
               <Text className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Professors</Text>
               <View className="flex-row items-center bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl px-4 mb-4">
                 <TextInput
@@ -370,8 +397,8 @@ export default function UpdateSubjectPage() {
                 />
                 <TouchableOpacity 
                   onPress={() => {
-                    if(currentProf) {
-                      setProfessors([...professors, currentProf]);
+                    if (currentProf && !professors.includes(currentProf.trim())) {
+                      setProfessors([...professors, currentProf.trim()]);
                       setCurrentProf('');
                     }
                   }}
@@ -385,6 +412,40 @@ export default function UpdateSubjectPage() {
                 <View key={index} className="flex-row items-center justify-between border border-gray-100 dark:border-gray-700 rounded-xl p-3 mb-2">
                   <Text className="text-gray-700 dark:text-gray-200 font-medium">{prof}</Text>
                   <TouchableOpacity onPress={() => setProfessors(professors.filter((_, i) => i !== index))}>
+                    <Ionicons name="close" size={20} color={isDark ? '#9ca3af' : '#9ca3af'} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+
+            {/* Venues */}
+            <View className="mb-6">
+              <Text className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Venues</Text>
+              <View className="flex-row items-center bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl px-4 mb-4">
+                <TextInput
+                  className="flex-1 py-4 text-base text-gray-900 dark:text-white"
+                  placeholder="Add Venue..."
+                  value={currentVenue}
+                  onChangeText={setCurrentVenue}
+                  placeholderTextColor={placeholderColor}
+                />
+                <TouchableOpacity
+                  onPress={() => {
+                    if (currentVenue && !venues.includes(currentVenue.trim())) {
+                      setVenues([...venues, currentVenue.trim()]);
+                      setCurrentVenue('');
+                    }
+                  }}
+                  className="bg-blue-600 dark:bg-blue-500 rounded-lg p-2"
+                >
+                  <Ionicons name="add" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
+
+              {venues.map((venue, index) => (
+                <View key={index} className="flex-row items-center justify-between border border-gray-100 dark:border-gray-700 rounded-xl p-3 mb-2">
+                  <Text className="text-gray-700 dark:text-gray-200 font-medium">{venue}</Text>
+                  <TouchableOpacity onPress={() => setVenues(venues.filter((_, i) => i !== index))}>
                     <Ionicons name="close" size={20} color={isDark ? '#9ca3af' : '#9ca3af'} />
                   </TouchableOpacity>
                 </View>

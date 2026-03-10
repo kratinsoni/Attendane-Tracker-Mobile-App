@@ -8,8 +8,9 @@ export interface SubjectInterface {
   totalClasses: number;
   classesAttended: number;
   slots: string[];
-  grading: "ABSOLUTE" | "RELATIVE";
+  grading: "ABSOLUTE" | "RELATIVE" | "UNKNOWN";
   owner: string;
+  venues: string[];
   createdAt: string;
   updatedAt: string;
 }

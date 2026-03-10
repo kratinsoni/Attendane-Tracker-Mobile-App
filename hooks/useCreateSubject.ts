@@ -11,6 +11,7 @@ export const useCreateSubject = () => {
   return useMutation({
     mutationFn: async (data: CreateSubjectPayload) => {
       // Pass both the axios instance and the form data
+      console.log(data);
       return subjectApi.createSubject(api, data);
     },
     onSuccess: async (data) => {

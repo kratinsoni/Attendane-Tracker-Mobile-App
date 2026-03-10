@@ -274,6 +274,7 @@ export default function SubjectDetailsPage() {
     const validRecords = flatAttendance.filter((r: any) => (r.type !== AttendanceStatus.CANCELLED && r.type !== AttendanceStatus.UNMARKED));
     const attended = validRecords.filter((r: any) => r.type === AttendanceStatus.PRESENT || r.type === AttendanceStatus.MEDICAL)?.length;
     const total = validRecords?.length;
+    console.log(validRecords, total);
     
     return {
       attended,
@@ -415,15 +416,15 @@ export default function SubjectDetailsPage() {
           <View className="flex-row mb-6">
             <View className="mr-8">
               <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">GRADING</Text>
-              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">Relative</Text>
+              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">{subject?.grading}</Text>
             </View>
             <View className="mr-8">
               <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">CREDITS</Text>
               <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">{subject?.credits || 4}</Text>
             </View>
-            <View>
+            <View className="flex-1">
               <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">VENUE</Text>
-              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200">{subject?.venue || "NR212"}</Text>
+              <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex-wrap">{subject?.venues.join(', ')}</Text>
             </View>
           </View>
 

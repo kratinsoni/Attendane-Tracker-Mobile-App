@@ -29,7 +29,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="details"
-          options={{ title: "Details", headerShown: false }}
+          options={{ title: "Overview", headerShown: false }}
         />
       </Tabs>
   );
