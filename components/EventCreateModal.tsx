@@ -1,0 +1,265 @@
+import { useAddEvent } from "@/hooks/useAddEvent";
+import { MaterialIcons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  KeyboardAvoidingView,
+} from "react-native";
+
+const EVENT_TYPES = ["Exam", "Assignment", "Test", "Other"];
+
+interface EventCreateModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) => {
+  const { mutateAsync: addEvent, isPending } = useAddEvent();
+
+  // Form State
+  const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
+  const [type, setType] = useState("");
+  const [description, setDescription] = useState("");
+
+  // Date & Time State
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  // Dropdown State
+  const [showTypeMenu, setShowTypeMenu] = useState(false);
+
+  const resetForm = () => {
+    setName("");
+    setLocation("");
+    setType("");
+    setDescription("");
+    setDate(new Date());
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleDateChange = (event: any, selectedDate: any) => {
+    if (Platform.OS === "android") setShowDatePicker(false);
+    if (selectedDate) {
+      setDate((prevDate) => {
+        const newDate = new Date(prevDate);
+        newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+        return newDate;
+      });
+    }
+  };
+
+  const handleTimeChange = (event: any, selectedTime: any) => {
+    if (Platform.OS === "android") setShowTimePicker(false);
+    if (selectedTime) {
+      setDate((prevDate) => {
+        const newDate = new Date(prevDate);
+        newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+        return newDate;
+      });
+    }
+  };
+
+  const handleCreateEvent = async () => {
+    if (!name || !location || !type) {
+      Alert.alert("Error", "Please fill out all required fields.");
+      return;
+    }
+
+    try {
+      await addEvent({
+        name,
+        location,
+        type,
+        date: date.toISOString(), // Send the exact ISO string
+        description,
+      });
+
+      Alert.alert("Success", "Event created successfully!");
+      handleClose();
+    } catch (error) {
+      Alert.alert("Error", "Failed to create event. Please try again.");
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={handleClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-zinc-50 dark:bg-zinc-950 rounded-t-3xl max-h-[90%] overflow-hidden shadow-2xl">
+            {/* Top Bar with Close Button */}
+            <View className="flex-row items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
+              <Text className="text-xl font-bold text-slate-900 dark:text-white">Add New Event</Text>
+              <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <MaterialIcons name="close" size={24} color="#64748B" className="dark:text-zinc-400" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+              {/* Event Name */}
+              <View className="mb-4">
+                <Text className="text-zinc-700 dark:text-zinc-300 text-sm font-semibold mb-2 ml-1">Event Name</Text>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="e.g. Advanced Calculus Lab"
+                  placeholderTextColor="#94a3b8"
+                  className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 h-14 px-4 text-base text-zinc-900 dark:text-zinc-100 focus:border-sky-500"
+                />
+              </View>
+
+              {/* Location */}
+              <View className="mb-4">
+                <Text className="text-zinc-700 dark:text-zinc-300 text-sm font-semibold mb-2 ml-1">Location</Text>
+                <View className="relative justify-center">
+                  <MaterialIcons name="location-on" size={20} color="#94a3b8" style={{ position: "absolute", left: 16, zIndex: 10 }} />
+                  <TextInput
+                    value={location}
+                    onChangeText={setLocation}
+                    placeholder="Enter location or room number"
+                    placeholderTextColor="#94a3b8"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 h-14 pl-12 pr-4 text-base text-zinc-900 dark:text-zinc-100 focus:border-sky-500"
+                  />
+                </View>
+              </View>
+
+              {/* Type Dropdown */}
+              <View className="mb-4">
+                <Text className="text-zinc-700 dark:text-zinc-300 text-sm font-semibold mb-2 ml-1">Type</Text>
+                <TouchableOpacity onPress={() => setShowTypeMenu(true)} activeOpacity={0.7} className="w-full flex-row items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 h-14 px-4">
+                  <Text className={`text-base ${type ? "text-zinc-900 dark:text-zinc-100" : "text-slate-400"}`}>
+                    {type || "Select event type"}
+                  </Text>
+                  <MaterialIcons name="expand-more" size={24} color="#94a3b8" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Date & Time Row */}
+              <View className="flex-row gap-4 mb-4">
+                {/* Date Picker Button */}
+                <View className="flex-1">
+                  <Text className="text-zinc-700 dark:text-zinc-300 text-sm font-semibold mb-2 ml-1">Date</Text>
+                  <TouchableOpacity onPress={() => setShowDatePicker(true)} activeOpacity={0.7} className="w-full flex-row items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                    <View className="flex-1 justify-center h-14 px-4">
+                      <Text className="text-base text-zinc-900 dark:text-zinc-100">
+                        {date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                      </Text>
+                    </View>
+                    <View className="h-14 w-12 items-center justify-center bg-sky-500/10 border-l border-zinc-200 dark:border-zinc-800">
+                      <MaterialIcons name="calendar-today" size={20} color="#0ea5e9" />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Time Picker Button */}
+                <View className="flex-1">
+                  <Text className="text-zinc-700 dark:text-zinc-300 text-sm font-semibold mb-2 ml-1">Time</Text>
+                  <TouchableOpacity onPress={() => setShowTimePicker(true)} activeOpacity={0.7} className="w-full flex-row items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+                    <View className="flex-1 justify-center h-14 px-4">
+                      <Text className="text-base text-zinc-900 dark:text-zinc-100">
+                        {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </View>
+                    <View className="h-14 w-12 items-center justify-center bg-sky-500/10 border-l border-zinc-200 dark:border-zinc-800">
+                      <MaterialIcons name="access-time" size={20} color="#0ea5e9" />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Render Native Date/Time Pickers */}
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "default"}
+                  minimumDate={new Date()}
+                  onChange={handleDateChange}
+                />
+              )}
+              {Platform.OS === "ios" && showDatePicker && (
+                <TouchableOpacity onPress={() => setShowDatePicker(false)} className="mb-4 items-end pr-2">
+                  <Text className="text-sky-500 font-bold">Done</Text>
+                </TouchableOpacity>
+              )}
+
+              {showTimePicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="time"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={handleTimeChange}
+                />
+              )}
+              {Platform.OS === "ios" && showTimePicker && (
+                <TouchableOpacity onPress={() => setShowTimePicker(false)} className="mb-4 items-end pr-2">
+                  <Text className="text-sky-500 font-bold">Done</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Description */}
+              <View className="mb-8 mt-2">
+                <Text className="text-zinc-700 dark:text-zinc-300 text-sm font-semibold mb-2 ml-1">
+                  Description <Text className="text-zinc-400 font-normal">(Optional)</Text>
+                </Text>
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Add additional details about the event..."
+                  placeholderTextColor="#94a3b8"
+                  multiline
+                  textAlignVertical="top"
+                  className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 min-h-[140px] p-4 text-base text-zinc-900 dark:text-zinc-100 focus:border-sky-500"
+                />
+              </View>
+
+              {/* Action Button */}
+              <TouchableOpacity onPress={handleCreateEvent} disabled={isPending} activeOpacity={0.8} className={`w-full h-14 rounded-xl flex-row items-center justify-center gap-2 shadow-lg shadow-sky-500/20 ${isPending ? "bg-sky-400" : "bg-sky-500"}`}>
+                {isPending ? <ActivityIndicator color="#ffffff" /> : (
+                  <>
+                    <MaterialIcons name="add-circle-outline" size={24} color="#ffffff" />
+                    <Text className="text-white text-base font-bold">Create Event</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* Type Selection Nested Modal */}
+      <Modal visible={showTypeMenu} transparent={true} animationType="fade" onRequestClose={() => setShowTypeMenu(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }} activeOpacity={1} onPress={() => setShowTypeMenu(false)} className="justify-center items-center p-6">
+          <View className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden p-2">
+            <Text className="text-zinc-500 dark:text-zinc-400 font-semibold px-4 py-3 text-sm border-b border-zinc-100 dark:border-zinc-800">Select Event Type</Text>
+            {EVENT_TYPES.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                activeOpacity={0.7}
+                onPress={() => { setType(item); setShowTypeMenu(false); }}
+                className={`flex-row items-center justify-between p-4 rounded-xl ${type === item ? "bg-sky-500/10" : ""}`}
+              >
+                <Text className={`text-base ${type === item ? "text-sky-600 dark:text-sky-400 font-bold" : "text-zinc-800 dark:text-zinc-200"}`}>{item}</Text>
+                {type === item && <MaterialIcons name="check" size={20} color="#0ea5e9" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </Modal>
+  );
+};

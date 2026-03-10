@@ -10,6 +10,7 @@ export interface AppEvent {
   owner: string; // Assuming the populated User is not returned, just the ID
   createdAt: string; // From timestamps: true
   updatedAt: string; // From timestamps: true
+  notificationIds?: string[];
 }
 
 export interface CreateEventPayload {

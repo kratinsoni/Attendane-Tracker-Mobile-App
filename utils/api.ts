@@ -3,7 +3,7 @@ import { UserInterface } from "@/types/userTypes";
 import { getToken } from "@/utils/token";
 import axios, { AxiosInstance } from "axios";
 import { CreateSubjectPayload } from "../types/subjectTypes";
-import { CreateEventPayload } from '../types/event';
+import { AppEvent, CreateEventPayload } from '../types/event';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -333,5 +333,18 @@ export const eventApi = {
   createEvent: async (api: AxiosInstance, payload: CreateEventPayload) => {
     const res = await api.post("/events", payload);
     return res.data.data;
+  },
+  toggleEventReminders: async (api: AxiosInstance, eventId: string, notificationIds: string[]) => {
+    const res = await api.patch(`/events/${eventId}/reminders`, { notificationIds });
+    return res.data; 
+  },
+  updateEvent: async (api: AxiosInstance, eventId: string, updates: Partial<AppEvent>) => {
+    const res = await api.patch(`/events/${eventId}`, updates);
+    
+    return res.data.data; 
+  },
+  deleteEvent: async (api: AxiosInstance, eventId: string) => {
+    const res = await api.delete(`/events/${eventId}`);
+    return res.data;
   },
 };
