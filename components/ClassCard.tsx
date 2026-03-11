@@ -1,43 +1,40 @@
+import { ClassSession } from "@/hooks/scheduleLogic";
+import { useCreateAttendance } from "@/hooks/useCreateAttendance";
+import { api, attendanceApi } from "@/utils/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
 import {
   Activity,
   Ban,
   CheckCircle,
   ChevronDown,
   ChevronUp,
+  Clock,
   Code,
   MapPin,
-  MoreVertical,
-  XCircle,
   Pencil,
-  Clock,
+  XCircle
 } from "lucide-react-native";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  Platform,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  Platform,
   Vibration,
+  View,
   useColorScheme,
-  StyleSheet,
-  Alert,
 } from "react-native";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withSequence,
-  withDelay,
   Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
 } from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
-import { StatusButton } from "./StatusButton";
-import { ClassSession } from "@/hooks/scheduleLogic";
-import { useCreateAttendance } from "@/hooks/useCreateAttendance";
 import { AttendanceEditPopup, AttendanceStatus } from "./AttendanceEditPopup";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { attendanceApi, api } from "@/utils/api";
+import { StatusButton } from "./StatusButton";
 
 // --- JUICY PHYSICS-BASED ANIMATION OVERLAY ---
 const StatusAnimation = ({
@@ -209,7 +206,9 @@ export const ClassCard = ({
 }) => {
   const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
   const [pendingAnimation, setPendingAnimation] = useState<string | null>(null);
-  const [optimisticStatuses, setOptimisticStatuses] = useState<Record<string, string>>({});
+  const [optimisticStatuses, setOptimisticStatuses] = useState<
+    Record<string, string>
+  >({});
   const [isExpanded, setIsExpanded] = useState(false);
   const queryClient = useQueryClient();
 
@@ -217,10 +216,10 @@ export const ClassCard = ({
 
   // Clear optimistic statuses when real API data updates
   useEffect(() => {
-    setOptimisticStatuses(prev => {
+    setOptimisticStatuses((prev) => {
       const updated = { ...prev };
       let changed = false;
-      (item.slotDetails || []).forEach(slot => {
+      (item.slotDetails || []).forEach((slot) => {
         if (slot.status !== "UNMARKED" && updated[slot.timeSlot]) {
           delete updated[slot.timeSlot];
           changed = true;
@@ -231,16 +230,18 @@ export const ClassCard = ({
   }, [item.slotDetails]);
 
   const editMutation = useMutation({
-    mutationFn: async ({ attendanceId, type }: { attendanceId: string; type: string }) => {
-      return await attendanceApi.editAttendanceStatus(
-        api,
-        attendanceId,
-        type,
-      );
+    mutationFn: async ({
+      attendanceId,
+      type,
+    }: {
+      attendanceId: string;
+      type: string;
+    }) => {
+      return await attendanceApi.editAttendanceStatus(api, attendanceId, type);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["attendanceStats"]})
+      queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
     },
     onError: (error) => {
       console.error("Failed to update attendance:", error);
@@ -259,19 +260,19 @@ export const ClassCard = ({
 
     // 1. Optimistically update all unmarked slots
     const newOptimistic: Record<string, string> = {};
-    item.slotDetails.forEach(slot => {
+    item.slotDetails.forEach((slot) => {
       if (getSlotDisplayStatus(slot) === "UNMARKED") {
         newOptimistic[slot.timeSlot] = status;
       }
     });
-    setOptimisticStatuses(prev => ({ ...prev, ...newOptimistic }));
+    setOptimisticStatuses((prev) => ({ ...prev, ...newOptimistic }));
 
     // 2. Trigger animation
     setPendingAnimation(status);
 
     // 3. Fire one API call per unmarked slot (hourly basis)
     console.log(item);
-    item.slotDetails.forEach(slot => {
+    item.slotDetails.forEach((slot) => {
       if (slot.status === "UNMARKED") {
         mutate(
           {
@@ -285,14 +286,16 @@ export const ClassCard = ({
           {
             onError: (error) => {
               console.error("Attendance mutation failed:", error);
-              setOptimisticStatuses(prev => {
+              setOptimisticStatuses((prev) => {
                 const updated = { ...prev };
                 delete updated[slot.timeSlot];
                 return updated;
               });
               Alert.alert(
                 "Update Failed",
-                "Couldn't save attendance for " + slot.timeSlot + ". Please try again.",
+                "Couldn't save attendance for " +
+                  slot.timeSlot +
+                  ". Please try again.",
               );
             },
             onSuccess: () => {
@@ -353,9 +356,13 @@ export const ClassCard = ({
 
   // Per-slot display status helpers
   const isMultiSlot = item.slotDetails.length > 1;
-  const slotDisplayStatuses = item.slotDetails.map(s => getSlotDisplayStatus(s));
-  const allUnmarked = slotDisplayStatuses.every(s => s === "UNMARKED");
-  const allSameStatus = !allUnmarked && slotDisplayStatuses.every(s => s === slotDisplayStatuses[0]);
+  const slotDisplayStatuses = item.slotDetails.map((s) =>
+    getSlotDisplayStatus(s),
+  );
+  const allUnmarked = slotDisplayStatuses.every((s) => s === "UNMARKED");
+  const allSameStatus =
+    !allUnmarked &&
+    slotDisplayStatuses.every((s) => s === slotDisplayStatuses[0]);
   const displayStatus = allUnmarked ? "UNMARKED" : slotDisplayStatuses[0];
   const statusColors = getStatusColors(displayStatus);
 
@@ -371,9 +378,9 @@ export const ClassCard = ({
             {item.time}
           </Text>
         </View>
-        {/* <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          {item.slots.length > 1 ? "DOUBLE SLOT" : "SINGLE SLOT"}
-        </Text> */}
+        <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          {item.slotDetails.length === 1 ? "1 SLOT" : `${item.slotDetails.length} SLOTS`}
+        </Text>
       </View>
 
       <View
@@ -405,25 +412,20 @@ export const ClassCard = ({
             </View>
           </View>
 
-          <TouchableOpacity
-            className="p-2 -mr-2"
-            onPress={() => {
-              if (allUnmarked) return;
-              if (isMultiSlot) {
-                setIsExpanded(!isExpanded);
-              } else {
-                setEditingSlotIndex(0);
-              }
-            }}
-          >
-            {editingSlotIndex !== null ? (
+          {!allUnmarked && !(isMultiSlot && isExpanded) && (
+            <TouchableOpacity
+              className="p-2 -mr-2"
+              onPress={() => {
+                if (isMultiSlot) {
+                  setIsExpanded(true);
+                } else {
+                  setEditingSlotIndex(0);
+                }
+              }}
+            >
               <Pencil size={20} color="#94a3b8" />
-            ) : isMultiSlot && isExpanded ? (
-              <ChevronUp size={20} color="#94a3b8" />
-            ) : (
-              <ChevronDown size={20} color="#cbd5e1" />
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
         </View>
 
         {allUnmarked ? (
@@ -463,19 +465,28 @@ export const ClassCard = ({
           </View>
         ) : isMultiSlot ? (
           <View className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/50">
-            <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)} className="flex-row items-center justify-between">
+            <TouchableOpacity
+              onPress={() => setIsExpanded(!isExpanded)}
+              className="flex-row items-center justify-between"
+            >
               <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                {item.slotDetails.length} Slots Logged
+                Attendance Logged
               </Text>
               <View className="flex-row items-center gap-2">
                 {!isExpanded && allSameStatus && (
                   <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
-                    <Text className={`text-xs font-black uppercase ${statusColors.text}`}>
+                    <Text
+                      className={`text-xs font-black uppercase ${statusColors.text}`}
+                    >
                       {displayStatus}
                     </Text>
                   </View>
                 )}
-                {isExpanded ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
+                {isExpanded ? (
+                  <ChevronUp size={16} color="#94a3b8" />
+                ) : (
+                  <ChevronDown size={16} color="#94a3b8" />
+                )}
               </View>
             </TouchableOpacity>
             {isExpanded && (
@@ -484,17 +495,27 @@ export const ClassCard = ({
                   const slotStatus = getSlotDisplayStatus(slot);
                   const colors = getStatusColors(slotStatus);
                   return (
-                    <View key={slot.timeSlot} className="flex-row items-center justify-between py-2 px-1">
+                    <View
+                      key={slot.timeSlot}
+                      className="flex-row items-center justify-between py-2 px-1"
+                    >
                       <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
                         {slot.timeSlot}
                       </Text>
                       <View className="flex-row items-center gap-2">
-                        <View className={`px-2 py-0.5 rounded-full ${colors.bg}`}>
-                          <Text className={`text-[10px] font-bold uppercase ${colors.text}`}>
+                        <View
+                          className={`px-2 py-0.5 rounded-full ${colors.bg}`}
+                        >
+                          <Text
+                            className={`text-[10px] font-bold uppercase ${colors.text}`}
+                          >
                             {slotStatus}
                           </Text>
                         </View>
-                        <TouchableOpacity onPress={() => setEditingSlotIndex(index)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <TouchableOpacity
+                          onPress={() => setEditingSlotIndex(index)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
                           <Pencil size={14} color="#94a3b8" />
                         </TouchableOpacity>
                       </View>
@@ -533,7 +554,9 @@ export const ClassCard = ({
           scheduleId={item.subjectId}
           timetableId={timetableId}
           selectedDate={selectedDate}
-          initialStatus={mapStatusForEditor(getSlotDisplayStatus(item.slotDetails[editingSlotIndex]))}
+          initialStatus={mapStatusForEditor(
+            getSlotDisplayStatus(item.slotDetails[editingSlotIndex]),
+          )}
           onClose={() => setEditingSlotIndex(null)}
           onSave={async (statusName) => {
             if (Platform.OS === "android") {
@@ -543,7 +566,10 @@ export const ClassCard = ({
             }
             const slot = item.slotDetails[editingSlotIndex!];
             if (slot?.attendanceId) {
-              await editMutation.mutateAsync({ attendanceId: slot.attendanceId, type: statusName });
+              await editMutation.mutateAsync({
+                attendanceId: slot.attendanceId,
+                type: statusName,
+              });
             }
           }}
           onSuccessCallback={(status) => {
