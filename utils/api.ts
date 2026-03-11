@@ -373,4 +373,10 @@ export const eventApi = {
     const res = await api.delete(`/events/${eventId}`);
     return res.data;
   },
+  deleteMultipleEvents: async (api: AxiosInstance, ids: string[]) => {
+    const res = await api.delete('/events', {
+      data: { ids } 
+    });
+    return res.data;
+  },
 };

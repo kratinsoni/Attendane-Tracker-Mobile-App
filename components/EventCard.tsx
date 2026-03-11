@@ -11,6 +11,10 @@ interface EventCardProps {
   event: AppEvent;
   onEdit?: (event: AppEvent) => void;
   onDelete?: (event: AppEvent) => void;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 const EVENT_TYPES: EventType[] = ["Exam", "Assignment", "Test", "Other"];
@@ -30,7 +34,7 @@ const getBadgeStyles = (type: EventType) => {
   }
 };
 
-export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
+export const EventCard = ({ event, onEdit, onDelete, isSelectionMode, isSelected, onPress, onLongPress }: EventCardProps) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const badgeStyles = getBadgeStyles(event.type);
@@ -85,7 +89,6 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
         await toggleRemindersMutation({ eventId: event._id, notificationIds: [] }); 
         setScheduledNotifIds([]);
         
-        // Success Toast for turning OFF
         Toast.show({
           type: 'success',
           text1: 'Reminders Disabled 🔕',
@@ -97,7 +100,6 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
           await toggleRemindersMutation({ eventId: event._id, notificationIds: newIds });
           setScheduledNotifIds(newIds);
           
-          // Success Toast for turning ON
           Toast.show({
             type: 'success',
             text1: 'Reminders Enabled 🔔',
@@ -170,7 +172,6 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
       });
       setIsEditing(false);
       
-      // Success Toast for Saving
       Toast.show({
         type: 'success',
         text1: 'Event Updated ✨',
@@ -221,7 +222,6 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
               await deleteEventMutation(event._id);
               onDelete?.(event); 
               
-              // Success Toast for Deleting
               Toast.show({
                 type: 'success',
                 text1: 'Event Deleted 🗑️',
@@ -246,71 +246,87 @@ export const EventCard = ({ event, onEdit, onDelete }: EventCardProps) => {
 
   return (
     <TouchableOpacity
-      activeOpacity={isEditing ? 1 : 0.8}
-      className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700"
+      activeOpacity={isEditing || isSelectionMode ? 1 : 0.8}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      className={`bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border ${isSelected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-gray-100 dark:border-slate-700'}`}
     >
       <View className="flex-row justify-between items-start ">
-        {isEditing ? (
-          <TouchableOpacity 
-            onPress={cycleEventType}
-            className={`flex-row items-center px-2 py-0.5 rounded border ${getBadgeStyles(editData.type).view}`}
-          >
-            <Text className={`text-[10px] font-bold uppercase tracking-wide mr-1 ${getBadgeStyles(editData.type).text}`}>
-              {editData.type}
-            </Text>
-            <MaterialIcons name="loop" size={12} color={getBadgeStyles(editData.type).text.split(' ')[0].replace('text-', '')} />
-          </TouchableOpacity>
-        ) : (
-          <View className={`px-2 py-0.5 rounded border ${badgeStyles.view}`}>
-            <Text className={`text-[10px] font-bold uppercase tracking-wide ${badgeStyles.text}`}>
-              {event.type}
-            </Text>
-          </View>
-        )}
-
-        <View className="flex-row items-center gap-3">
+        <View className="flex-row items-center gap-2">
+          {/* Display Checkbox during selection mode */}
+          {isSelectionMode && (
+            <MaterialIcons
+              name={isSelected ? "check-circle" : "radio-button-unchecked"}
+              size={22}
+              color={isSelected ? "#3B82F6" : (isDark ? "#64748B" : "#94A3B8")}
+            />
+          )}
+          
           {isEditing ? (
-            <>
-              <TouchableOpacity onPress={handleCancel} hitSlop={8} disabled={isSaving}>
-                <MaterialIcons name="close" size={22} color="#EF4444" />
-              </TouchableOpacity>
-              
-              <TouchableOpacity onPress={handleSave} hitSlop={8} disabled={isSaving}>
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#10B981" />
-                ) : (
-                  <MaterialIcons name="check" size={22} color="#10B981" />
-                )}
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity 
+              onPress={cycleEventType}
+              className={`flex-row items-center px-2 py-0.5 rounded border ${getBadgeStyles(editData.type).view}`}
+            >
+              <Text className={`text-[10px] font-bold uppercase tracking-wide mr-1 ${getBadgeStyles(editData.type).text}`}>
+                {editData.type}
+              </Text>
+              <MaterialIcons name="loop" size={12} color={getBadgeStyles(editData.type).text.split(' ')[0].replace('text-', '')} />
+            </TouchableOpacity>
           ) : (
-            <>
-              <TouchableOpacity onPress={handleToggleReminder} hitSlop={8} disabled={isRemindersPending}>
-                {isRemindersPending ? (
-                  <ActivityIndicator size="small" color={isDark ? "#94A3B8" : "#64748B"} />
-                ) : (
-                  <MaterialIcons
-                    name={isReminderSet ? "notifications-active" : "notifications-none"}
-                    size={20}
-                    color={isReminderSet ? "#F59E0B" : (isDark ? "#94A3B8" : "#64748B")} 
-                  />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => setIsEditing(true)} hitSlop={8}>
-                <MaterialIcons name="edit" size={18} color={isDark ? "#94A3B8" : "#64748B"} />
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={handleDelete} hitSlop={8} disabled={isDeleting}>
-                {isDeleting ? (
-                  <ActivityIndicator size="small" color="#EF4444" />
-                ) : (
-                  <MaterialIcons name="delete-outline" size={20} color="#EF4444" />
-                )}
-              </TouchableOpacity>
-            </>
+            <View className={`px-2 py-0.5 rounded border ${badgeStyles.view}`}>
+              <Text className={`text-[10px] font-bold uppercase tracking-wide ${badgeStyles.text}`}>
+                {event.type}
+              </Text>
+            </View>
           )}
         </View>
+
+        {/* Hide actions entirely when in multi-select mode */}
+        {!isSelectionMode && (
+          <View className="flex-row items-center gap-3">
+            {isEditing ? (
+              <>
+                <TouchableOpacity onPress={handleCancel} hitSlop={8} disabled={isSaving}>
+                  <MaterialIcons name="close" size={22} color="#EF4444" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity onPress={handleSave} hitSlop={8} disabled={isSaving}>
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#10B981" />
+                  ) : (
+                    <MaterialIcons name="check" size={22} color="#10B981" />
+                  )}
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity onPress={handleToggleReminder} hitSlop={8} disabled={isRemindersPending}>
+                  {isRemindersPending ? (
+                    <ActivityIndicator size="small" color={isDark ? "#94A3B8" : "#64748B"} />
+                  ) : (
+                    <MaterialIcons
+                      name={isReminderSet ? "notifications-active" : "notifications-none"}
+                      size={20}
+                      color={isReminderSet ? "#F59E0B" : (isDark ? "#94A3B8" : "#64748B")} 
+                    />
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => setIsEditing(true)} hitSlop={8}>
+                  <MaterialIcons name="edit" size={18} color={isDark ? "#94A3B8" : "#64748B"} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleDelete} hitSlop={8} disabled={isDeleting}>
+                  {isDeleting ? (
+                    <ActivityIndicator size="small" color="#EF4444" />
+                  ) : (
+                    <MaterialIcons name="delete-outline" size={20} color="#EF4444" />
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
       </View>
 
       {isEditing ? (

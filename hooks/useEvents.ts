@@ -51,3 +51,15 @@ export const useDeleteEvent = () => {
     },
   });
 };
+
+export const useDeleteMultipleEvents = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ ids }: { ids: string[] }) => eventApi.deleteMultipleEvents(api, ids),
+    onSuccess: () => {
+      // Refetch events so the deleted items are removed from the list globally
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
+};

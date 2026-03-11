@@ -11,7 +11,7 @@ export const EmptyState = () => {
       <Text className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
         No Events Found
       </Text>
-      <Text className="text-center text-sm text-muted-foreground-light dark:text-muted-foreground-dark">
+      <Text className="text-center text-sm text-muted-foreground-light dark:text-muted-foreground-dark dark:text-gray-100">
         It looks like there are no events scheduled. Tap the + button to create a new event.
       </Text>
     </View>

@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Platform,
   SectionList,
@@ -18,10 +19,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../components/EmptyState";
 import { EventCard } from "../components/EventCard";
-import { useEvents } from "../hooks/useEvents";
+// Make sure to export useDeleteMultipleEvents from your hooks file
+import { useEvents, useDeleteMultipleEvents } from "../hooks/useEvents"; 
 import { AppEvent, EventType } from "../types/event";
 import { ChevronLeft, User } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
+import Toast from "react-native-toast-message";
 
 import { EventCreateModal } from "./EventCreateModal";
 
@@ -47,6 +50,8 @@ const EVENT_TYPES = ["All", "Exam", "Assignment", "Test", "Other"];
 export const EventsScreen = () => {
   const { data } = useMe();
   const { data: events, isLoading, isError } = useEvents();
+  // Assume you have created this hook to handle multiple deletions
+  const { mutateAsync: deleteMultipleEventsMutation, isPending: isDeletingMultiple } = useDeleteMultipleEvents();
   
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -54,8 +59,13 @@ export const EventsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<EventType | "All">("All");
   const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
-  
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+
+  // Multi-select State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+
+  const hasEvents = events && events.length > 0;
 
   const sectionedEvents = useMemo(() => {
     if (!events || events.length === 0) return [];
@@ -94,28 +104,99 @@ export const EventsScreen = () => {
     router.back();
   };
 
+  const handleSelectAll = () => {
+    if (!events) return;
+    if (selectedEventIds.length === events.length) {
+      setSelectedEventIds([]); // Deselect all if everything is currently selected
+    } else {
+      setSelectedEventIds(events.map(e => e._id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedEventIds.length === 0) return;
+    Alert.alert(
+      "Delete Multiple Events",
+      `Are you sure you want to delete ${selectedEventIds.length} event(s)? This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Pass the array of IDs to your API route
+              await deleteMultipleEventsMutation({ ids: selectedEventIds });
+              setIsSelectionMode(false);
+              setSelectedEventIds([]);
+              
+              Toast.show({
+                type: 'success',
+                text1: 'Events Deleted 🗑️',
+                text2: 'The selected events were permanently removed.',
+              });
+            } catch (error) {
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: 'Could not delete the selected events. Please try again.',
+              });
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#F8FAFC] dark:bg-background-dark">
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
       <View className="px-5 pt-2 pb-0">
-        <View className="flex-row items-center justify-between mb-4 mt-2">
-          <View className="flex-row items-center gap-4">
-            <TouchableOpacity onPress={handleBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <ChevronLeft size={28} color="#135bec" />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-slate-900 dark:text-white">
-              Events
-            </Text>
+        
+        {/* Dynamic Header */}
+        {isSelectionMode ? (
+          <View className="flex-row items-center justify-between mb-4 mt-2 bg-blue-50 dark:bg-slate-800 p-2 rounded-xl">
+            <View className="flex-row items-center gap-4">
+              <TouchableOpacity onPress={() => { setIsSelectionMode(false); setSelectedEventIds([]); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <MaterialIcons name="close" size={26} color={isDark ? "#E2E8F0" : "#1E293B"} />
+              </TouchableOpacity>
+              <Text className="text-xl font-bold text-slate-900 dark:text-white">
+                {selectedEventIds.length} Selected
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-4">
+              <TouchableOpacity onPress={handleSelectAll} className="mr-2">
+                <Text className="text-[#135bec] dark:text-blue-400 font-semibold text-base">Select All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDeleteSelected} disabled={selectedEventIds.length === 0 || isDeletingMultiple}>
+                {isDeletingMultiple ? (
+                   <ActivityIndicator size="small" color="#EF4444" />
+                ) : (
+                   <MaterialIcons name="delete" size={26} color={selectedEventIds.length === 0 ? "gray" : "#EF4444"} />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-          <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-            <User size={24} color="#135bec" onPress={() => {
-              if (Platform.OS === "android") Vibration.vibrate(20);
-              else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              router.push("/profile/profile");
-            }}/>
-          </TouchableOpacity>
-        </View>
+        ) : (
+          <View className="flex-row items-center justify-between mb-4 mt-2">
+            <View className="flex-row items-center gap-4">
+              <TouchableOpacity onPress={handleBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <ChevronLeft size={28} color="#135bec" />
+              </TouchableOpacity>
+              <Text className="text-2xl font-bold text-slate-900 dark:text-white">
+                Events
+              </Text>
+            </View>
+            <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
+              <User size={24} color="#135bec" onPress={() => {
+                if (Platform.OS === "android") Vibration.vibrate(20);
+                else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push("/profile/profile");
+              }}/>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View className="mb-3 shadow-sm">
           <View className="relative w-full justify-center">
@@ -132,8 +213,9 @@ export const EventsScreen = () => {
 
         <View className="flex-row items-center gap-3 mb-0">
           <TouchableOpacity
-            onPress={() => setIsTypeMenuOpen(true)}
-            className="flex-row items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm"
+            onPress={() => hasEvents && setIsTypeMenuOpen(true)}
+            disabled={!hasEvents}
+            className={`flex-row items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm ${!hasEvents ? "opacity-50" : ""}`}
           >
             <Text className="text-sm font-medium text-slate-700 dark:text-slate-200">
               {selectedType === "All" ? "Type" : selectedType}
@@ -167,7 +249,33 @@ export const EventsScreen = () => {
               </Text>
             </View>
           )}
-          renderItem={({ item }) => <EventCard event={item} />}
+          renderItem={({ item }) => (
+            <EventCard 
+              event={item} 
+              isSelectionMode={isSelectionMode}
+              isSelected={selectedEventIds.includes(item._id)}
+              // 1. Long press enters selection mode
+              onLongPress={() => {
+                if (!isSelectionMode) {
+                  setIsSelectionMode(true);
+                  setSelectedEventIds([item._id]);
+                  if (Platform.OS === "android") Vibration.vibrate(40); // Slightly stronger vibration for long press
+                  else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                }
+              }}
+
+              // 2. Regular press handles toggling (only if already in selection mode)
+              onPress={() => {
+                if (isSelectionMode) {
+                  setSelectedEventIds(prev => 
+                    prev.includes(item._id) 
+                      ? prev.filter(id => id !== item._id) 
+                      : [...prev, item._id]
+                  );
+                }
+              }}
+            />
+          )}
         />
       )}
 
@@ -201,13 +309,15 @@ export const EventsScreen = () => {
         </TouchableOpacity>
       </Modal>
 
-      <TouchableOpacity
-        activeOpacity={0.9}
-        className="absolute bottom-40 right-6 bg-blue-600 w-14 h-14 rounded-full justify-center items-center shadow-lg shadow-blue-300 dark:shadow-none z-10"
-        onPress={() => setIsCreateModalVisible(true)}
-      >
-        <MaterialIcons name="add" size={30} color="#ffffff" />
-      </TouchableOpacity>
+      {!isSelectionMode && (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          className="absolute bottom-40 right-6 bg-blue-600 w-14 h-14 rounded-full justify-center items-center shadow-lg shadow-blue-300 dark:shadow-none z-10"
+          onPress={() => setIsCreateModalVisible(true)}
+        >
+          <MaterialIcons name="add" size={30} color="#ffffff" />
+        </TouchableOpacity>
+      )}
 
       <EventCreateModal 
         visible={isCreateModalVisible} 
