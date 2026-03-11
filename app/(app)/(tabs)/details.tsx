@@ -36,6 +36,11 @@ export default function AttendanceDetails() {
   const [isSubjectsExpanded, setIsSubjectsExpanded] = useState(false);
   const [isTimetablesExpanded, setIsTimetablesExpanded] = useState(false);
 
+  // New States for Filtering
+  const [subjectFilter, setSubjectFilter] = useState<string>("ALL");
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const filterOptions = ["ALL", "THEORY", "LAB", "OTHER"];
+
   // Theme detection
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -46,6 +51,8 @@ export default function AttendanceDetails() {
     useGetAttendanceStatOfAllSubjects(selectedSem);
   const { data: timetablesData, refetch: refetchTimetables } =
     useGetAttendanceStatOfAllTimetables(selectedSem);
+
+    console.log("All subjects Data", allSubjectsData);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -62,20 +69,33 @@ export default function AttendanceDetails() {
     }
   }, [refetchSemesterOverview, refetchAllSubjects, refetchTimetables]);
 
-  // Derived Data for Subjects (Search & Slice)
+  // Derived Data for Subjects (Search, Filter & Slice)
   const filteredSubjects = useMemo(() => {
-    const data = allSubjectsData?.finalStatsArray || [];
-    if (!subjectSearchQuery) return data;
-    return data.filter(
-      (subject: any) =>
-        subject?.subjectName
-          ?.toLowerCase()
-          .includes(subjectSearchQuery.toLowerCase()) ||
-        subject?.subjectCode
-          ?.toLowerCase()
-          .includes(subjectSearchQuery.toLowerCase()),
-    );
-  }, [allSubjectsData, subjectSearchQuery]);
+    let data = allSubjectsData?.finalStatsArray || [];
+
+    // 1. Filter by Type
+    if (subjectFilter !== "ALL") {
+      data = data.filter(
+        (subject: any) =>
+          subject?.type?.toUpperCase() === subjectFilter
+      );
+    }
+
+    // 2. Filter by Search Query
+    if (subjectSearchQuery) {
+      data = data.filter(
+        (subject: any) =>
+          subject?.subjectName
+            ?.toLowerCase()
+            .includes(subjectSearchQuery.toLowerCase()) ||
+          subject?.subjectCode
+            ?.toLowerCase()
+            .includes(subjectSearchQuery.toLowerCase())
+      );
+    }
+
+    return data;
+  }, [allSubjectsData, subjectSearchQuery, subjectFilter]);
 
   const displayedSubjects = isSubjectsExpanded
     ? filteredSubjects
@@ -154,6 +174,14 @@ export default function AttendanceDetails() {
     cancelled: [20, 10, 0, 40, 10, 0, 100],
   };
 
+  const triggerHaptic = () => {
+    if (Platform.OS === "android") {
+      Vibration.vibrate(20);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <StatusBar
@@ -163,17 +191,13 @@ export default function AttendanceDetails() {
 
       {/* HEADER */}
       <View className="flex-row items-center justify-between p-4 bg-white/90 dark:bg-slate-900/90 border-b border-slate-100 dark:border-slate-800 z-50 shadow-sm">
-        <TouchableOpacity className=" rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => {
-          if (Platform.OS === "android") {
-            // Forces the motor to spin up and stop in exactly 20 milliseconds.
-            // This creates a sharp "tick" rather than a soft buzz.
-            Vibration.vibrate(20);
-          } else {
-            // iOS handles impacts much better natively, so stick to Expo here
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
-          router.back()
-        }}>
+        <TouchableOpacity 
+          className=" rounded-full hover:bg-slate-100 dark:hover:bg-slate-800" 
+          onPress={() => {
+            triggerHaptic();
+            router.back()
+          }}
+        >
           <MaterialIcons
             name="chevron-left"
             size={32}
@@ -183,17 +207,13 @@ export default function AttendanceDetails() {
         <Text className="text-xl font-bold text-slate-900 dark:text-white">
           Attendance Details
         </Text>
-        <TouchableOpacity className="p-2 rounded-full bg-green-50 dark:bg-green-900/30 hover:bg-slate-100 dark:hover:bg-slate-800" onPress={() => {
-          if (Platform.OS === "android") {
-            // Forces the motor to spin up and stop in exactly 20 milliseconds.
-            // This creates a sharp "tick" rather than a soft buzz.
-            Vibration.vibrate(20);
-          } else {
-            // iOS handles impacts much better natively, so stick to Expo here
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
-          router.push("/profile/profile")
-        }}>
+        <TouchableOpacity 
+          className="p-2 rounded-full bg-green-50 dark:bg-green-900/30 hover:bg-slate-100 dark:hover:bg-slate-800" 
+          onPress={() => {
+            triggerHaptic();
+            router.push("/profile/profile")
+          }}
+        >
           <User
             size={24}
             color="#48bb78"
@@ -223,14 +243,7 @@ export default function AttendanceDetails() {
             <TouchableOpacity
               className="flex-row items-center bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-full"
               onPress={() => {
-                if (Platform.OS === "android") {
-                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                  // This creates a sharp "tick" rather than a soft buzz.
-                  Vibration.vibrate(20);
-                } else {
-                  // iOS handles impacts much better natively, so stick to Expo here
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
+                triggerHaptic();
                 setIsSemModalVisible(true)
               }}
             >
@@ -349,14 +362,37 @@ export default function AttendanceDetails() {
         {/* ALL SUBJECTS SECTION */}
         <View className="px-5 pt-8 pb-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 mt-2">
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-2xl font-bold text-slate-900 dark:text-white">
-              All Subjects
-            </Text>
-            <TouchableOpacity className="w-8 h-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+            <View className="flex-row items-center">
+              <Text className="text-2xl font-bold text-slate-900 dark:text-white mr-2">
+                All Subjects
+              </Text>
+              {subjectFilter !== "ALL" && (
+                <View className="bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
+                  <Text className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    {subjectFilter}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <TouchableOpacity 
+              className={`w-8 h-8 items-center justify-center rounded-full ${
+                subjectFilter !== "ALL" 
+                  ? "bg-emerald-100 dark:bg-emerald-900/40" 
+                  : "bg-slate-100 dark:bg-slate-800"
+              }`}
+              onPress={() => {
+                triggerHaptic();
+                setIsFilterModalVisible(true);
+              }}
+            >
               <MaterialIcons
                 name="filter-list"
                 size={20}
-                color={isDark ? "#94a3b8" : "#475569"}
+                color={
+                  subjectFilter !== "ALL" 
+                    ? (isDark ? "#34d399" : "#059669") 
+                    : (isDark ? "#94a3b8" : "#475569")
+                }
               />
             </TouchableOpacity>
           </View>
@@ -400,15 +436,7 @@ export default function AttendanceDetails() {
               return (
                 <TouchableOpacity
                   onPress={() => {
-                    if (Platform.OS === "android") {
-                      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                      // This creates a sharp "tick" rather than a soft buzz.
-                      Vibration.vibrate(20);
-                    } else {
-                      // iOS handles impacts much better natively, so stick to Expo here
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    }
-
+                    triggerHaptic();
                     router.push(`/subject/details/${subject.subjectId}`)
                   }}
                   key={index}
@@ -431,7 +459,7 @@ export default function AttendanceDetails() {
                           {subject?.subjectName}
                         </Text>
                         <Text className="text-xs text-slate-500 dark:text-slate-400">
-                          {subject?.subjectCode}
+                          {subject?.subjectCode} {subject?.type ? `• ${subject.type}` : ''}
                         </Text>
                       </View>
                     </View>
@@ -464,11 +492,14 @@ export default function AttendanceDetails() {
               );
             })}
 
-            {/* Show empty state if search yields no results */}
+            {/* Show empty state if search/filter yields no results */}
             {displayedSubjects.length === 0 && (
-              <Text className="text-center text-slate-500 dark:text-slate-400 py-4">
-                No subjects found.
-              </Text>
+              <View className="items-center justify-center py-6">
+                <MaterialIcons name="search-off" size={48} color={isDark ? "#475569" : "#cbd5e1"} />
+                <Text className="text-center text-slate-500 dark:text-slate-400 mt-2">
+                  No subjects found.
+                </Text>
+              </View>
             )}
           </View>
 
@@ -477,14 +508,7 @@ export default function AttendanceDetails() {
             <TouchableOpacity
               className="mt-6 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl items-center border border-slate-200 dark:border-slate-700"
               onPress={() => {
-                if (Platform.OS === "android") {
-                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                  // This creates a sharp "tick" rather than a soft buzz.
-                  Vibration.vibrate(20);
-                } else {
-                  // iOS handles impacts much better natively, so stick to Expo here
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
+                triggerHaptic();
                 setIsSubjectsExpanded(!isSubjectsExpanded)
               }}
             >
@@ -503,11 +527,6 @@ export default function AttendanceDetails() {
             <Text className="text-2xl font-bold text-slate-900 dark:text-white">
               Timetable
             </Text>
-            {/* <TouchableOpacity>
-              <Text className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                Edit
-              </Text>
-            </TouchableOpacity> */}
           </View>
 
           {/* Timetable Search Bar */}
@@ -564,20 +583,12 @@ export default function AttendanceDetails() {
               return (
                 <TouchableOpacity
                   onPress={() => {
-                    if (Platform.OS === "android") {
-                      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                      // This creates a sharp "tick" rather than a soft buzz.
-                      Vibration.vibrate(20);
-                    } else {
-                      // iOS handles impacts much better natively, so stick to Expo here
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    }
+                    triggerHaptic();
                     router.push({
                       pathname: "/timetable/[id]",
                       params: { id: tt?.timetableId },
                     })
-                  }
-                  }
+                  }}
                   key={index}
                   className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm"
                 >
@@ -639,9 +650,12 @@ export default function AttendanceDetails() {
 
             {/* Show empty state if search yields no results */}
             {displayedTimetables.length === 0 && (
-              <Text className="text-center text-slate-500 dark:text-slate-400 py-4">
-                No timetables found.
-              </Text>
+              <View className="items-center justify-center py-6">
+                <MaterialIcons name="search-off" size={48} color={isDark ? "#475569" : "#cbd5e1"} />
+                <Text className="text-center text-slate-500 dark:text-slate-400 mt-2">
+                  No timetables found.
+                </Text>
+              </View>
             )}
           </View>
 
@@ -650,14 +664,7 @@ export default function AttendanceDetails() {
             <TouchableOpacity
               className="mt-6 py-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl items-center border border-slate-200 dark:border-slate-700"
               onPress={() => {
-                if (Platform.OS === "android") {
-                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                  // This creates a sharp "tick" rather than a soft buzz.
-                  Vibration.vibrate(20);
-                } else {
-                  // iOS handles impacts much better natively, so stick to Expo here
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
+                triggerHaptic();
                 setIsTimetablesExpanded(!isTimetablesExpanded)
               }}
             >
@@ -695,14 +702,7 @@ export default function AttendanceDetails() {
                 <TouchableOpacity
                   key={sem}
                   onPress={() => {
-                    if (Platform.OS === "android") {
-                      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                      // This creates a sharp "tick" rather than a soft buzz.
-                      Vibration.vibrate(20);
-                    } else {
-                      // iOS handles impacts much better natively, so stick to Expo here
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    }
+                    triggerHaptic();
                     setSelectedSem(sem);
                     setIsSemModalVisible(false);
                   }}
@@ -725,6 +725,57 @@ export default function AttendanceDetails() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* FILTER MODAL */}
+      <Modal
+        visible={isFilterModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsFilterModalVisible(false)}
+      >
+        <Pressable
+          className="flex-1 bg-black/50 dark:bg-black/70 justify-center items-center"
+          onPress={() => setIsFilterModalVisible(false)}
+        >
+          <View
+            className="bg-white dark:bg-slate-800 w-4/5 rounded-2xl p-6 shadow-xl"
+            onStartShouldSetResponder={() => true}
+          >
+            <Text className="text-xl font-bold text-slate-900 dark:text-white mb-6 text-center">
+              Filter by Type
+            </Text>
+
+            <View className="flex-row flex-wrap justify-center gap-3">
+              {filterOptions.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  onPress={() => {
+                    triggerHaptic();
+                    setSubjectFilter(option);
+                    setIsFilterModalVisible(false);
+                  }}
+                  className={`px-6 py-3 rounded-xl items-center justify-center border-2 w-[45%] ${
+                    subjectFilter === option
+                      ? "bg-emerald-500 border-emerald-500"
+                      : "bg-slate-50 dark:bg-slate-700 border-slate-100 dark:border-slate-600"
+                  }`}
+                >
+                  <Text
+                    className={`font-bold ${
+                      subjectFilter === option
+                        ? "text-white"
+                        : "text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
     </SafeAreaView>
   );
 }
