@@ -1,15 +1,20 @@
 import {
   useGetAttendanceStats,
+  useGetAttendanceStatsBySemester,
   useGetUpcomingClasses,
 } from "@/hooks/useDashboardAttendanceStat";
 import { useEvents } from "@/hooks/useEvents";
 import { useMe } from "@/hooks/useMe";
+import { scheduleClassReminders } from "@/utils/notificationHelper";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { Headphones, User } from "lucide-react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Image,
+  Modal,
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -19,22 +24,46 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
-import { Contact, Headphones, User } from "lucide-react-native";
 
 // 1. Setup Icons for NativeWind
 const Icon = ({ name, size = 24, color, className }: any) => (
   <MaterialIcons name={name} size={size} color={color} className={className} />
-);  
+);
 
 export default function Dashboard() {
   const { data } = useMe();
-  const { data :attendstats = {} } = useGetAttendanceStats();
+  const { data: defaultStats = {} } = useGetAttendanceStats();
   const { data: upcomingClasses } = useGetUpcomingClasses();
   const { data: allEvents } = useEvents();
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  // Semester selector state
+  const [selectedSemester, setSelectedSemester] = useState<number>(0);
+  const [showSemesterDropdown, setShowSemesterDropdown] = useState(false);
+
+  // Initialize semester from default stats
+  useEffect(() => {
+    if (defaultStats?.semester && selectedSemester === 0) {
+      setSelectedSemester(defaultStats.semester);
+    }
+  }, [defaultStats?.semester]);
+
+  // Fetch semester-specific stats when user picks a different semester
+  const { data: semesterStats } =
+    useGetAttendanceStatsBySemester(selectedSemester);
+
+  // Use semester-specific stats if available, otherwise fall back to default
+  const attendstats =
+    selectedSemester && semesterStats ? semesterStats : defaultStats;
+
+  // Schedule notifications for upcoming classes
+  useEffect(() => {
+    if (upcomingClasses && upcomingClasses.length > 0) {
+      scheduleClassReminders(upcomingClasses);
+    }
+  }, [upcomingClasses]);
 
   // --- New State for Schedule and Refresh ---
   const [isExpanded, setIsExpanded] = useState(false);
@@ -161,33 +190,116 @@ export default function Dashboard() {
           </View>
           <View className="flex-row gap-4">
             <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-              <Headphones size={24} color="#135bec" onPress={() => {
-                if (Platform.OS === "android") {
-                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                  // This creates a sharp "tick" rather than a soft buzz.
-                  Vibration.vibrate(20);
-                } else {
-                  // iOS handles impacts much better natively, so stick to Expo here
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
-                router.push("/contactUs/contactPage")
-              }} />
+              <Headphones
+                size={24}
+                color="#135bec"
+                onPress={() => {
+                  if (Platform.OS === "android") {
+                    // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                    // This creates a sharp "tick" rather than a soft buzz.
+                    Vibration.vibrate(20);
+                  } else {
+                    // iOS handles impacts much better natively, so stick to Expo here
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  }
+                  router.push("/contactUs/contactPage");
+                }}
+              />
             </TouchableOpacity>
             <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20">
-              <User size={24} color="#135bec" onPress={() => {
-                if (Platform.OS === "android") {
-                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                  // This creates a sharp "tick" rather than a soft buzz.
-                  Vibration.vibrate(20);
-                } else {
-                  // iOS handles impacts much better natively, so stick to Expo here
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
-                router.push("/profile/profile")
-              }} />
+              <User
+                size={24}
+                color="#135bec"
+                onPress={() => {
+                  if (Platform.OS === "android") {
+                    // Forces the motor to spin up and stop in exactly 20 milliseconds.
+                    // This creates a sharp "tick" rather than a soft buzz.
+                    Vibration.vibrate(20);
+                  } else {
+                    // iOS handles impacts much better natively, so stick to Expo here
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  }
+                  router.push("/profile/profile");
+                }}
+              />
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Semester Selector */}
+        <View className="flex-row items-center justify-between mb-4">
+          <Text className="text-lg font-bold text-slate-900 dark:text-white">
+            Attendance Stats
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowSemesterDropdown(true)}
+            className="flex-row items-center gap-1.5 bg-white dark:bg-[#151c2b] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
+          >
+            <Icon
+              name="school"
+              size={16}
+              color={isDark ? "#94A3B8" : "#64748B"}
+            />
+            <Text className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Sem {selectedSemester || "-"}
+            </Text>
+            <Icon
+              name="arrow-drop-down"
+              size={20}
+              color={isDark ? "#94A3B8" : "#64748B"}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Semester Dropdown Modal */}
+        <Modal
+          visible={showSemesterDropdown}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowSemesterDropdown(false)}
+        >
+          <Pressable
+            className="flex-1 justify-center items-center bg-black/40"
+            onPress={() => setShowSemesterDropdown(false)}
+          >
+            <Pressable className="bg-white dark:bg-[#151c2b] rounded-xl p-4 w-64 shadow-xl border border-slate-200 dark:border-slate-700">
+              <Text className="text-base font-bold text-slate-900 dark:text-white mb-3 text-center">
+                Select Semester
+              </Text>
+              <View className="flex-row flex-wrap gap-2 justify-center">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                  <TouchableOpacity
+                    key={sem}
+                    onPress={() => {
+                      if (Platform.OS === "android") {
+                        Vibration.vibrate(20);
+                      } else {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      setSelectedSemester(sem);
+                      setShowSemesterDropdown(false);
+                    }}
+                    className={`w-12 h-12 rounded-lg items-center justify-center ${
+                      selectedSemester === sem
+                        ? "bg-primary"
+                        : "bg-slate-100 dark:bg-slate-800"
+                    }`}
+                  >
+                    <Text
+                      className={`text-base font-bold ${
+                        selectedSemester === sem
+                          ? "text-white"
+                          : "text-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {sem}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         {/* Stats Grid (Top Attendance & Needs Focus) */}
         <View className="flex-col gap-4 mb-6">
@@ -231,6 +343,12 @@ export default function Dashboard() {
                         ? "bg-green-100 dark:bg-green-900/30"
                         : "bg-blue-100 dark:bg-blue-900/30"
                     }
+                    onPress={() => {
+                      if (item.subjectId) {
+                        Vibration.vibrate(20);
+                        router.push(`/subject/details/${item.subjectId}`);
+                      }
+                    }}
                   />
                 );
               })}
@@ -282,6 +400,12 @@ export default function Dashboard() {
                         ? "bg-red-100 dark:bg-red-900/30"
                         : "bg-orange-100 dark:bg-orange-900/30"
                     }
+                    onPress={() => {
+                      if (item.subjectId) {
+                        Vibration.vibrate(20);
+                        router.push(`/subject/details/${item.subjectId}`);
+                      }
+                    }}
                   />
                 );
               })}
@@ -333,7 +457,11 @@ export default function Dashboard() {
                       time={time}
                       ampm={ampm}
                       subject={item.subjectName}
-                      room={`Code: ${item.subjectCode} • ${item.credits} Credits`}
+                      room={
+                        item.subjectVenue
+                          ? `${item.subjectVenue} • ${item.subjectCode}`
+                          : `${item.subjectCode} • ${item.credits} Credits`
+                      }
                     />
                   );
                 })
@@ -368,7 +496,7 @@ export default function Dashboard() {
                   // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
-                setActiveEventTab(tab.id)
+                setActiveEventTab(tab.id);
               }}
               isDark={isDark}
             />
@@ -410,18 +538,34 @@ export default function Dashboard() {
 
 // --- Helper Components ---
 
-const StatRow = ({ label, color, score, scoreColor, scoreBg }: any) => (
-  <View className="flex-row items-center justify-between">
+const StatRow = ({
+  label,
+  color,
+  score,
+  scoreColor,
+  scoreBg,
+  onPress,
+}: any) => (
+  <TouchableOpacity
+    className="flex-row items-center justify-between"
+    onPress={onPress}
+    activeOpacity={onPress ? 0.6 : 1}
+  >
     <View className="flex-row items-center gap-3">
       <View className={`w-2 h-2 rounded-full ${color}`} />
       <Text className="text-sm font-medium text-slate-600 dark:text-slate-300">
         {label}
       </Text>
     </View>
-    <View className={`px-2 py-1 rounded-lg ${scoreBg}`}>
-      <Text className={`text-xs font-bold ${scoreColor}`}>{score}</Text>
+    <View className="flex-row items-center gap-2">
+      <View className={`px-2 py-1 rounded-lg ${scoreBg}`}>
+        <Text className={`text-xs font-bold ${scoreColor}`}>{score}</Text>
+      </View>
+      {onPress && (
+        <MaterialIcons name="chevron-right" size={16} color="#94A3B8" />
+      )}
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
 const ScheduleItem = ({ time, ampm, subject, room }: any) => (

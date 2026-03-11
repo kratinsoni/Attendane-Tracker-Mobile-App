@@ -1,10 +1,10 @@
 import { RegisterPayload } from "@/hooks/useRegister";
+import { RecordInterface } from "@/types/recordTypes";
 import { UserInterface } from "@/types/userTypes";
 import { getToken } from "@/utils/token";
-import axios, { Axios, AxiosInstance } from "axios";
+import axios, { AxiosInstance } from "axios";
+import { AppEvent, CreateEventPayload } from "../types/event";
 import { CreateSubjectPayload } from "../types/subjectTypes";
-import { RecordInterface } from "@/types/recordTypes";
-import { AppEvent, CreateEventPayload } from '../types/event';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -21,7 +21,9 @@ export const createApiClient = (): AxiosInstance => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      console.log(`[AXIOS] Sending ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
+      console.log(
+        `[AXIOS] Sending ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`,
+      );
 
       return config;
     },
@@ -87,12 +89,14 @@ export const userApi = {
     const res = await api.patch("/users/change-password", {
       currentPassword,
       newPassword,
-      confirmNewPassword
+      confirmNewPassword,
     });
     return res.data.data;
   },
   changeForgotPasswordInit: async (api: AxiosInstance, instituteId: string) => {
-    return await api.post("/users/change-forgot-password-init", { instituteId });
+    return await api.post("/users/change-forgot-password-init", {
+      instituteId,
+    });
   },
   changeForgotPassword: async (
     api: AxiosInstance,
@@ -118,11 +122,11 @@ export const userApi = {
       rollNo: string;
       graduationYear: number;
       department: string;
-    }
+    },
   ) => {
     const res = await api.patch("/users", data);
     return res.data.data;
-  }
+  },
 };
 
 export const timetableApi = {
@@ -193,7 +197,7 @@ export const timetableApi = {
     const res = await api.delete(`/timetable/delete/${timetableId}`);
     return res.data.data;
   },
-  getAllTimetablesOfUser: async(api: AxiosInstance) => {
+  getAllTimetablesOfUser: async (api: AxiosInstance) => {
     const res = await api.get(`/timetable/user`);
     return res.data.data;
   },
@@ -242,9 +246,11 @@ export const attendanceApi = {
   getAttendanceBySubject: async (
     api: AxiosInstance,
     subjectId: string,
-    semester: number
+    semester: number,
   ) => {
-    const res = await api.get(`/attendance/subject/${subjectId}/semester/${semester}`);
+    const res = await api.get(
+      `/attendance/subject/${subjectId}/semester/${semester}`,
+    );
     return res.data.data;
   },
 };
@@ -284,7 +290,7 @@ export const subjectApi = {
   updateSubject: async (
     api: AxiosInstance,
     id: string,
-    payload: Partial<CreateSubjectPayload> // Using Partial since updates might not require all fields
+    payload: Partial<CreateSubjectPayload>, // Using Partial since updates might not require all fields
   ) => {
     const res = await api.patch(`/subjects/${id}`, payload);
     return res.data.data;
@@ -299,26 +305,35 @@ export const subjectApi = {
 };
 
 export const recordApi = {
-  createRecord: async (api: AxiosInstance, data: Omit<RecordInterface, "_id">) => {
+  createRecord: async (
+    api: AxiosInstance,
+    data: Omit<RecordInterface, "_id">,
+  ) => {
     const res = await api.post("/records/", data);
     return res.data.data;
   },
-  updateRecord: async(api: AxiosInstance, data: Omit<RecordInterface, "_id">, recordId: string) => {
+  updateRecord: async (
+    api: AxiosInstance,
+    data: Omit<RecordInterface, "_id">,
+    recordId: string,
+  ) => {
     const res = await api.patch(`/records/${recordId}`, data);
     return res.data.data;
   },
-  deleteRecord: async(api: AxiosInstance, recordId: string) => {
+  deleteRecord: async (api: AxiosInstance, recordId: string) => {
     const res = await api.delete(`/records/${recordId}`);
     return res.data.data;
   },
-  getAllRecordsBySubjectAndSemester: async(
+  getAllRecordsBySubjectAndSemester: async (
     api: AxiosInstance,
     subjectId: string,
-    semester: number
+    semester: number,
   ) => {
-    const res = await api.get(`/records/subject/${subjectId}/semester/${semester}`);
+    const res = await api.get(
+      `/records/subject/${subjectId}/semester/${semester}`,
+    );
     return res.data.data;
-  }
+  },
 };
 
 export const dashboardApi = {
@@ -326,10 +341,19 @@ export const dashboardApi = {
     const res = await api.get("/dashboard/stats/attendance");
     return res.data.data;
   },
+  getAttendanceStatsBySemester: async (
+    api: AxiosInstance,
+    semester: number,
+  ) => {
+    const res = await api.post("/dashboard/stats/attendance/semester", {
+      semester,
+    });
+    return res.data.data;
+  },
   getUpcomingClasses: async (api: AxiosInstance) => {
     const res = await api.get("/dashboard/upcoming/classes");
     return res.data.data;
-  }
+  },
 };
 
 export const detailsApi = {
@@ -337,19 +361,32 @@ export const detailsApi = {
     const res = await api.get(`/details/attendance/semester/${semester}`);
     return res.data.data;
   },
-  getAttendanceStatOfAllSubjects: async (api: AxiosInstance, semester: number) => {
-    const res = await api.get(`/details/attendance/subjects/semester/${semester}`);
+  getAttendanceStatOfAllSubjects: async (
+    api: AxiosInstance,
+    semester: number,
+  ) => {
+    const res = await api.get(
+      `/details/attendance/subjects/semester/${semester}`,
+    );
     return res.data.data;
   },
-  getAttendanceStatOfAllTimetables: async (api: AxiosInstance, semester: number) => {
-    const res = await api.get(`/details/attendance/timetables/semester/${semester}`);
+  getAttendanceStatOfAllTimetables: async (
+    api: AxiosInstance,
+    semester: number,
+  ) => {
+    const res = await api.get(
+      `/details/attendance/timetables/semester/${semester}`,
+    );
     return res.data.data;
   },
-  getAttendanceStatByTimetable: async (api: AxiosInstance, timetableId: string) => {
+  getAttendanceStatByTimetable: async (
+    api: AxiosInstance,
+    timetableId: string,
+  ) => {
     const res = await api.get(`/details/attendance/timetable/${timetableId}`);
     return res.data.data;
-  }
-}
+  },
+};
 
 export const eventApi = {
   getAllEvents: async (api: AxiosInstance) => {
@@ -360,22 +397,32 @@ export const eventApi = {
     const res = await api.post("/events", payload);
     return res.data.data;
   },
-  toggleEventReminders: async (api: AxiosInstance, eventId: string, notificationIds: string[]) => {
-    const res = await api.patch(`/events/${eventId}/reminders`, { notificationIds });
-    return res.data; 
+  toggleEventReminders: async (
+    api: AxiosInstance,
+    eventId: string,
+    notificationIds: string[],
+  ) => {
+    const res = await api.patch(`/events/${eventId}/reminders`, {
+      notificationIds,
+    });
+    return res.data;
   },
-  updateEvent: async (api: AxiosInstance, eventId: string, updates: Partial<AppEvent>) => {
+  updateEvent: async (
+    api: AxiosInstance,
+    eventId: string,
+    updates: Partial<AppEvent>,
+  ) => {
     const res = await api.patch(`/events/${eventId}`, updates);
-    
-    return res.data.data; 
+
+    return res.data.data;
   },
   deleteEvent: async (api: AxiosInstance, eventId: string) => {
     const res = await api.delete(`/events/${eventId}`);
     return res.data;
   },
   deleteMultipleEvents: async (api: AxiosInstance, ids: string[]) => {
-    const res = await api.delete('/events', {
-      data: { ids } 
+    const res = await api.delete("/events", {
+      data: { ids },
     });
     return res.data;
   },
