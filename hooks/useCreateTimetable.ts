@@ -1,11 +1,11 @@
 import { api, timetableApi } from "@/utils/api";
-import { QueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { router } from "expo-router";
 import Toast from "react-native-toast-message";
 
 export const useCreateTimetable = () => {
-  const queryClient = new QueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       name,
@@ -26,7 +26,7 @@ export const useCreateTimetable = () => {
       queryClient.invalidateQueries({
         queryKey: ["userTimetables"],
       });
-      router.replace("/timetable");
+      router.replace(`/timetable/addSubjectToTimetable/${data._id}`);
     },
     onError: (error) => {
       let message = "Timetable Creation failed";
@@ -48,7 +48,7 @@ export const useCreateTimetable = () => {
 };
 
 export const useCreateTimetableByImage = () => {
-  const queryClient = new QueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: FormData) => {
       return timetableApi.createTimetableByImage(api, formData);
