@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
   KeyboardAvoidingView,
+  ToastAndroid
 } from "react-native";
 
 const EVENT_TYPES = ["Exam", "Assignment", "Test", "Other"];
@@ -63,16 +64,36 @@ export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) =>
     }
   };
 
-  const handleTimeChange = (event: any, selectedTime: any) => {
-    if (Platform.OS === "android") setShowTimePicker(false);
-    if (selectedTime) {
-      setDate((prevDate) => {
-        const newDate = new Date(prevDate);
-        newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
-        return newDate;
-      });
+ const handleTimeChange = (event: any, selectedTime: any) => {
+  // 1. Close picker immediately on Android
+  if (Platform.OS === "android") setShowTimePicker(false);
+
+  if (selectedTime) {
+    const now = new Date();
+    const newDate = new Date(date); // Use current date state
+    
+    // 2. Map the selected time to our date object
+    newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+
+    // 3. Validation: Is the selected time in the past?
+    if (newDate < now) {
+      const message = "Please select a future time";
+      
+      if (Platform.OS === "android") {
+        ToastAndroid.show(message, ToastAndroid.SHORT);
+      } else {
+        // iOS doesn't have a native Toast; Alert is the standard fallback
+        Alert.alert("Invalid Time", message);
+      }
+      
+      // Optional: Reset to current time so the state isn't "stuck" in the past
+      setDate(new Date());
+    } else {
+      // 4. Valid time: Update the state
+      setDate(newDate);
     }
-  };
+  }
+};
 
   const handleCreateEvent = async () => {
     if (!name || !location || !type) {
@@ -116,7 +137,7 @@ export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) =>
                 <TextInput
                   value={name}
                   onChangeText={setName}
-                  placeholder="e.g. Advanced Calculus Lab"
+                  placeholder="e.g. Advanced Calculus Class Test"
                   placeholderTextColor="#94a3b8"
                   className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 h-14 px-4 text-base text-zinc-900 dark:text-zinc-100 focus:border-sky-500"
                 />
@@ -203,6 +224,7 @@ export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) =>
                   mode="time"
                   display={Platform.OS === "ios" ? "spinner" : "default"}
                   onChange={handleTimeChange}
+                  minimumDate={new Date()}
                 />
               )}
               {Platform.OS === "ios" && showTimePicker && (

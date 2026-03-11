@@ -35,7 +35,7 @@ export const scheduleEventReminders = async (
   // 2. Calculate times
   // Because event.date is now a full ISO string, this grabs the exact millisecond!
   const eventTime = new Date(event.date).getTime();
-  const intervalsInHours = [48, 24, 12, 6];
+  const intervalsInHours = [24, 12, 6,1, 0.5]; // 48h, 24h, 12h, 6h, 1h, and 30min before the event
   const scheduledIds: string[] = [];
 
   // 3. Schedule each valid reminder
@@ -47,7 +47,7 @@ export const scheduleEventReminders = async (
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: `${event.type} Reminder: ${event.name}`,
-          body: `Starts in ${hours} hours at ${event.location}.`,
+          body: `Starts in ${hours<1?`${hours * 60} minutes`:`${hours} hours`} at ${event.location}.`,
           data: { eventId: event._id },
         },
         trigger: {
