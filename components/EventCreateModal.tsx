@@ -15,6 +15,7 @@ import {
   KeyboardAvoidingView,
   ToastAndroid
 } from "react-native";
+import CustomAlertModal from './CustomAlertModal';
 
 const EVENT_TYPES = ["Exam", "Assignment", "Test", "Other"];
 
@@ -39,6 +40,25 @@ export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) =>
 
   // Dropdown State
   const [showTypeMenu, setShowTypeMenu] = useState(false);
+
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info',
+    onCloseAction: () => {}, // Stores what happens after they click OK
+  });
+
+  // Helper function to easily show the alert
+  const showAlert = (title: string, message: string, type: 'success' | 'error' | 'info', onCloseAction = () => {}) => {
+    setAlertConfig({ visible: true, title, message, type, onCloseAction });
+  };
+
+  // Close the modal and run any pending actions (like handleClose)
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+    alertConfig.onCloseAction(); 
+  };
 
   const resetForm = () => {
     setName("");
@@ -95,9 +115,31 @@ export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) =>
   }
 };
 
+  // const handleCreateEvent = async () => {
+  //   if (!name || !location || !type) {
+  //     Alert.alert("Error", "Please fill out all required fields.");
+  //     return;
+  //   }
+
+  //   try {
+  //     await addEvent({
+  //       name,
+  //       location,
+  //       type,
+  //       date: date.toISOString(), // Send the exact ISO string
+  //       description,
+  //     });
+
+  //     Alert.alert("Success", "Event created successfully!");
+  //     handleClose();
+  //   } catch (error) {
+  //     Alert.alert("Error", "Failed to create event. Please try again.");
+  //   }
+  // };
+
   const handleCreateEvent = async () => {
     if (!name || !location || !type) {
-      Alert.alert("Error", "Please fill out all required fields.");
+      showAlert("Error", "Please fill out all required fields.", "error");
       return;
     }
 
@@ -106,14 +148,15 @@ export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) =>
         name,
         location,
         type,
-        date: date.toISOString(), // Send the exact ISO string
+        date: date.toISOString(),
         description,
       });
 
-      Alert.alert("Success", "Event created successfully!");
-      handleClose();
+      // Pass `handleClose` as the action to run AFTER the user clicks "OK"
+      showAlert("Success", "Event created successfully!", "success", handleClose);
+      
     } catch (error) {
-      Alert.alert("Error", "Failed to create event. Please try again.");
+      showAlert("Error", "Failed to create event. Please try again.", "error");
     }
   };
 
@@ -282,6 +325,13 @@ export const EventCreateModal = ({ visible, onClose }: EventCreateModalProps) =>
           </View>
         </TouchableOpacity>
       </Modal>
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={closeAlert}
+      />
     </Modal>
   );
 };

@@ -23,6 +23,7 @@ import {
   cancelReminders,
   scheduleEventReminders,
 } from "../utils/notificationHelper";
+import CustomConfirmModal from './CustomConfirmModal';
 
 interface EventCardProps {
   event: AppEvent;
@@ -104,6 +105,11 @@ export const EventCard = ({
     type: event.type,
     date: new Date(event.date),
   });
+  const [isModalVisible, setModalVisible] = useState(false);
+
+  const handleDeletePress = () => {
+    setModalVisible(true);
+  };
 
   const handleDateChange = (e: any, selectedDate?: Date) => {
     if (Platform.OS === "android") setShowDatePicker(false);
@@ -179,7 +185,7 @@ export const EventCard = ({
           Toast.show({
             type: "info",
             text1: "Cannot Set Reminder",
-            text2: "This event is too soon or in the past.",
+            text2: "This event occurs within a hour.",
           });
         }
       }
@@ -274,40 +280,65 @@ export const EventCard = ({
     setEditData((prev) => ({ ...prev, type: EVENT_TYPES[nextIndex] }));
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      "Delete Event",
-      "Are you sure you want to delete this event? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              if (scheduledNotifIds.length > 0) {
-                await cancelReminders(scheduledNotifIds);
-              }
-              await deleteEventMutation(event._id);
-              onDelete?.(event);
+  // const handleDelete = () => {
+  //   Alert.alert(
+  //     "Delete Event",
+  //     "Are you sure you want to delete this event? This action cannot be undone.",
+  //     [
+  //       { text: "Cancel", style: "cancel" },
+  //       {
+  //         text: "Delete",
+  //         style: "destructive",
+  //         onPress: async () => {
+  //           try {
+  //             if (scheduledNotifIds.length > 0) {
+  //               await cancelReminders(scheduledNotifIds);
+  //             }
+  //             await deleteEventMutation(event._id);
+  //             onDelete?.(event);
 
-              Toast.show({
-                type: "success",
-                text1: "Event Deleted 🗑️",
-                text2: "The event was permanently removed.",
-              });
-            } catch (error) {
-              Toast.show({
-                type: "error",
-                text1: "Delete Failed",
-                text2: "Could not delete the event. Please try again.",
-              });
-              console.error(error);
-            }
-          },
-        },
-      ],
-    );
+  //             Toast.show({
+  //               type: "success",
+  //               text1: "Event Deleted 🗑️",
+  //               text2: "The event was permanently removed.",
+  //             });
+  //           } catch (error) {
+  //             Toast.show({
+  //               type: "error",
+  //               text1: "Delete Failed",
+  //               text2: "Could not delete the event. Please try again.",
+  //             });
+  //             console.error(error);
+  //           }
+  //         },
+  //       },
+  //     ],
+  //   );
+  // };
+
+  const confirmDelete = async () => {
+    setModalVisible(false); // Close modal immediately
+    
+    try {
+      if (scheduledNotifIds.length > 0) {
+        await cancelReminders(scheduledNotifIds);
+      }
+      await deleteEventMutation(event._id);
+      onDelete?.(event);
+
+      Toast.show({
+        type: "success",
+        text1: "Event Deleted 🗑️",
+        text2: "The event was permanently removed.",
+      });
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Delete Failed",
+        text2: "Could not delete the event. Please try again.",
+      });
+      console.error(error);
+    }
   };
 
   const displayDate = new Date(event.date);
@@ -421,22 +452,30 @@ export const EventCard = ({
                 >
                   <MaterialIcons
                     name="edit"
-                    size={18}
+                    size={20}
                     color={isDark ? "#94A3B8" : "#64748B"}
                   />
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={handleDelete}
+                  onPress={handleDeletePress}
                   hitSlop={8}
                   disabled={isDeleting}
                 >
+                  <CustomConfirmModal
+                    visible={isModalVisible}
+                    title="Delete Event"
+                    message="Are you sure you want to delete this event? This action cannot be undone."
+                    onCancel={() => setModalVisible(false)} // Close modal on cancel
+                    onConfirm={confirmDelete}               // Run your logic on confirm
+                  />
+
                   {isDeleting ? (
                     <ActivityIndicator size="small" color="#EF4444" />
                   ) : (
                     <MaterialIcons
                       name="delete-outline"
-                      size={20}
+                      size={24}
                       color="#EF4444"
                     />
                   )}
@@ -575,7 +614,60 @@ export const EventCard = ({
             >
               {event.description}
             </Text>
+            
           )}
+        </View>
+      )}
+
+      {/* --- New Reminders Button --- */}
+      {!isEditing && (
+        <View className="mt-3 flex-row justify-start">
+          <TouchableOpacity
+            onPress={handleToggleReminder}
+            disabled={isRemindersPending}
+            activeOpacity={0.7}
+            className={`flex-row items-center justify-center px-3 py-1.5 rounded-full border ${
+              isReminderSet
+                ? "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800"
+                : "bg-slate-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
+            } ${isRemindersPending ? "opacity-70" : "opacity-100"}`}
+          >
+            {isRemindersPending ? (
+              <>
+                <ActivityIndicator
+                  size="small"
+                  color={isReminderSet ? "#F59E0B" : isDark ? "#94A3B8" : "#64748B"}
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  className={`text-xs font-medium ${
+                    isReminderSet
+                      ? "text-amber-600 dark:text-amber-500"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Updating...
+                </Text>
+              </>
+            ) : (
+              <>
+                <MaterialIcons
+                  name={isReminderSet ? "notifications-active" : "notifications-none"}
+                  size={16}
+                  color={isReminderSet ? "#F59E0B" : isDark ? "#94A3B8" : "#64748B"}
+                />
+                <Text
+                  className={`ml-1.5 text-xs font-medium ${
+                    isReminderSet
+                      ? "text-amber-600 dark:text-amber-500"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  {isReminderSet ? "Reminder On" : "Remind Me"}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       )}
     </TouchableOpacity>
