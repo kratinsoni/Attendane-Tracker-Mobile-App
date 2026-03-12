@@ -51,12 +51,16 @@ export default function Dashboard() {
   }, [defaultStats?.semester]);
 
   // Fetch semester-specific stats when user picks a different semester
-  const { data: semesterStats } =
+  const { data: semesterStats, isFetched: isSemesterFetched } =
     useGetAttendanceStatsBySemester(selectedSemester);
 
-  // Use semester-specific stats if available, otherwise fall back to default
-  const attendstats =
-    selectedSemester && semesterStats ? semesterStats : defaultStats;
+  // Use semester-specific stats when fetched; show empty if no data for that semester
+  const isDefaultSemester = selectedSemester === defaultStats?.semester;
+  const attendstats = isDefaultSemester
+    ? defaultStats
+    : isSemesterFetched
+      ? (semesterStats ?? { topAttended: [], leastAttended: [] })
+      : { topAttended: [], leastAttended: [] };
 
   // Schedule notifications for upcoming classes
   useEffect(() => {
@@ -458,8 +462,8 @@ export default function Dashboard() {
                       ampm={ampm}
                       subject={item.subjectName}
                       room={
-                        item.subjectVenue
-                          ? `${item.subjectVenue} • ${item.subjectCode}`
+                        item.venue
+                          ? `${item.venue} • ${item.subjectCode}`
                           : `${item.subjectCode} • ${item.credits} Credits`
                       }
                     />

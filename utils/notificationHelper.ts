@@ -67,7 +67,7 @@ export const scheduleClassReminders = async (
     subjectName: string;
     subjectCode: string;
     slot: string;
-    subjectVenue?: string;
+    venue?: string;
   }[],
 ): Promise<string[]> => {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -101,7 +101,7 @@ export const scheduleClassReminders = async (
     const reminderTime = new Date(classTime.getTime() - 15 * 60 * 1000);
     if (reminderTime <= now) continue;
 
-    const venue = cls.subjectVenue ? ` at ${cls.subjectVenue}` : "";
+    const venue = cls.venue ? ` at ${cls.venue}` : "";
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: `Upcoming Class: ${cls.subjectName}`,

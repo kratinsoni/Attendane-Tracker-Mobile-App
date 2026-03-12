@@ -345,10 +345,17 @@ export const dashboardApi = {
     api: AxiosInstance,
     semester: number,
   ) => {
-    const res = await api.post("/dashboard/stats/attendance/semester", {
-      semester,
-    });
-    return res.data.data;
+    try {
+      const res = await api.get(
+        `/dashboard/stats/attendance/semester/${semester}`,
+      );
+      return res.data.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   },
   getUpcomingClasses: async (api: AxiosInstance) => {
     const res = await api.get("/dashboard/upcoming/classes");
