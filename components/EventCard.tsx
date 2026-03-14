@@ -23,7 +23,7 @@ import {
   cancelReminders,
   scheduleEventReminders,
 } from "../utils/notificationHelper";
-import CustomConfirmModal from './CustomConfirmModal';
+import CustomConfirmModal from "./CustomConfirmModal";
 
 interface EventCardProps {
   event: AppEvent;
@@ -133,7 +133,11 @@ export const EventCard = ({
         const now = new Date();
         const newDate = new Date(prev.date);
         newDate.setHours(
-          selectedTime.getHours(),selectedTime.getMinutes(),0,0,);
+          selectedTime.getHours(),
+          selectedTime.getMinutes(),
+          0,
+          0,
+        );
         if (newDate < now) {
           const message = "Please select a future time";
           if (Platform.OS === "android") {
@@ -318,7 +322,7 @@ export const EventCard = ({
 
   const confirmDelete = async () => {
     setModalVisible(false); // Close modal immediately
-    
+
     try {
       if (scheduledNotifIds.length > 0) {
         await cancelReminders(scheduledNotifIds);
@@ -467,7 +471,7 @@ export const EventCard = ({
                     title="Delete Event"
                     message="Are you sure you want to delete this event? This action cannot be undone."
                     onCancel={() => setModalVisible(false)} // Close modal on cancel
-                    onConfirm={confirmDelete}               // Run your logic on confirm
+                    onConfirm={confirmDelete} // Run your logic on confirm
                   />
 
                   {isDeleting ? (
@@ -570,26 +574,85 @@ export const EventCard = ({
         />
       )}
 
-      <View className="flex-row items-center gap-1.5 mb-2">
-        <MaterialIcons
-          name="location-on"
-          size={14}
-          color={isDark ? "#94A3B8" : "#64748B"}
-        />
-        {isEditing ? (
-          <TextInput
-            value={editData.location}
-            onChangeText={(text) =>
-              setEditData((prev) => ({ ...prev, location: text }))
-            }
-            placeholder="Location"
-            placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
-            className="flex-1 text-sm py-0.5 border-b border-gray-200 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+      <View className="flex-row items-center justify-between mb-2">
+        <View className="flex-row items-center gap-1.5 flex-1 pr-2">
+          <MaterialIcons
+            name="location-on"
+            size={14}
+            color={isDark ? "#94A3B8" : "#64748B"}
           />
-        ) : (
-          <Text className="text-sm text-slate-500 dark:text-slate-400">
-            {event.location}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              value={editData.location}
+              onChangeText={(text) =>
+                setEditData((prev) => ({ ...prev, location: text }))
+              }
+              placeholder="Location"
+              placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
+              className="flex-1 text-sm py-0.5 border-b border-gray-200 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+            />
+          ) : (
+            <Text className="text-sm text-slate-500 dark:text-slate-400">
+              {event.location}
+            </Text>
+          )}
+        </View>
+
+        {!isEditing && (
+          <TouchableOpacity
+            onPress={handleToggleReminder}
+            disabled={isRemindersPending}
+            activeOpacity={0.7}
+            className={`flex-row items-center justify-center px-3 py-1.5 rounded-full border ${
+              isReminderSet
+                ? "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800"
+                : "bg-slate-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
+            } ${isRemindersPending ? "opacity-70" : "opacity-100"}`}
+          >
+            {isRemindersPending ? (
+              <>
+                <ActivityIndicator
+                  size="small"
+                  color={
+                    isReminderSet ? "#F59E0B" : isDark ? "#94A3B8" : "#64748B"
+                  }
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  className={`text-xs font-medium ${
+                    isReminderSet
+                      ? "text-amber-600 dark:text-amber-500"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Updating...
+                </Text>
+              </>
+            ) : (
+              <>
+                <MaterialIcons
+                  name={
+                    isReminderSet
+                      ? "notifications-active"
+                      : "notifications-none"
+                  }
+                  size={16}
+                  color={
+                    isReminderSet ? "#F59E0B" : isDark ? "#94A3B8" : "#64748B"
+                  }
+                />
+                <Text
+                  className={`ml-1.5 text-xs font-medium ${
+                    isReminderSet
+                      ? "text-amber-600 dark:text-amber-500"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  {isReminderSet ? "Reminder On" : "Remind Me"}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
         )}
       </View>
 
@@ -614,60 +677,7 @@ export const EventCard = ({
             >
               {event.description}
             </Text>
-            
           )}
-        </View>
-      )}
-
-      {/* --- New Reminders Button --- */}
-      {!isEditing && (
-        <View className="mt-3 flex-row justify-start">
-          <TouchableOpacity
-            onPress={handleToggleReminder}
-            disabled={isRemindersPending}
-            activeOpacity={0.7}
-            className={`flex-row items-center justify-center px-3 py-1.5 rounded-full border ${
-              isReminderSet
-                ? "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800"
-                : "bg-slate-50 dark:bg-slate-700 border-gray-200 dark:border-slate-600"
-            } ${isRemindersPending ? "opacity-70" : "opacity-100"}`}
-          >
-            {isRemindersPending ? (
-              <>
-                <ActivityIndicator
-                  size="small"
-                  color={isReminderSet ? "#F59E0B" : isDark ? "#94A3B8" : "#64748B"}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  className={`text-xs font-medium ${
-                    isReminderSet
-                      ? "text-amber-600 dark:text-amber-500"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  Updating...
-                </Text>
-              </>
-            ) : (
-              <>
-                <MaterialIcons
-                  name={isReminderSet ? "notifications-active" : "notifications-none"}
-                  size={16}
-                  color={isReminderSet ? "#F59E0B" : isDark ? "#94A3B8" : "#64748B"}
-                />
-                <Text
-                  className={`ml-1.5 text-xs font-medium ${
-                    isReminderSet
-                      ? "text-amber-600 dark:text-amber-500"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  {isReminderSet ? "Reminder On" : "Remind Me"}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
       )}
     </TouchableOpacity>

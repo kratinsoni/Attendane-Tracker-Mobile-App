@@ -1,13 +1,18 @@
-import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React from "react";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 // 1. The Interface
 interface CustomAlertModalProps {
   visible: boolean;
   title: string;
   message: string;
-  type?: 'success' | 'error' | 'info'; // Optional: Use this to change button colors if you want!
+  type?: "success" | "error" | "info"; // Optional: Use this to change button colors if you want!
   onClose: () => void;
+  mode?: "single" | "confirm";
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
 
 // 2. The Component
@@ -15,18 +20,23 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
   visible,
   title,
   message,
-  type = 'info',
+  type = "info",
   onClose,
+  mode = "single",
+  confirmText = "OK",
+  cancelText = "Cancel",
+  onConfirm,
+  onCancel,
 }) => {
   // Determine button color based on the type of alert
   const getButtonColor = () => {
     switch (type) {
-      case 'success':
-        return '#10B981'; // Green
-      case 'error':
-        return '#EF4444'; // Red
+      case "success":
+        return "#10B981"; // Green
+      case "error":
+        return "#EF4444"; // Red
       default:
-        return '#3B82F6'; // Blue
+        return "#3B82F6"; // Blue
     }
   };
 
@@ -44,12 +54,31 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
           <Text style={styles.message}>{message}</Text>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.button, { backgroundColor: getButtonColor() }]} 
-              onPress={onClose}
-            >
-              <Text style={styles.buttonText}>OK</Text>
-            </TouchableOpacity>
+            {mode === "confirm" ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={onCancel ?? onClose}
+                >
+                  <Text style={[styles.buttonText, styles.cancelButtonText]}>
+                    {cancelText}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, { backgroundColor: getButtonColor() }]}
+                  onPress={onConfirm ?? onClose}
+                >
+                  <Text style={styles.buttonText}>{confirmText}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: getButtonColor() }]}
+                onPress={onClose}
+              >
+                <Text style={styles.buttonText}>{confirmText}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -61,37 +90,38 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   dialogContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 24,
-    width: '80%',
+    width: "80%",
     maxWidth: 400,
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000', // Explicitly black
+    fontWeight: "bold",
+    color: "#000000", // Explicitly black
     marginBottom: 10,
   },
   message: {
     fontSize: 16,
-    color: '#4A4A4A',
+    color: "#4A4A4A",
     marginBottom: 24,
     lineHeight: 22,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
   },
   button: {
     paddingVertical: 10,
@@ -100,9 +130,15 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "white",
+    textAlign: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#E5E7EB",
+  },
+  cancelButtonText: {
+    color: "#1F2937",
   },
 });
 

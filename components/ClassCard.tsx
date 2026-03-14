@@ -13,7 +13,7 @@ import {
   Code,
   MapPin,
   Pencil,
-  XCircle
+  XCircle,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -31,7 +31,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming
+  withTiming,
 } from "react-native-reanimated";
 import { AttendanceEditPopup, AttendanceStatus } from "./AttendanceEditPopup";
 import { StatusButton } from "./StatusButton";
@@ -205,6 +205,7 @@ export const ClassCard = ({
   selectedDate: string;
 }) => {
   const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
   const [pendingAnimation, setPendingAnimation] = useState<string | null>(null);
   const [optimisticStatuses, setOptimisticStatuses] = useState<
     Record<string, string>
@@ -250,6 +251,20 @@ export const ClassCard = ({
 
   const getSlotDisplayStatus = (slot: { timeSlot: string; status: string }) =>
     optimisticStatuses[slot.timeSlot] || slot.status;
+
+  const applyOptimisticStatusForSlots = (
+    slots: { timeSlot: string }[],
+    statusName: string,
+  ) => {
+    const optimisticUpdate = slots.reduce<Record<string, string>>(
+      (acc, slot) => {
+        acc[slot.timeSlot] = statusName;
+        return acc;
+      },
+      {},
+    );
+    setOptimisticStatuses((prev) => ({ ...prev, ...optimisticUpdate }));
+  };
 
   const handleMarkAttendance = (status: string) => {
     if (Platform.OS === "android") {
@@ -379,7 +394,9 @@ export const ClassCard = ({
           </Text>
         </View>
         <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          {item.slotDetails.length === 1 ? "1 SLOT" : `${item.slotDetails.length} SLOTS`}
+          {item.slotDetails.length === 1
+            ? "1 SLOT"
+            : `${item.slotDetails.length} SLOTS`}
         </Text>
       </View>
 
@@ -416,11 +433,7 @@ export const ClassCard = ({
             <TouchableOpacity
               className="p-2 -mr-2"
               onPress={() => {
-                if (isMultiSlot) {
-                  setIsExpanded(true);
-                } else {
-                  setEditingSlotIndex(0);
-                }
+                setIsBulkEditing(true);
               }}
             >
               <Pencil size={20} color="#94a3b8" />
@@ -549,23 +562,71 @@ export const ClassCard = ({
         )}
       </View>
 
-      {editingSlotIndex !== null && (
+      {(editingSlotIndex !== null || isBulkEditing) && (
         <AttendanceEditPopup
           scheduleId={item.subjectId}
           timetableId={timetableId}
           selectedDate={selectedDate}
-          initialStatus={mapStatusForEditor(
-            getSlotDisplayStatus(item.slotDetails[editingSlotIndex]),
-          )}
-          onClose={() => setEditingSlotIndex(null)}
+          initialStatus={
+            isBulkEditing
+              ? allSameStatus
+                ? mapStatusForEditor(displayStatus)
+                : undefined
+              : mapStatusForEditor(
+                  getSlotDisplayStatus(item.slotDetails[editingSlotIndex!]),
+                )
+          }
+          onClose={() => {
+            setEditingSlotIndex(null);
+            setIsBulkEditing(false);
+          }}
           onSave={async (statusName) => {
             if (Platform.OS === "android") {
               Vibration.vibrate(40);
             } else {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
             }
+
+            if (isBulkEditing) {
+              const editableSlots = item.slotDetails.filter(
+                (slot) => !!slot.attendanceId,
+              );
+              if (!editableSlots.length) return;
+
+              applyOptimisticStatusForSlots(editableSlots, statusName);
+
+              const results = await Promise.allSettled(
+                editableSlots.map((slot) =>
+                  editMutation.mutateAsync({
+                    attendanceId: slot.attendanceId!,
+                    type: statusName,
+                  }),
+                ),
+              );
+
+              const failedSlots = editableSlots.filter(
+                (_, index) => results[index].status === "rejected",
+              );
+
+              if (failedSlots.length > 0) {
+                setOptimisticStatuses((prev) => {
+                  const updated = { ...prev };
+                  failedSlots.forEach((slot) => {
+                    delete updated[slot.timeSlot];
+                  });
+                  return updated;
+                });
+                Alert.alert(
+                  "Partial Update Failed",
+                  `Couldn't update ${failedSlots.length} slot(s). Please try again.`,
+                );
+              }
+              return;
+            }
+
             const slot = item.slotDetails[editingSlotIndex!];
             if (slot?.attendanceId) {
+              applyOptimisticStatusForSlots([slot], statusName);
               await editMutation.mutateAsync({
                 attendanceId: slot.attendanceId,
                 type: statusName,
