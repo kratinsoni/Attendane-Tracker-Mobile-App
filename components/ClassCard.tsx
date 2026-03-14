@@ -322,6 +322,71 @@ export const ClassCard = ({
     });
   };
 
+  const handleMarkSingleSlot = (
+    slot: {
+      attendanceId?: string;
+      status: string;
+      timeSlot: string;
+    },
+    statusName: string,
+  ) => {
+    if (Platform.OS === "android") {
+      Vibration.vibrate(30);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+    }
+
+    applyOptimisticStatusForSlots([slot], statusName);
+    setPendingAnimation(statusName);
+
+    if (slot.attendanceId) {
+      editMutation.mutate(
+        {
+          attendanceId: slot.attendanceId,
+          type: statusName,
+        },
+        {
+          onError: () => {
+            setOptimisticStatuses((prev) => {
+              const updated = { ...prev };
+              delete updated[slot.timeSlot];
+              return updated;
+            });
+            Alert.alert(
+              "Update Failed",
+              `Couldn't save attendance for ${slot.timeSlot}. Please try again.`,
+            );
+          },
+        },
+      );
+      return;
+    }
+
+    mutate(
+      {
+        subjectId: item.subjectId,
+        day: item.day,
+        type: statusName,
+        timeSlot: slot.timeSlot,
+        date: selectedDate,
+        semester: item.semester,
+      },
+      {
+        onError: () => {
+          setOptimisticStatuses((prev) => {
+            const updated = { ...prev };
+            delete updated[slot.timeSlot];
+            return updated;
+          });
+          Alert.alert(
+            "Update Failed",
+            `Couldn't save attendance for ${slot.timeSlot}. Please try again.`,
+          );
+        },
+      },
+    );
+  };
+
   // --- Replaced executeAttendanceMutation with immediate execution above ---
 
   const mapStatusForEditor = (status: string): AttendanceStatus | undefined => {
@@ -413,19 +478,37 @@ export const ClassCard = ({
               {item.subjectName}
             </Text>
 
-            <View className="flex-row items-center mt-3 opacity-70">
-              <View className="flex-row items-center mr-4">
-                <MapPin size={14} color="#64748b" strokeWidth={2.5} />
-                <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold ml-1">
-                  {item.location}
-                </Text>
-              </View>
+            <View className="flex-row items-center justify-between mt-3 opacity-70">
               <View className="flex-row items-center">
-                <Code size={14} color="#64748b" strokeWidth={2.5} />
-                <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold ml-1">
-                  Semester {item.semester}
-                </Text>
+                <View className="flex-row items-center mr-4">
+                  <MapPin size={14} color="#64748b" strokeWidth={2.5} />
+                  <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold ml-1">
+                    {item.location}
+                  </Text>
+                </View>
+                <View className="flex-row items-center">
+                  <Code size={14} color="#64748b" strokeWidth={2.5} />
+                  <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold ml-1">
+                    Semester {item.semester}
+                  </Text>
+                </View>
               </View>
+
+              {isMultiSlot && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsExpanded((prev) => !prev);
+                  }}
+                  className="p-2 -mr-2"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {isExpanded ? (
+                    <ChevronUp size={16} color="#94a3b8" />
+                  ) : (
+                    <ChevronDown size={16} color="#94a3b8" />
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -441,7 +524,7 @@ export const ClassCard = ({
           )}
         </View>
 
-        {allUnmarked ? (
+        {allUnmarked && !(isMultiSlot && isExpanded) ? (
           <View className="flex-row justify-between mt-6 pt-5 border-t border-slate-100 dark:border-slate-700/50">
             <StatusButton
               icon={CheckCircle}
@@ -476,43 +559,51 @@ export const ClassCard = ({
               onSubmit={handleMarkAttendance}
             />
           </View>
-        ) : isMultiSlot ? (
-          <View className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/50">
-            <TouchableOpacity
-              onPress={() => setIsExpanded(!isExpanded)}
-              className="flex-row items-center justify-between"
-            >
-              <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                Attendance Logged
+        ) : isMultiSlot && !isExpanded && allSameStatus ? (
+          <View className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/50 flex-row items-center justify-between">
+            <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+              Attendance Logged
+            </Text>
+            <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
+              <Text
+                className={`text-xs font-black uppercase ${statusColors.text}`}
+              >
+                {displayStatus}
               </Text>
-              <View className="flex-row items-center gap-2">
-                {!isExpanded && allSameStatus && (
-                  <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
-                    <Text
-                      className={`text-xs font-black uppercase ${statusColors.text}`}
-                    >
-                      {displayStatus}
-                    </Text>
-                  </View>
-                )}
-                {isExpanded ? (
-                  <ChevronUp size={16} color="#94a3b8" />
-                ) : (
-                  <ChevronDown size={16} color="#94a3b8" />
-                )}
-              </View>
-            </TouchableOpacity>
-            {isExpanded && (
-              <View className="mt-3 gap-2">
-                {item.slotDetails.map((slot, index) => {
-                  const slotStatus = getSlotDisplayStatus(slot);
-                  const colors = getStatusColors(slotStatus);
-                  return (
-                    <View
-                      key={slot.timeSlot}
-                      className="flex-row items-center justify-between py-2 px-1"
-                    >
-                      <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            </View>
+          </View>
+        ) : !isMultiSlot ? (
+          <View className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/50 flex-row items-center justify-between">
+            <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+              Attendance Logged
+            </Text>
+            <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
+              <Text
+                className={`text-xs font-black uppercase ${statusColors.text}`}
+              >
+                {displayStatus}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {isMultiSlot && isExpanded && (
+          <View className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/50">
+            <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-3">
+              Individual Slot Marking
+            </Text>
+            <View className="gap-3">
+              {item.slotDetails.map((slot, index) => {
+                const slotStatus = getSlotDisplayStatus(slot);
+                const colors = getStatusColors(slotStatus);
+
+                return (
+                  <View
+                    key={slot.timeSlot}
+                    className="rounded-xl border border-slate-100 dark:border-slate-700/60 p-3"
+                  >
+                    <View className="flex-row items-center justify-between mb-3">
+                      <Text className="text-xs font-bold text-slate-600 dark:text-slate-300">
                         {slot.timeSlot}
                       </Text>
                       <View className="flex-row items-center gap-2">
@@ -533,22 +624,43 @@ export const ClassCard = ({
                         </TouchableOpacity>
                       </View>
                     </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        ) : (
-          <View className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/50 flex-row items-center justify-between">
-            <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-              Attendance Logged
-            </Text>
-            <View className={`px-3 py-1 rounded-full ${statusColors.bg}`}>
-              <Text
-                className={`text-xs font-black uppercase ${statusColors.text}`}
-              >
-                {displayStatus}
-              </Text>
+
+                    {slotStatus === "UNMARKED" && (
+                      <View className="flex-row justify-between gap-2">
+                        <TouchableOpacity
+                          onPress={() => handleMarkSingleSlot(slot, "PRESENT")}
+                          className="flex-1 items-center py-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10"
+                        >
+                          <CheckCircle size={14} color="#10b981" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() => handleMarkSingleSlot(slot, "ABSENT")}
+                          className="flex-1 items-center py-2 rounded-lg bg-rose-50 dark:bg-rose-500/10"
+                        >
+                          <XCircle size={14} color="#f43f5e" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() => handleMarkSingleSlot(slot, "MEDICAL")}
+                          className="flex-1 items-center py-2 rounded-lg bg-amber-50 dark:bg-amber-500/10"
+                        >
+                          <Activity size={14} color="#f59e0b" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() =>
+                            handleMarkSingleSlot(slot, "CANCELLED")
+                          }
+                          className="flex-1 items-center py-2 rounded-lg bg-slate-50 dark:bg-slate-700/40"
+                        >
+                          <Ban size={14} color="#64748b" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </View>
         )}
@@ -625,13 +737,34 @@ export const ClassCard = ({
             }
 
             const slot = item.slotDetails[editingSlotIndex!];
-            if (slot?.attendanceId) {
-              applyOptimisticStatusForSlots([slot], statusName);
+            if (!slot) return;
+
+            applyOptimisticStatusForSlots([slot], statusName);
+
+            if (slot.attendanceId) {
               await editMutation.mutateAsync({
                 attendanceId: slot.attendanceId,
                 type: statusName,
               });
+              return;
             }
+
+            await new Promise<void>((resolve, reject) => {
+              mutate(
+                {
+                  subjectId: item.subjectId,
+                  day: item.day,
+                  type: statusName,
+                  timeSlot: slot.timeSlot,
+                  date: selectedDate,
+                  semester: item.semester,
+                },
+                {
+                  onSuccess: () => resolve(),
+                  onError: (error) => reject(error),
+                },
+              );
+            });
           }}
           onSuccessCallback={(status) => {
             console.log("Updated successfully to:", status);

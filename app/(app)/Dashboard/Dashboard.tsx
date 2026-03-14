@@ -230,6 +230,61 @@ export default function Dashboard() {
           </View>
         </View>
 
+      {/* Blue Schedule Card */}
+        <View className="bg-primary rounded-xl shadow-lg shadow-primary/20 overflow-hidden relative mb-6">
+          {/* Background Decorative Circles */}
+          <View className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10" />
+          <View className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -ml-8 -mb-8" />
+
+          <View className="p-5 z-10">
+            <View className="flex-row justify-between items-center mb-5">
+              <View className="flex-row items-center gap-2">
+                <Icon name="schedule" size={20} color="rgba(255,255,255,0.8)" />
+                <Text className="text-lg font-semibold text-white">
+                  Schedule at a Glance
+                </Text>
+              </View>
+              {/* Only show the button if there are more than 2 classes */}
+              {hasMoreThanTwo && (
+                <TouchableOpacity
+                  onPress={() => setIsExpanded(!isExpanded)}
+                  className="bg-white/20 px-3 py-1.5 rounded-lg active:bg-white/30"
+                >
+                  <Text className="text-xs font-medium text-white">
+                    {isExpanded ? "View Less" : "View Full"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View className="gap-4">
+              {displayedClasses && displayedClasses.length > 0 ? (
+                displayedClasses.map((item: any, index: number) => {
+                  const { time, ampm } = parseSlotTime(item.slot);
+
+                  return (
+                    <ScheduleItem
+                      key={`${item.subjectCode}-${index}`}
+                      time={time}
+                      ampm={ampm}
+                      subject={item.subjectName}
+                      room={
+                        item.venue
+                          ? `${item.venue} • ${item.subjectCode}`
+                          : `${item.subjectCode} • ${item.credits} Credits`
+                      }
+                    />
+                  );
+                })
+              ) : (
+                <Text className="text-white text-center opacity-80 py-2">
+                  No upcoming classes scheduled.
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+        
         {/* Semester Selector */}
         <View className="flex-row items-center justify-between mb-4">
           <Text className="text-lg font-bold text-slate-900 dark:text-white">
@@ -423,60 +478,7 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* Blue Schedule Card */}
-        <View className="bg-primary rounded-xl shadow-lg shadow-primary/20 overflow-hidden relative mb-6">
-          {/* Background Decorative Circles */}
-          <View className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10" />
-          <View className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -ml-8 -mb-8" />
-
-          <View className="p-5 z-10">
-            <View className="flex-row justify-between items-center mb-5">
-              <View className="flex-row items-center gap-2">
-                <Icon name="schedule" size={20} color="rgba(255,255,255,0.8)" />
-                <Text className="text-lg font-semibold text-white">
-                  Schedule at a Glance
-                </Text>
-              </View>
-              {/* Only show the button if there are more than 2 classes */}
-              {hasMoreThanTwo && (
-                <TouchableOpacity
-                  onPress={() => setIsExpanded(!isExpanded)}
-                  className="bg-white/20 px-3 py-1.5 rounded-lg active:bg-white/30"
-                >
-                  <Text className="text-xs font-medium text-white">
-                    {isExpanded ? "View Less" : "View Full"}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <View className="gap-4">
-              {displayedClasses && displayedClasses.length > 0 ? (
-                displayedClasses.map((item: any, index: number) => {
-                  const { time, ampm } = parseSlotTime(item.slot);
-
-                  return (
-                    <ScheduleItem
-                      key={`${item.subjectCode}-${index}`}
-                      time={time}
-                      ampm={ampm}
-                      subject={item.subjectName}
-                      room={
-                        item.venue
-                          ? `${item.venue} • ${item.subjectCode}`
-                          : `${item.subjectCode} • ${item.credits} Credits`
-                      }
-                    />
-                  );
-                })
-              ) : (
-                <Text className="text-white text-center opacity-80 py-2">
-                  No upcoming classes scheduled.
-                </Text>
-              )}
-            </View>
-          </View>
-        </View>
+        
 
         {/* Horizontal Tabs */}
         <ScrollView
