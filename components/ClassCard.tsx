@@ -1,4 +1,5 @@
 import { ClassSession } from "@/hooks/scheduleLogic";
+import { useAttendanceSounds } from "@/hooks/useAttendanceSound";
 import { useCreateAttendance } from "@/hooks/useCreateAttendance";
 import { api, attendanceApi } from "@/utils/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -199,10 +200,12 @@ export const ClassCard = ({
   item,
   timetableId,
   selectedDate,
+  playSound,
 }: {
   item: ClassSession;
   timetableId: string;
   selectedDate: string;
+  playSound: (status: string) => void;
 }) => {
   const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
   const [isBulkEditing, setIsBulkEditing] = useState(false);
@@ -273,6 +276,9 @@ export const ClassCard = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     }
 
+    // Play custom sound
+    playSound(status);
+
     // 1. Optimistically update all unmarked slots
     const newOptimistic: Record<string, string> = {};
     item.slotDetails.forEach((slot) => {
@@ -336,6 +342,9 @@ export const ClassCard = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     }
 
+    // Play custom sound
+    playSound(statusName);
+
     applyOptimisticStatusForSlots([slot], statusName);
     setPendingAnimation(statusName);
 
@@ -386,8 +395,6 @@ export const ClassCard = ({
       },
     );
   };
-
-  // --- Replaced executeAttendanceMutation with immediate execution above ---
 
   const mapStatusForEditor = (status: string): AttendanceStatus | undefined => {
     switch (status.toUpperCase()) {
@@ -698,6 +705,9 @@ export const ClassCard = ({
             } else {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
             }
+
+            // Play custom sound on edit/save as well
+            playSound(statusName);
 
             if (isBulkEditing) {
               const editableSlots = item.slotDetails.filter(

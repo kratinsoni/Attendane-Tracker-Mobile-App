@@ -184,8 +184,7 @@ export default function CreateSubjectPage() {
     } else {
       // Loop is finished (or we only had one subject)!
       if (timetableId && finalIdsToSubmit.length > 0) {
-        // Bulk add everything to the timetable. The hook's onSuccess handles navigation.
-        addToTimetable(finalIdsToSubmit);
+        router.replace(`/timetable/addSubjectToTimetable/${timetableId}`);
       } else {
         if (router.canGoBack()) router.back();
       }
