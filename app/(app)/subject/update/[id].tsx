@@ -119,14 +119,17 @@ export default function UpdateSubjectPage() {
   };
 
   const handleUpdate = () => {
-    if (venues.length === 0) setVenues(['Unknown']);
+    if (venues.length === 0) {
+      if (currentVenue) setVenues([currentVenue]);
+      else setVenues(['Unknown']);
+    }
     const payload = {
       code: subjectCode.toUpperCase(),
       name: subjectName,
       credits,
       grading,
       professors,
-      venues: venues.length ? venues: ['Unknown'],
+      venues: venues.length ? venues : (currentVenue ? [currentVenue] : ['Unknown']),
       slots: selectedSlots,
       type,
     };

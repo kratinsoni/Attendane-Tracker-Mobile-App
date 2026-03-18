@@ -278,7 +278,6 @@ const AttendanceEditModal = ({
                 <TouchableOpacity
                   key={`bulk-${opt.value}`}
                   onPress={() => onUpdateBulk(selectedGroup, opt.value)}
-                  // REMOVED disabled={isLoading} to allow sequential unblocked clicks
                   className={clsx(
                     "w-[48%] items-center justify-center p-4 rounded-2xl border-2",
                     parentStatus === opt.value 
@@ -318,7 +317,6 @@ const AttendanceEditModal = ({
                             <TouchableOpacity
                               key={`${item._id}-${opt.value}`}
                               onPress={() => onUpdateSingle(item, opt.value)}
-                              // REMOVED disabled={isLoading} to allow sequential unblocked clicks
                               className={clsx(
                                 "w-[23%] items-center justify-center p-2 rounded-xl border-2",
                                 item.type === opt.value 
@@ -433,11 +431,13 @@ export default function SubjectDetailsPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [semesterModalVisible, setSemesterModalVisible] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any[] | null>(null);
-  const [editedSlots, setEditedSlots] = useState<Set<string>>(new Set());
   const [expandedTimelineGroups, setExpandedTimelineGroups] = useState<Record<number, boolean>>({});
   const [isShowMore, setIsShowMore] = useState(false);
   const [semester, setSemester] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Use a Ref to track edited slots synchronously (Fixes the state closure bug on rapid clicks)
+  const editedSlotsRef = useRef<Set<string>>(new Set());
 
   // --- Record Section State ---
   const [isRecordsExpanded, setIsRecordsExpanded] = useState(false);
@@ -452,7 +452,6 @@ export default function SubjectDetailsPage() {
   const [sortModalVisible, setSortModalVisible] = useState(false);
 
   // --- Sequential Request Queue ---
-  // This queue prevents the 500 API Error (WriteConflicts) by ensuring only one request hits the DB at a time
   const requestQueue = useRef<Promise<any>>(Promise.resolve());
   const enqueueMutation = (mutationFn: () => Promise<any>) => {
     requestQueue.current = requestQueue.current
@@ -501,7 +500,7 @@ export default function SubjectDetailsPage() {
       result = result.filter((r: RecordInterface) => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }
     
-    // 2. Sort (assuming RecordInterface has createdAt / updatedAt standard timestamps)
+    // 2. Sort 
     result.sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -524,17 +523,47 @@ export default function SubjectDetailsPage() {
   }, [semesters]);
 
   const stats = useMemo(() => {
-    if (flatAttendance.length === 0) return { percentage: 0, attended: 0, total: 0 };
+    // Base Case
+    if (flatAttendance.length === 0) return { 
+      percentage: 0, attended: 0, total: 0, 
+      statusColor: 'bg-slate-200 dark:bg-slate-700', textColor: 'text-slate-500', 
+      message: 'No classes marked yet.' 
+    };
 
     const validRecords = flatAttendance.filter((r: any) => (r.type !== AttendanceStatus.CANCELLED && r.type !== AttendanceStatus.UNMARKED));
     const attended = validRecords.filter((r: any) => r.type === AttendanceStatus.PRESENT || r.type === AttendanceStatus.MEDICAL)?.length;
     const total = validRecords?.length;
+    const percentage = total > 0 ? Math.round((attended / total) * 100) : 0;
+
+    let statusColor = 'bg-green-500';
+    let textColor = 'text-green-600 dark:text-green-500';
+    let message = '';
+
+    if (percentage < 75) {
+      // Formula: (attended + N) / (total + N) >= 0.75 => N >= (0.75 * total - attended) / 0.25
+      const classesNeeded = Math.ceil((0.75 * total - attended) / 0.25);
+      
+      if (percentage < 50) {
+        statusColor = 'bg-red-500';
+        textColor = 'text-red-600 dark:text-red-500';
+        message = `Danger Zone! Attend ${classesNeeded} more consecutive class${classesNeeded > 1 ? 'es' : ''} to reach 75%.`;
+      } else {
+        statusColor = 'bg-yellow-500';
+        textColor = 'text-yellow-600 dark:text-yellow-500';
+        message = `Needs Attention. Attend ${classesNeeded} more consecutive class${classesNeeded > 1 ? 'es' : ''} to reach 75%.`;
+      }
+    } else {
+      // Formula: attended / (total + N) >= 0.75 => N <= (attended - 0.75 * total) / 0.75
+      const canMiss = Math.floor((attended - 0.75 * total) / 0.75);
+      
+      if (canMiss > 0) {
+        message = `Safe Zone! You can afford to miss ${canMiss} class${canMiss > 1 ? 'es' : ''}.`;
+      } else {
+        message = `Exactly on track! Don't miss the next class.`;
+      }
+    }
     
-    return {
-      attended,
-      total,
-      percentage: total > 0 ? Math.round((attended / total) * 100) : 0
-    };
+    return { attended, total, percentage, statusColor, textColor, message };
   }, [flatAttendance]);
 
   const filteredProfessors = useMemo(() => {
@@ -542,88 +571,157 @@ export default function SubjectDetailsPage() {
     else return subject?.professors?.slice(0, 2);
   }, [isShowMore, subject?.professors]);
 
-  // --- Handlers for Attendance (Queued) ---
+  // --- Handlers for Attendance (Queued & Optimistic) ---
   const toggleTimelineExpand = (index: number) => {
     setExpandedTimelineGroups(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
   const handleCreateAttendanceBulk = (group: any[], status: string) => {
-    group.forEach(item => {
-      enqueueMutation(() => createAttendanceAsync({
-        subjectId: item.subject || id,
-        day: item.day,
-        type: status,
-        timeSlot: item.timeSlot,
-        date: item.date,
-        semester: item.semester || subject?.semester || 0,
-      }));
+    // 1. Optimistic Update
+    const timeSlots = group.map(g => g.timeSlot);
+    const date = group[0].date;
+
+    queryClient.setQueryData(['attendance', 'subject', id, semester] , (oldData: any) => {
+      if (!oldData) return oldData;
+      return oldData.map((groupArray: any[]) =>
+        groupArray.map((g: any) => (timeSlots.includes(g.timeSlot) && g.date === date ? { ...g, type: status } : g))
+      );
     });
+
+    // 2. Background Queue
+    group.forEach(item => {
+      enqueueMutation(async () => {
+        try {
+          await createAttendanceAsync({
+            subjectId: item.subject || id,
+            day: item.day,
+            type: status,
+            timeSlot: item.timeSlot,
+            date: item.date,
+            semester: item.semester || subject?.semester || 0,
+          });
+        } catch (error) {
+          console.error("Failed to create attendance in bulk", error);
+        }
+      });
+    });
+
+    // Sync on finish
     enqueueMutation(async () => {
       await refetchAttendance();
     });
   };
 
   const handleCreateAttendanceSingle = (item: any, status: string) => {
+    // 1. Optimistic Update
+    queryClient.setQueryData(['attendance', 'subject', id, semester] , (oldData: any) => {
+      if (!oldData) return oldData;
+      return oldData.map((groupArray: any[]) =>
+        groupArray.map((g: any) => (g.timeSlot === item.timeSlot && g.date === item.date ? { ...g, type: status } : g))
+      );
+    });
+
+    // 2. Background Queue
     enqueueMutation(async () => {
-      await createAttendanceAsync({
-        subjectId: item.subject || id,
-        day: item.day,
-        type: status,
-        timeSlot: item.timeSlot,
-        date: item.date,
-        semester: item.semester || subject?.semester || 0,
-      });
-      await refetchAttendance();
+      try {
+        await createAttendanceAsync({
+          subjectId: item.subject || id,
+          day: item.day,
+          type: status,
+          timeSlot: item.timeSlot,
+          date: item.date,
+          semester: item.semester || subject?.semester || 0,
+        });
+        await refetchAttendance();
+      } catch (error) {
+        Alert.alert("Error", "Failed to mark attendance. Reverting to server state...");
+        await refetchAttendance(); // Revert on failure
+      }
     });
   };
 
   const handleEditGroupPress = (group: any[]) => {
     setSelectedGroup(group);
-    setEditedSlots(new Set());
+    editedSlotsRef.current.clear(); // Reset synchronous tracker
     setModalVisible(true);
   };
 
   const handleUpdateStatusBulk = (group: any[], newStatus: string) => {
+    // 1. Optimistic Update
+    const groupIds = group.map(g => g._id);
+    
+    queryClient.setQueryData(['attendance', 'subject', id, semester] , (oldData: any) => {
+      if (!oldData) return oldData;
+      return oldData.map((groupArray: any[]) =>
+        groupArray.map((g: any) => (groupIds.includes(g._id) ? { ...g, type: newStatus } : g))
+      );
+    });
+
+    setModalVisible(false);
+
+    // 2. Background Queue
     group.forEach(item => {
-      enqueueMutation(() => updateAttendanceAsync({
-        attendanceId: item._id,
-        type: newStatus,
-        subjectId: id,
-      }));
+      enqueueMutation(async () => {
+        try {
+          await updateAttendanceAsync({
+            attendanceId: item._id,
+            type: newStatus,
+            subjectId: id,
+          });
+        } catch (error) {
+           console.error("Failed to update status in bulk", error);
+        }
+      });
     });
     
     enqueueMutation(async () => {
       await queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
-      await refetchAttendance();
+      await refetchAttendance(); // Sync all changes with the server
     });
-    setModalVisible(false);
   };
 
   const handleUpdateStatusSingle = (item: any, newStatus: string) => {
-    const newEditedSlots = new Set(editedSlots);
-    newEditedSlots.add(item._id);
-    setEditedSlots(newEditedSlots);
+    // 1. Track synchronously to avoid stale state bugs on rapid clicks
+    editedSlotsRef.current.add(item._id);
 
-    // Optimistic local update
+    // 2. Instantly update UI State (Modal visually updates instantly)
     setSelectedGroup((prevGroup) => {
       if (!prevGroup) return null;
       return prevGroup.map((g) => 
         g._id === item._id ? { ...g, type: newStatus } : g
       );
     });
-    
+
+    // 3. Instantly update React Query Cache (Background timeline visually updates instantly)
+    queryClient.setQueryData(['attendance', 'subject', id, semester] , (oldData: any) => {
+      if (!oldData) return oldData;
+      return oldData.map((groupArray: any[]) =>
+        groupArray.map((g: any) => (g._id === item._id ? { ...g, type: newStatus } : g))
+      );
+    });
+
+    // Capture the condition dynamically so the queued promise knows exactly when to close the modal
+    const shouldCloseModal = selectedGroup && editedSlotsRef.current.size >= selectedGroup.length;
+
+    // 4. Background Queue
     enqueueMutation(async () => {
-      await updateAttendanceAsync({
-        attendanceId: item._id,
-        type: newStatus,
-        subjectId: id,
-      });
-      
-      if (selectedGroup && newEditedSlots.size >= selectedGroup.length) {
-        setModalVisible(false);
+      try {
+        await updateAttendanceAsync({
+          attendanceId: item._id,
+          type: newStatus,
+          subjectId: id,
+        });
+        
+        // Modal cleanly auto-closes once the final queued item succeeds
+        if (shouldCloseModal) {
+          setModalVisible(false);
+        }
+      } catch (error) {
+        Alert.alert("Error", "Failed to update attendance status. Reverting...");
+        await refetchAttendance(); 
+      } finally {
+        await queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
       }
-      await queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
-      await refetchAttendance();
     });
   };
 
@@ -713,6 +811,7 @@ export default function SubjectDetailsPage() {
 
       <ScrollView 
         contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -798,23 +897,32 @@ export default function SubjectDetailsPage() {
           </View>
 
           {/* Attendance Stats */}
-            <View className="border-t border-slate-100 dark:border-slate-700 pt-4 mt-2">
-              <View className="flex-row justify-between items-end mb-2">
-                <View>
-                  <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">ATTENDANCE</Text>
-                  <Text className="text-4xl font-black text-slate-900 dark:text-white">{stats.percentage}%</Text>
-                </View>
-                <View className="items-end mb-1">
-                  <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">CLASSES</Text>
-                  <Text className="text-xl font-bold text-slate-700 dark:text-slate-300">
-                      {stats.attended} <Text className="text-slate-400 text-base">/ {stats.total}</Text>
-                  </Text>
-                </View>
+          <View className="border-t border-slate-100 dark:border-slate-700 pt-4 mt-2">
+            <View className="flex-row justify-between items-end mb-2">
+              <View>
+                <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">ATTENDANCE</Text>
+                <Text className={clsx("text-4xl font-black", stats.textColor)}>{stats.percentage}%</Text>
               </View>
-              <View className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                 <View className="h-full bg-green-500 rounded-full" style={{ width: `${stats.percentage}%` }}/>
+              <View className="items-end mb-1">
+                <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">CLASSES</Text>
+                <Text className="text-xl font-bold text-slate-700 dark:text-slate-300">
+                    {stats.attended} <Text className="text-slate-400 text-base">/ {stats.total}</Text>
+                </Text>
               </View>
             </View>
+            
+            {/* Dynamic Progress Bar */}
+            <View className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-2">
+                <View className={clsx("h-full rounded-full", stats.statusColor)} style={{ width: `${stats.percentage}%` }}/>
+            </View>
+            
+            {/* Dynamic Message */}
+            {stats.total > 0 && (
+              <Text className={clsx("text-xs font-semibold", stats.textColor)}>
+                {stats.message}
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* ================= RECORDS SECTION ================= */}
@@ -822,7 +930,6 @@ export default function SubjectDetailsPage() {
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-lg font-bold text-slate-900 dark:text-white">Records</Text>
 
-            {/* New Sort Filter */}
             {sortedAndFilteredRecords.length > 0 && (
               <TouchableOpacity onPress={() => setSortModalVisible(true)} className="flex-row items-center bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5 rounded-full ml-3 mr-auto">
                 <Text className="text-xs font-semibold text-slate-700 dark:text-slate-300 mr-1.5">Sort: {getSortLabel(sortMethod)}</Text>
@@ -1060,7 +1167,6 @@ export default function SubjectDetailsPage() {
                           <TouchableOpacity 
                             key={btn.status}
                             onPress={() => handleCreateAttendanceBulk(group, btn.status)}
-                            // REMOVED disabled={isCreatePending} to allow sequential unblocked clicks
                             className="items-center bg-white dark:bg-[#151F32] border border-slate-100 dark:border-slate-700 rounded-xl p-2 w-[23%] shadow-sm"
                           >
                             <View className={clsx("w-8 h-8 rounded-full items-center justify-center mb-1", 
@@ -1096,7 +1202,6 @@ export default function SubjectDetailsPage() {
                                       <TouchableOpacity 
                                         key={stat}
                                         onPress={() => handleCreateAttendanceSingle(child, stat)}
-                                        // REMOVED any disabling logic here as well
                                         className={clsx(
                                           "w-8 h-8 rounded-lg items-center justify-center border mx-1",
                                           stat === 'PRESENT' ? 'bg-green-100 border-green-500 dark:bg-green-900/30 dark:border-green-700' :

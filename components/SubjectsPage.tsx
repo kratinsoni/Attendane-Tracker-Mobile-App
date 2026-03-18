@@ -214,11 +214,8 @@ export default function SubjectsPage() {
 
   const openMenu = (id: string, event: any) => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     const { pageY, pageX } = event.nativeEvent;
@@ -231,9 +228,9 @@ export default function SubjectsPage() {
       if (isSelectionMode) {
         clearSelection();
         setIsManualSelectionMode(false);
-        return true; // Stop default behavior (going back/exiting)
+        return true; 
       }
-      return false; // Allow default behavior
+      return false; 
     };
 
     const backHandler = BackHandler.addEventListener(
@@ -248,11 +245,8 @@ export default function SubjectsPage() {
 
   const handleLongPress = (id: string) => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     if (!selectedIds.includes(id)) {
@@ -262,11 +256,8 @@ export default function SubjectsPage() {
 
   const toggleSelection = (id: string) => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setSelectedIds((prev) =>
@@ -276,11 +267,8 @@ export default function SubjectsPage() {
 
   const clearSelection = () => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setSelectedIds([]);
@@ -288,11 +276,8 @@ export default function SubjectsPage() {
 
   const handleSelectAll = () => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     const allIds = filteredSubjects.map((s) => s._id);
@@ -306,11 +291,8 @@ export default function SubjectsPage() {
 
   const handleDeleteSelected = () => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     Alert.alert(
@@ -332,11 +314,8 @@ export default function SubjectsPage() {
 
   const handleEdit = (id: string) => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     router.push(`/subject/update/${id}`);
@@ -346,11 +325,8 @@ export default function SubjectsPage() {
 
   const handleDeleteSingle = (id: string) => {
     if (Platform.OS === "android") {
-      // Forces the motor to spin up and stop in exactly 20 milliseconds.
-      // This creates a sharp "tick" rather than a soft buzz.
       Vibration.vibrate(20);
     } else {
-      // iOS handles impacts much better natively, so stick to Expo here
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     Alert.alert(
@@ -558,11 +534,6 @@ export default function SubjectsPage() {
 
   const renderSubjectCard = ({ item }: { item: SubjectInterface }) => {
     const isSelected = selectedIds.includes(item._id || "");
-    const attended = item.classesAttended || 0;
-    const total = item.totalClasses || 0;
-    const attendancePct =
-      total === 0 ? 0 : Math.round((attended / total) * 100);
-    const isLowAttendance = total > 0 && attendancePct < 75;
 
     return (
       <TouchableOpacity
@@ -570,11 +541,8 @@ export default function SubjectsPage() {
         onLongPress={() => handleLongPress(item._id || "")}
         onPress={() => {
           if (Platform.OS === "android") {
-            // Forces the motor to spin up and stop in exactly 20 milliseconds.
-            // This creates a sharp "tick" rather than a soft buzz.
             Vibration.vibrate(20);
           } else {
-            // iOS handles impacts much better natively, so stick to Expo here
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           }
           if (isSelectionMode) toggleSelection(item._id || "");
@@ -654,7 +622,7 @@ export default function SubjectsPage() {
         </View>
 
         {/* CONSTRAINT: Subject Code and Type on the same line */}
-        <View className="flex-row items-center mb-4">
+        <View className="flex-row items-center mb-1">
           <View
             className={`px-2 py-0.5 rounded-md mr-2 ${getTypeStyles(item.type)}`}
           >
@@ -667,48 +635,17 @@ export default function SubjectsPage() {
           </Text>
         </View>
 
-        {/* Attendance Section */}
-        <View className="flex-row justify-between mb-2">
-          <Text className="text-xs font-bold text-gray-700 dark:text-gray-300">
-            Attendance Progress
+        {/* View Details Indicator */}
+        <View className="flex-row items-center justify-end mt-3 border-t border-gray-100 dark:border-slate-700/60 pt-3">
+          <Text className="text-sm font-medium text-blue-600 dark:text-blue-400 mr-1">
+            View Details
           </Text>
-          <Text
-            className={`text-xs font-bold ${isLowAttendance ? "text-orange-500 dark:text-orange-400" : "text-blue-600 dark:text-blue-400"}`}
-          >
-            {attendancePct}%
-          </Text>
-        </View>
-
-        {/* Progress Bar */}
-        <View className="w-full h-2.5 bg-gray-100 dark:bg-slate-700 rounded-full mb-2 overflow-hidden flex-row">
-          <View
-            className={`h-full rounded-full ${isLowAttendance ? "bg-orange-500 dark:bg-orange-400" : "bg-blue-600 dark:bg-blue-500"}`}
-            style={{ width: `${attendancePct}%` }}
+          <Ionicons
+            name="arrow-forward"
+            size={16}
+            color={isDark ? "#60a5fa" : "#3b82f6"}
           />
         </View>
-
-        <View className="flex-row justify-between">
-          <Text className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-            ATTENDED: {attended}
-          </Text>
-          <Text className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-            TOTAL: {total}
-          </Text>
-        </View>
-
-        {/* Warning Badge */}
-        {isLowAttendance && (
-          <View className="mt-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-2.5 flex-row items-center border border-yellow-100 dark:border-yellow-900/50">
-            <Ionicons
-              name="warning-outline"
-              size={16}
-              color={isDark ? "#f59e0b" : "#d97706"}
-            />
-            <Text className="text-xs text-yellow-700 dark:text-yellow-400 ml-2 font-medium">
-              Below threshold (75% required)
-            </Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   };
@@ -791,11 +728,8 @@ export default function SubjectsPage() {
             <TouchableOpacity
               onPress={() => {
                 if (Platform.OS === "android") {
-                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                  // This creates a sharp "tick" rather than a soft buzz.
                   Vibration.vibrate(20);
                 } else {
-                  // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
                 router.back();
@@ -817,11 +751,8 @@ export default function SubjectsPage() {
             <TouchableOpacity
               onPress={() => {
                 if (Platform.OS === "android") {
-                  // Forces the motor to spin up and stop in exactly 20 milliseconds.
-                  // This creates a sharp "tick" rather than a soft buzz.
                   Vibration.vibrate(20);
                 } else {
-                  // iOS handles impacts much better natively, so stick to Expo here
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
                 setHeaderMenuVisible(true)
@@ -975,11 +906,8 @@ export default function SubjectsPage() {
         <TouchableOpacity
           onPress={() => {
             if (Platform.OS === "android") {
-              // Forces the motor to spin up and stop in exactly 20 milliseconds.
-              // This creates a sharp "tick" rather than a soft buzz.
               Vibration.vibrate(20);
             } else {
-              // iOS handles impacts much better natively, so stick to Expo here
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
             router.push("/subject/create")

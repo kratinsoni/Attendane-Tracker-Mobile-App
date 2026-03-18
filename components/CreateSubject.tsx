@@ -319,9 +319,17 @@ export default function CreateSubjectPage() {
 
             {/* Schedule Slots Section */}
             <View className="mt-8">
-              <Text className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-                Schedule Slots
-              </Text>
+              <Text className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Schedule Slots</Text>
+              
+              {/* Conditionally rendered informational message */}
+              {fetchedSubject && (
+                <View className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-lg p-3 mb-4 flex-row items-start">
+                  <Ionicons name="information-circle" size={18} color={isDark ? '#93c5fd' : '#2563eb'} style={{ marginTop: 1 }} />
+                  <Text className="text-blue-700 dark:text-blue-300 text-xs ml-2 flex-1 leading-tight">
+                    Slot details are auto-fetched based on the subject code. Please verify them with your official timetable before proceeding.
+                  </Text>
+                </View>
+              )}
 
               <View className="flex-row justify-between mb-6">
                 {DAYS.map((day) => (
