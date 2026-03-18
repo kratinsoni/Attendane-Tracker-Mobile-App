@@ -63,7 +63,10 @@ export const useCreateTimetableByImage = () => {
       queryClient.invalidateQueries({
         queryKey: ["userTimetables"],
       });
-      router.replace("/timetable");
+      router.push({
+        pathname: "/(app)/subject/create",
+        params: { batchCodes: data?.parsedData?.join(','), timetableId: data?.timetable?._id }
+      })
     },
     onError: (error) => {
       let message = "Timetable Creation failed";

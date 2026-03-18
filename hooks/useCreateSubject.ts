@@ -25,10 +25,9 @@ export const useCreateSubject = () => {
         position: "bottom",
       });
 
-      // Navigate back to the previous screen (likely the Timetable or Subject list)
-      if (router.canGoBack()) {
-        router.back();
-      }
+      // if (router.canGoBack()) {
+      //   router.back();
+      // }
     },
     onError: (error) => {
       let message = "Failed to create subject";
