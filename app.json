@@ -26,7 +26,17 @@
         "monochromeImage": "./assets/icons/adaptive-icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kratinsoni.attendancetracker"
+      "package": "com.kratinsoni.attendancetracker",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            { "scheme": "https" },
+            { "scheme": "mailto" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",
