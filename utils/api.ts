@@ -1,12 +1,44 @@
 import { RegisterPayload } from "@/hooks/useRegister";
 import { RecordInterface } from "@/types/recordTypes";
 import { UserInterface } from "@/types/userTypes";
-import { getToken } from "@/utils/token";
-import axios, { AxiosInstance } from "axios";
+import {
+  getRefreshToken,
+  getToken,
+  removeToken,
+  saveToken,
+} from "@/utils/token";
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+} from "axios";
 import { AppEvent, CreateEventPayload } from "../types/event";
 import { CreateSubjectPayload } from "../types/subjectTypes";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+
+// State to handle multiple API calls failing simultaneously due to expired token
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: any) => void;
+  reject: (reason?: any) => void;
+}> = [];
+
+// Helper to push queued requests through after a successful refresh
+const processQueue = (
+  error: AxiosError | null,
+  token: string | null = null,
+) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
 
 export const createApiClient = (): AxiosInstance => {
   const api = axios.create({
@@ -30,6 +62,100 @@ export const createApiClient = (): AxiosInstance => {
     (error) => Promise.reject(error),
   );
 
+  // --- REFRESH TOKEN INTERCEPTOR LOGIC ---
+  api.interceptors.response.use(
+    (response) => {
+      // If the request succeeds fully (2xx status), just return the body
+      return response;
+    },
+    async (error: AxiosError) => {
+      const originalRequest = error.config as InternalAxiosRequestConfig & {
+        _retry?: boolean;
+      };
+
+      // Check if it's an authorization error (401), and ensure we aren't looping the refresh-token endpoint itself.
+      if (
+        error.response?.status === 401 &&
+        originalRequest &&
+        !originalRequest._retry &&
+        originalRequest.url !== "/users/refresh-token"
+      ) {
+        // Mark that we are attempting to retry this specific request
+        originalRequest._retry = true;
+
+        if (isRefreshing) {
+          // If another request is currently refreshing the token, pause this request and add it to our queue
+          return new Promise(function (resolve, reject) {
+            failedQueue.push({ resolve, reject });
+          })
+            .then((token) => {
+              // Wait for the new token, attach it, and re-attempt the request
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return api(originalRequest);
+            })
+            .catch((err) => {
+              return Promise.reject(err);
+            });
+        }
+
+        isRefreshing = true;
+
+        try {
+          const refreshToken = await getRefreshToken();
+
+          if (!refreshToken) {
+            // No refresh token available in storage, log the user out directly
+            throw new Error("No refresh token found.");
+          }
+
+          console.log("[AXIOS] Attempting to refresh the access token...");
+
+          // Request a new access token using our fresh refresh token using a base axios instance to avoid interception
+          const response = await axios.post(
+            `${API_BASE_URL}/users/refresh-accessToken`,
+            {
+              refreshToken: refreshToken,
+            },
+          );
+
+          // Assume the API structure handles standard backend response (if backend returns it inside .data.accessToken or similarly)
+          // Based on typical behavior, extract new token from response...
+          const { accessToken, refreshToken: newRefreshToken } =
+            response.data.data;
+
+          // Store the refreshed tokens securely
+          await saveToken(accessToken, newRefreshToken);
+
+          // Give the successful token to the queue to send any suspended requests immediately
+          processQueue(null, accessToken);
+
+          // Update the original failed request headers with the brand-new token
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+          // Finally, replay the original failed request!
+          return api(originalRequest);
+        } catch (refreshError: any) {
+          // If the refresh token request itself fails (e.g. refresh token expired), we log the user out
+          console.error(
+            "[AXIOS] Refresh token is invalid/expired. Logging out...",
+          );
+          processQueue(refreshError, null);
+
+          // Wiping local storage
+          await removeToken();
+
+          return Promise.reject(refreshError);
+        } finally {
+          // Stop blocking concurrent requests since refresh is complete (whether failure or success)
+          isRefreshing = false;
+        }
+      }
+
+      // If error is not a 401, or if it's standard error, just pass it forward unchanged
+      return Promise.reject(error);
+    },
+  );
+
   return api;
 };
 
@@ -40,7 +166,7 @@ export const userApi = {
     api: AxiosInstance,
     instituteId: string,
     password: string,
-  ): Promise<{ accessToken: string }> => {
+  ): Promise<{ accessToken: string; refreshToken: string }> => {
     const res = await api.post("/users/login", {
       instituteId,
       password,
@@ -402,6 +528,14 @@ export const eventApi = {
   },
   createEvent: async (api: AxiosInstance, payload: CreateEventPayload) => {
     const res = await api.post("/events", payload);
+    return res.data.data;
+  },
+  createEventFromAudio: async (api: AxiosInstance, formData: FormData) => {
+    const res = await api.post("/events/audio", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return res.data.data;
   },
   toggleEventReminders: async (

@@ -19,9 +19,10 @@ export const useLogin = () => {
 
     onSuccess: async (data) => {
       const accessToken = data.accessToken;
+      const refreshToken = data.refreshToken;
 
-      await saveToken(accessToken);
-      console.log("JWT saved successfully");
+      await saveToken(accessToken, refreshToken);
+      console.log("JWT and Refresh Token saved successfully");
       Toast.show({
         type: "success",
         text1: "Login Successful",

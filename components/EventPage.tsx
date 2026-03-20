@@ -21,9 +21,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../components/EmptyState";
 import { EventCard } from "../components/EventCard";
 // Make sure to export useDeleteMultipleEvents from your hooks file
+import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import { ChevronLeft, User } from "lucide-react-native";
 import Toast from "react-native-toast-message";
+import { useAddEventFromAudio } from "../hooks/useAddEvent";
 import { useDeleteMultipleEvents, useEvents } from "../hooks/useEvents";
 import { AppEvent, EventType } from "../types/event";
 
@@ -82,6 +84,9 @@ export const EventsScreen = () => {
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [showCreateSuccessAlert, setShowCreateSuccessAlert] = useState(false);
 
+  // Audio Recording State
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+
   // Multi-select State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
@@ -132,6 +137,11 @@ export const EventsScreen = () => {
     router.back();
   };
 
+  const {
+    mutateAsync: addEventFromAudioMutation,
+    isPending: isUploadingAudio,
+  } = useAddEventFromAudio();
+
   const handleSelectAll = () => {
     if (!events) return;
     if (selectedEventIds.length === events.length) {
@@ -175,6 +185,74 @@ export const EventsScreen = () => {
         },
       ],
     );
+  };
+
+  const startRecording = async () => {
+    try {
+      if (Platform.OS === "android") Vibration.vibrate(20);
+      else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
+      );
+      setRecording(recording);
+    } catch (err) {
+      console.error("Failed to start recording", err);
+      Toast.show({
+        type: "error",
+        text1: "Recording Failed",
+        text2: "Could not start audio recording.",
+      });
+    }
+  };
+
+  const stopRecordingAndSubmit = async () => {
+    if (!recording) return;
+
+    try {
+      setRecording(null);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+
+      if (!uri) throw new Error("No recording URI");
+
+      // Extract extension from URI
+      const fileExt = uri.split(".").pop() || "m4a";
+      // Normalize URI for Android if needed
+      const normalizedUri =
+        Platform.OS === "android" && !uri.startsWith("file://")
+          ? `file://${uri}`
+          : uri;
+
+      const formData = new FormData();
+      formData.append("audio", {
+        uri: normalizedUri,
+        name: `recording.${fileExt}`,
+        type: `audio/${fileExt === "m4a" ? "mp4" : fileExt}`,
+      } as any);
+
+      Keyboard.dismiss();
+      await addEventFromAudioMutation(formData);
+
+      Toast.show({
+        type: "success",
+        text1: "Event created 🎙️",
+        text2: "Your event was successfully extracted from the audio.",
+      });
+    } catch (error) {
+      console.error(error);
+      Toast.show({
+        type: "error",
+        text1: "Upload Failed",
+        text2: "Could not process the audio recording. Please try again.",
+      });
+    }
   };
 
   return (
@@ -390,16 +468,39 @@ export const EventsScreen = () => {
       </Modal>
 
       {!isSelectionMode && (
-        <TouchableOpacity
-          activeOpacity={0.9}
-          className="absolute bottom-40 right-6 bg-blue-600 w-14 h-14 rounded-full justify-center items-center shadow-lg shadow-blue-300 dark:shadow-none z-10"
-          onPress={() => {
-            Keyboard.dismiss();
-            setIsCreateModalVisible(true);
-          }}
-        >
-          <MaterialIcons name="add" size={30} color="#ffffff" />
-        </TouchableOpacity>
+        <>
+          {/* Audio Record Button */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            className={`absolute bottom-60 right-6 w-14 h-14 rounded-full justify-center items-center shadow-lg z-10 ${
+              recording
+                ? "bg-red-500 shadow-red-300 dark:shadow-none"
+                : "bg-indigo-500 shadow-indigo-300 dark:shadow-none"
+            }`}
+            onPress={recording ? stopRecordingAndSubmit : startRecording}
+            disabled={isUploadingAudio}
+          >
+            {isUploadingAudio ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : recording ? (
+              <MaterialIcons name="stop" size={28} color="#ffffff" />
+            ) : (
+              <MaterialIcons name="mic" size={28} color="#ffffff" />
+            )}
+          </TouchableOpacity>
+
+          {/* Manual Create Button */}
+          <TouchableOpacity
+            activeOpacity={0.9}
+            className="absolute bottom-40 right-6 bg-blue-600 w-14 h-14 rounded-full justify-center items-center shadow-lg shadow-blue-300 dark:shadow-none z-10"
+            onPress={() => {
+              Keyboard.dismiss();
+              setIsCreateModalVisible(true);
+            }}
+          >
+            <MaterialIcons name="add" size={30} color="#ffffff" />
+          </TouchableOpacity>
+        </>
       )}
 
       <EventCreateModal
