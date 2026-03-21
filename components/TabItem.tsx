@@ -8,9 +8,10 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { FontAwesome } from "@expo/vector-icons";
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+// import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { Vibration, Platform } from "react-native";
+import { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 
 // --- Types ---
 type IconName = keyof typeof FontAwesome.glyphMap;
@@ -31,7 +32,7 @@ interface TabItemProps {
   colors: ColorTheme;
 }
 
-interface CustomTabBarProps extends BottomTabBarProps {
+interface CustomTabBarProps extends MaterialTopTabBarProps {
   isDark: boolean;
 }
 

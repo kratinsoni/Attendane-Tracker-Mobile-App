@@ -1,36 +1,41 @@
-import { Tabs } from "expo-router";
+import { withLayoutContext } from "expo-router";
+import {
+  createMaterialTopTabNavigator,
+  MaterialTopTabNavigationOptions,
+  MaterialTopTabNavigationEventMap,
+} from "@react-navigation/material-top-tabs";
+import { ParamListBase, TabNavigationState } from "@react-navigation/native";
 import { useColorScheme } from "react-native";
-import { CustomTabBar } from "../../../components/TabItem"; // Import the file above
+import { CustomTabBar } from "../../../components/TabItem";
+
+const TopTabNavigator = createMaterialTopTabNavigator();
+
+// Pass ONLY the Navigator, and provide explicit TypeScript generics
+export const MaterialTopTabs = withLayoutContext<
+  MaterialTopTabNavigationOptions,
+  typeof TopTabNavigator.Navigator,
+  TabNavigationState<ParamListBase>,
+  MaterialTopTabNavigationEventMap
+>(TopTabNavigator.Navigator);
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   return (
-      <Tabs
-        screenOptions={{ headerShown: false }}
-        tabBar={(props) => <CustomTabBar {...props} isDark={isDark} />}
-      >
-        <Tabs.Screen
-          name="dashboard"
-          options={{ title: "Home", headerShown: false }}
-        />
-        <Tabs.Screen
-          name="timetable"
-          options={{ title: "Timetable", headerShown: false }}
-        />
-        <Tabs.Screen
-          name="subjects"
-          options={{ title: "Subjects", headerShown: false }}
-        />
-        <Tabs.Screen
-          name="events"
-          options={{ title: "Events", headerShown: false }}
-        />
-        <Tabs.Screen
-          name="details"
-          options={{ title: "Overview", headerShown: false }}
-        />
-      </Tabs>
+    <MaterialTopTabs
+      tabBarPosition="bottom"
+      screenOptions={{ swipeEnabled: true }}
+      tabBar={(props) => <CustomTabBar {...props} isDark={isDark} />}
+    >
+      <MaterialTopTabs.Screen name="dashboard" options={{ title: "Home" }} />
+      <MaterialTopTabs.Screen
+        name="timetable"
+        options={{ title: "Timetable" }}
+      />
+      <MaterialTopTabs.Screen name="subjects" options={{ title: "Subjects" }} />
+      <MaterialTopTabs.Screen name="events" options={{ title: "Events" }} />
+      <MaterialTopTabs.Screen name="details" options={{ title: "Overview" }} />
+    </MaterialTopTabs>
   );
 }
