@@ -1,5 +1,7 @@
 import { api, timetableApi } from "@/utils/api"
 import { useQuery } from "@tanstack/react-query"
+import { useIsFocused } from "@react-navigation/native"
+
 
 export const useGetUserTimetables = () => {
     return useQuery({
@@ -7,5 +9,6 @@ export const useGetUserTimetables = () => {
         queryFn: async () => {
             return timetableApi.getUserTimetables(api);
         },
+        enabled: useIsFocused(),
     });
 }

@@ -1,5 +1,6 @@
 import { api, detailsApi } from "@/utils/api";
 import { useQuery } from "@tanstack/react-query";
+import { useIsFocused } from "@react-navigation/native";
 
 export const useGetAttendanceStatBySemester = (semester: number) => {
   return useQuery({
@@ -7,7 +8,7 @@ export const useGetAttendanceStatBySemester = (semester: number) => {
     queryFn: async () => {
       return detailsApi.getAttendanceStatBySemester(api, semester);
     },
-    enabled: !!semester, // Only run if semester is provided
+    enabled: !!semester && useIsFocused(), // Only run if semester is provided
   });
 };
 
@@ -17,6 +18,7 @@ export const useGetAttendanceStatOfAllSubjects = (semester: number) => {
     queryFn: async () => {
       return detailsApi.getAttendanceStatOfAllSubjects(api, semester);
     },
+    enabled: !!semester && useIsFocused(),
   });
 };
 
@@ -26,6 +28,7 @@ export const useGetAttendanceStatOfAllTimetables = (semester: number) => {
     queryFn: async () => {
       return detailsApi.getAttendanceStatOfAllTimetables(api, semester);
     },
+    enabled: !!semester && useIsFocused(),
   });
 };
 
@@ -35,6 +38,6 @@ export const useGetAttendanceStatByTimetable = (timetableId: string) => {
     queryFn: async () => {
       return detailsApi.getAttendanceStatByTimetable(api, timetableId);
     },
-    enabled: !!timetableId,
+    enabled: !!timetableId && useIsFocused(),
   });
 };

@@ -43,12 +43,12 @@ export default function Dashboard() {
   const [selectedSemester, setSelectedSemester] = useState<number>(0);
   const [showSemesterDropdown, setShowSemesterDropdown] = useState(false);
 
-  // Initialize semester from default stats
-  useEffect(() => {
-    if (defaultStats?.semester && selectedSemester === 0) {
-      setSelectedSemester(defaultStats.semester);
-    }
-  }, [defaultStats?.semester]);
+  // // Initialize semester from default stats
+  // useEffect(() => {
+  //   if (defaultStats?.semester && selectedSemester === 0) {
+  //     setSelectedSemester(defaultStats.semester);
+  //   }
+  // }, [defaultStats?.semester]);
 
   // Fetch semester-specific stats when user picks a different semester
   const { data: semesterStats, isFetched: isSemesterFetched } =
