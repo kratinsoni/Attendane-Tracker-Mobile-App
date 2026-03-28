@@ -10,6 +10,7 @@ import {
 import axios, {
   AxiosError,
   AxiosInstance,
+  AxiosInterceptorManager,
   InternalAxiosRequestConfig,
 } from "axios";
 import { AppEvent, CreateEventPayload } from "../types/event";
@@ -467,6 +468,10 @@ export const dashboardApi = {
     const res = await api.get("/dashboard/stats/attendance");
     return res.data.data;
   },
+  getDashBoardInit : async ( api: AxiosInstance) =>{
+    const res = await api.get("/dashboard/init");
+    return res.data.data;
+  },
   getAttendanceStatsBySemester: async (
     api: AxiosInstance,
     semester: number,
@@ -483,6 +488,7 @@ export const dashboardApi = {
       throw error;
     }
   },
+
   getUpcomingClasses: async (api: AxiosInstance) => {
     const res = await api.get("/dashboard/upcoming/classes");
     return res.data.data;

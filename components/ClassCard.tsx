@@ -245,7 +245,6 @@ export const ClassCard = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
     },
     onError: (error) => {
       console.error("Failed to update attendance:", error);
@@ -318,9 +317,6 @@ export const ClassCard = ({
                   slot.timeSlot +
                   ". Please try again.",
               );
-            },
-            onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
             },
           },
         );

@@ -1,9 +1,7 @@
 import {
-  useGetAttendanceStats,
   useGetAttendanceStatsBySemester,
-  useGetUpcomingClasses,
-} from "@/hooks/useDashboardAttendanceStat";
-import { useEvents } from "@/hooks/useEvents";
+  useGetDashboardInit
+} from "@/hooks/useDashboardStats";
 import { useMe } from "@/hooks/useMe";
 import { scheduleClassReminders } from "@/utils/notificationHelper";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -32,9 +30,22 @@ const Icon = ({ name, size = 24, color, className }: any) => (
 
 export default function Dashboard() {
   const { data } = useMe();
-  const { data: defaultStats = {} } = useGetAttendanceStats();
-  const { data: upcomingClasses } = useGetUpcomingClasses();
-  const { data: allEvents } = useEvents();
+
+  // 1. Trigger the single Init call
+  const {
+    data: dashboardData,
+    isLoading: isInitLoading,
+    refetch: refetchDashboard,
+  } = useGetDashboardInit();
+
+  const upcomingClasses = dashboardData?.upcomingClasses || [];
+  const allEvents = dashboardData?.events || [];
+  
+  const defaultStats = useMemo(() => ({
+    semester: dashboardData?.semester,
+    topAttended: dashboardData?.topAttended || [],
+    leastAttended: dashboardData?.leastAttended || [],
+  }), [dashboardData]);
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -43,12 +54,12 @@ export default function Dashboard() {
   const [selectedSemester, setSelectedSemester] = useState<number>(0);
   const [showSemesterDropdown, setShowSemesterDropdown] = useState(false);
 
-  // // Initialize semester from default stats
-  // useEffect(() => {
-  //   if (defaultStats?.semester && selectedSemester === 0) {
-  //     setSelectedSemester(defaultStats.semester);
-  //   }
-  // }, [defaultStats?.semester]);
+  // Initialize semester from default stats
+  useEffect(() => {
+    if (defaultStats?.semester && selectedSemester === 0) {
+      setSelectedSemester(defaultStats.semester);
+    }
+  }, [defaultStats?.semester]);
 
   // Fetch semester-specific stats when user picks a different semester
   const { data: semesterStats, isFetched: isSemesterFetched } =
@@ -73,25 +84,25 @@ export default function Dashboard() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async() => {
     setRefreshing(true);
-    // TODO: Call your actual API refetch functions here if your hooks provide them
-    // Example: Promise.all([refetchMe(), refetchTopAttendance(), ...]).then(() => setRefreshing(false))
+    // Force the unified endpoint to run again and update all caches
+    await refetchDashboard();
 
     // Simulating a network delay for the UI
     setTimeout(() => {
       setRefreshing(false);
     }, 1500);
-  }, []);
+  }, [refetchDashboard]);
+
+  
 
   const today = new Date();
 
   const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(
     today,
   );
-  const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(
-    today,
-  );
+  
   const dateNumber = today.getDate();
   const shortMonth = new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -167,6 +178,16 @@ export default function Dashboard() {
         };
     }
   };
+
+
+  // if (isInitLoading && !refreshing) {
+  //   return (
+  //     <View className="flex-1 items-center justify-center bg-background-light dark:bg-background-dark">
+  //       {/* Replace with your custom ActivityIndicator or Skeleton Loader */}
+  //       <Text className="dark:text-white">Loading Dashboard...</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">

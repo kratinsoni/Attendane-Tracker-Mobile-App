@@ -675,7 +675,6 @@ export default function SubjectDetailsPage() {
     });
     
     enqueueMutation(async () => {
-      await queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
       await refetchAttendance(); // Sync all changes with the server
     });
   };
@@ -719,8 +718,6 @@ export default function SubjectDetailsPage() {
       } catch (error) {
         Alert.alert("Error", "Failed to update attendance status. Reverting...");
         await refetchAttendance(); 
-      } finally {
-        await queryClient.invalidateQueries({ queryKey: ["attendanceStats"] });
       }
     });
   };

@@ -1,7 +1,7 @@
 import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
   Vibration,
   View,
   useColorScheme,
+  Animated
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../components/EmptyState";
@@ -32,6 +33,7 @@ import { AppEvent, EventType } from "../types/event";
 import CustomAlertModal from "./CustomAlertModal";
 import { EventCreateModal } from "./EventCreateModal";
 
+// Setup formatting constraints
 const formatDateGroup = (isoString: string) => {
   const date = new Date(isoString);
   const today = new Date();
@@ -54,8 +56,13 @@ const formatDateGroup = (isoString: string) => {
 
 const EVENT_TYPES = ["All", "Exam", "Assignment", "Test", "Other"];
 
+// NEW: Constants for Audio Limits and Silence Detection
+const MAX_RECORDING_DURATION = 15000; // 15 seconds max length
+const SILENCE_TIMEOUT = 3000; // 3 seconds of continuous silence to trigger auto-stop
+const SILENCE_THRESHOLD = -40; // Decibel (dB) threshold for silence. Adjust if it's too sensitive.
+
 export const EventsScreen = () => {
-  const { data } = useMe();
+
   const { data: events, isLoading, isError, refetch } = useEvents();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -86,6 +93,14 @@ export const EventsScreen = () => {
 
   // Audio Recording State
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
+
+   // NEW: Refs needed for Audio progress checks inside intervals (avoids stale closures)
+  const isStoppingRef = useRef(false);
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const silenceStartRef = useRef<number | null>(null);
+
+  // NEW: Animated Value for the wavy listening effect
+  const waveAnim = useRef(new Animated.Value(1)).current;
 
   // Multi-select State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -187,44 +202,50 @@ export const EventsScreen = () => {
     );
   };
 
-  const startRecording = async () => {
-    try {
-      if (Platform.OS === "android") Vibration.vibrate(20);
-      else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
-      setRecording(recording);
-    } catch (err) {
-      console.error("Failed to start recording", err);
-      Toast.show({
-        type: "error",
-        text1: "Recording Failed",
-        text2: "Could not start audio recording.",
-      });
-    }
+   // NEW: Helper function to start the wavy animation
+  const startWaveAnimation = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(waveAnim, {
+          toValue: 2,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(waveAnim, {
+          toValue: 1,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   };
 
+  // NEW: Helper function to stop the wavy animation
+  const stopWaveAnimation = () => {
+    waveAnim.stopAnimation();
+    waveAnim.setValue(1);
+  };
+
+  // NEW: Handles stopping the recording and submitting. Refactored to work with interval callbacks safely.
   const stopRecordingAndSubmit = async () => {
-    if (!recording) return;
+    // Check if it's already stopping or no recording is present using Refs
+    if (isStoppingRef.current || !recordingRef.current) return;
+    
+    isStoppingRef.current = true;
+    const currentRecording = recordingRef.current;
 
     try {
+      // Clear UI state immediately to feel responsive
       setRecording(null);
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      recordingRef.current = null;
+      stopWaveAnimation();
+
+      await currentRecording.stopAndUnloadAsync();
+      const uri = currentRecording.getURI();
 
       if (!uri) throw new Error("No recording URI");
 
-      // Extract extension from URI
       const fileExt = uri.split(".").pop() || "m4a";
-      // Normalize URI for Android if needed
       const normalizedUri =
         Platform.OS === "android" && !uri.startsWith("file://")
           ? `file://${uri}`
@@ -251,6 +272,84 @@ export const EventsScreen = () => {
         type: "error",
         text1: "Upload Failed",
         text2: "Could not process the audio recording. Please try again.",
+      });
+    } finally {
+      // Clean up ref for the next record cycle
+      isStoppingRef.current = false;
+    }
+  };
+
+  // NEW: Status Update Handler checking limit and silence
+  const onRecordingStatusUpdate = useCallback(async (status: Audio.RecordingStatus) => {
+    if (!status.isRecording || isStoppingRef.current) return;
+
+    // 1. Check Max Duration Limit
+    if (status.durationMillis >= MAX_RECORDING_DURATION) {
+      console.log("Maximum recording duration reached.");
+      await stopRecordingAndSubmit();
+      return;
+    }
+
+    // 2. Check Audio Silence Metering
+    const currentMetering = status.metering ?? 0;
+    
+    if (currentMetering < SILENCE_THRESHOLD) {
+      // User is too quiet, start the silence timer
+      if (silenceStartRef.current === null) {
+        silenceStartRef.current = status.durationMillis;
+      } else {
+        // Calculate how long it's been silent
+        const silentDuration = status.durationMillis - silenceStartRef.current;
+        if (silentDuration >= SILENCE_TIMEOUT) {
+          console.log("Auto-stopping due to prolonged silence.");
+          await stopRecordingAndSubmit();
+        }
+      }
+    } else {
+      // User spoke! Reset the silence tracker
+      silenceStartRef.current = null;
+    }
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      if (Platform.OS === "android") Vibration.vibrate(20);
+      else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      // MODIFIED: Merged default options with `isMeteringEnabled` needed for silence detection
+      const recordingOptions = {
+        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        isMeteringEnabled: true,
+      };
+
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        recordingOptions
+      );
+
+      // NEW: Apply progress updates to run checks for limits and silence every 200ms
+      newRecording.setProgressUpdateInterval(200);
+      newRecording.setOnRecordingStatusUpdate(onRecordingStatusUpdate);
+
+      // Track active instances locally and globally
+      setRecording(newRecording);
+      recordingRef.current = newRecording;
+      isStoppingRef.current = false;
+      silenceStartRef.current = null;
+
+      // Launch the visual feedback wave
+      startWaveAnimation();
+    } catch (err) {
+      console.error("Failed to start recording", err);
+      Toast.show({
+        type: "error",
+        text1: "Recording Failed",
+        text2: "Could not start audio recording.",
       });
     }
   };
@@ -469,25 +568,45 @@ export const EventsScreen = () => {
 
       {!isSelectionMode && (
         <>
-          {/* Audio Record Button */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            className={`absolute bottom-60 right-6 w-14 h-14 rounded-full justify-center items-center shadow-lg z-10 ${
-              recording
-                ? "bg-red-500 shadow-red-300 dark:shadow-none"
-                : "bg-indigo-500 shadow-indigo-300 dark:shadow-none"
-            }`}
-            onPress={recording ? stopRecordingAndSubmit : startRecording}
-            disabled={isUploadingAudio}
-          >
-            {isUploadingAudio ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : recording ? (
-              <MaterialIcons name="stop" size={28} color="#ffffff" />
-            ) : (
-              <MaterialIcons name="mic" size={28} color="#ffffff" />
+          {/* MODIFIED: Grouped Audio Record Button with its background Animation Container */}
+          <View className="absolute bottom-60 right-6 z-10 justify-center items-center">
+            {/* NEW: Wavy pulsing animation rendered behind the mic when recording */}
+            {recording && (
+              <Animated.View
+                style={{
+                  position: "absolute",
+                  width: 56, // Same dimension as the mic button (w-14)
+                  height: 56, // Same dimension as the mic button (h-14)
+                  borderRadius: 28,
+                  backgroundColor: "#EF4444", // Tailwind red-500
+                  transform: [{ scale: waveAnim }],
+                  opacity: waveAnim.interpolate({
+                    inputRange: [1, 2],
+                    outputRange: [0.6, 0], // Fades out completely as it expands
+                  }),
+                }}
+              />
             )}
-          </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              className={`w-14 h-14 rounded-full justify-center items-center shadow-lg ${
+                recording
+                  ? "bg-red-500 shadow-red-300 dark:shadow-none"
+                  : "bg-indigo-500 shadow-indigo-300 dark:shadow-none"
+              }`}
+              onPress={recording ? stopRecordingAndSubmit : startRecording}
+              disabled={isUploadingAudio}
+            >
+              {isUploadingAudio ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : recording ? (
+                <MaterialIcons name="stop" size={28} color="#ffffff" />
+              ) : (
+                <MaterialIcons name="mic" size={28} color="#ffffff" />
+              )}
+            </TouchableOpacity>
+          </View>
 
           {/* Manual Create Button */}
           <TouchableOpacity
