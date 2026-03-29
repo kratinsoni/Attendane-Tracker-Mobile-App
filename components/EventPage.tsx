@@ -1,3 +1,8 @@
+// Note: This code is built for a React Native / Expo environment.
+// The compilation errors you are seeing in the preview are because the web-based 
+// canvas does not support native modules like 'react-native', 'expo-av', etc.
+// Please copy this code into your local Expo project to run it successfully.
+
 import { useMe } from "@/hooks/useMe";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -16,12 +21,11 @@ import {
   Vibration,
   View,
   useColorScheme,
-  Animated
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../components/EmptyState";
 import { EventCard } from "../components/EventCard";
-// Make sure to export useDeleteMultipleEvents from your hooks file
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import { ChevronLeft, User } from "lucide-react-native";
@@ -33,7 +37,7 @@ import { AppEvent, EventType } from "../types/event";
 import CustomAlertModal from "./CustomAlertModal";
 import { EventCreateModal } from "./EventCreateModal";
 
-// Setup formatting constraints
+// Helper to format dates for section headers
 const formatDateGroup = (isoString: string) => {
   const date = new Date(isoString);
   const today = new Date();
@@ -56,13 +60,12 @@ const formatDateGroup = (isoString: string) => {
 
 const EVENT_TYPES = ["All", "Exam", "Assignment", "Test", "Other"];
 
-// NEW: Constants for Audio Limits and Silence Detection
+// Constants for Audio Limits and Silence Detection
 const MAX_RECORDING_DURATION = 15000; // 15 seconds max length
-const SILENCE_TIMEOUT = 3000; // 3 seconds of continuous silence to trigger auto-stop
-const SILENCE_THRESHOLD = -40; // Decibel (dB) threshold for silence. Adjust if it's too sensitive.
+const SILENCE_TIMEOUT = 1500; // 3 seconds of continuous silence to trigger auto-stop
+const SILENCE_THRESHOLD = -40; // Decibel (dB) threshold for silence
 
 export const EventsScreen = () => {
-
   const { data: events, isLoading, isError, refetch } = useEvents();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -76,7 +79,7 @@ export const EventsScreen = () => {
       setRefreshing(false);
     }
   }, [refetch]);
-  // Assume you have created this hook to handle multiple deletions
+  
   const {
     mutateAsync: deleteMultipleEventsMutation,
     isPending: isDeletingMultiple,
@@ -94,13 +97,13 @@ export const EventsScreen = () => {
   // Audio Recording State
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
-   // NEW: Refs needed for Audio progress checks inside intervals (avoids stale closures)
+  // Refs needed for Audio progress checks
   const isStoppingRef = useRef(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const silenceStartRef = useRef<number | null>(null);
 
-  // NEW: Animated Value for the wavy listening effect
-  const waveAnim = useRef(new Animated.Value(1)).current;
+  // NEW: Array of Animated Values for the 5 waveform bars
+  const meteringAnims = useRef([...Array(5)].map(() => new Animated.Value(0)));
 
   // Multi-select State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -160,7 +163,7 @@ export const EventsScreen = () => {
   const handleSelectAll = () => {
     if (!events) return;
     if (selectedEventIds.length === events.length) {
-      setSelectedEventIds([]); // Deselect all if everything is currently selected
+      setSelectedEventIds([]);
     } else {
       setSelectedEventIds(events.map((e) => e._id));
     }
@@ -178,7 +181,6 @@ export const EventsScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              // Pass the array of IDs to your API route
               await deleteMultipleEventsMutation({ ids: selectedEventIds });
               setIsSelectionMode(false);
               setSelectedEventIds([]);
@@ -192,8 +194,7 @@ export const EventsScreen = () => {
               Toast.show({
                 type: "error",
                 text1: "Delete Failed",
-                text2:
-                  "Could not delete the selected events. Please try again.",
+                text2: "Could not delete the selected events. Please try again.",
               });
             }
           },
@@ -202,47 +203,30 @@ export const EventsScreen = () => {
     );
   };
 
-   // NEW: Helper function to start the wavy animation
-  const startWaveAnimation = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(waveAnim, {
-          toValue: 2,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(waveAnim, {
-          toValue: 1,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  };
-
-  // NEW: Helper function to stop the wavy animation
-  const stopWaveAnimation = () => {
-    waveAnim.stopAnimation();
-    waveAnim.setValue(1);
-  };
-
-  // NEW: Handles stopping the recording and submitting. Refactored to work with interval callbacks safely.
   const stopRecordingAndSubmit = async () => {
-    // Check if it's already stopping or no recording is present using Refs
     if (isStoppingRef.current || !recordingRef.current) return;
     
     isStoppingRef.current = true;
     const currentRecording = recordingRef.current;
 
     try {
-      // Clear UI state immediately to feel responsive
+      // Clear UI state immediately
       setRecording(null);
       recordingRef.current = null;
-      stopWaveAnimation();
 
+      // FIX: Detach the listener FIRST so it doesn't fire while we are unloading
+      currentRecording.setOnRecordingStatusUpdate(null);
+      
       await currentRecording.stopAndUnloadAsync();
-      const uri = currentRecording.getURI();
 
+      // FIX: Give the filesystem a tiny amount of time to actually finalize the file.
+      // This prevents the React Native Network Error when trying to read an unclosed file.
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Reset animation values to zero
+      meteringAnims.current.forEach(anim => anim.setValue(0));
+
+      const uri = currentRecording.getURI();
       if (!uri) throw new Error("No recording URI");
 
       const fileExt = uri.split(".").pop() || "m4a";
@@ -266,39 +250,68 @@ export const EventsScreen = () => {
         text1: "Event created 🎙️",
         text2: "Your event was successfully extracted from the audio.",
       });
-    } catch (error) {
-      console.error(error);
+    } catch (error : any) {
+      console.log("Upload Error Details:", error);
+      
+      let title = "Upload Failed";
+      let message = "Could not process the audio. Is your backend reachable?";
+
+      // Handle Backend Rate Limiting (429 Too Many Requests)
+      if (error?.response?.status === 429 || error?.message?.includes('429')) {
+        title = "Daily Limit Reached ⏳";
+        message = "Our daily audio processing limit has been reached. Please try typing your event or try again tomorrow!";
+      }
+
       Toast.show({
         type: "error",
-        text1: "Upload Failed",
-        text2: "Could not process the audio recording. Please try again.",
+        text1: title,
+        text2: message,
       });
+
+      // console.error("Upload Error Details:", error);
+      // Toast.show({
+      //   type: "error",
+      //   text1: "Upload Failed",
+      //   text2: "Could not process the audio. Is your backend reachable?",
+      // });
     } finally {
-      // Clean up ref for the next record cycle
       isStoppingRef.current = false;
     }
   };
 
-  // NEW: Status Update Handler checking limit and silence
+  // Status Update Handler checking limit, silence, AND animating waveforms
   const onRecordingStatusUpdate = useCallback(async (status: Audio.RecordingStatus) => {
     if (!status.isRecording || isStoppingRef.current) return;
 
-    // 1. Check Max Duration Limit
+    // 1. Update the Waveform Animations based on Decibels
+    const currentMetering = status.metering ?? -160;
+    // Normalize metering (-60 to 0) to a value roughly between 0 and 1
+    const normalizedLevel = Math.max(0, Math.min(1, (currentMetering + 60) / 60));
+    
+    // Animate each bar with slight phase multipliers so they wave naturally
+    const waveMultipliers = [0.5, 0.8, 1.2, 0.8, 0.5];
+    meteringAnims.current.forEach((anim, i) => {
+      // Add slight randomness to make it feel organic
+      const targetValue = Math.max(0.1, normalizedLevel * waveMultipliers[i] * (0.8 + Math.random() * 0.4));
+      Animated.timing(anim, {
+        toValue: targetValue,
+        duration: 150, // Matches roughly the polling interval
+        useNativeDriver: true,
+      }).start();
+    });
+
+    // 2. Check Max Duration Limit
     if (status.durationMillis >= MAX_RECORDING_DURATION) {
       console.log("Maximum recording duration reached.");
       await stopRecordingAndSubmit();
       return;
     }
 
-    // 2. Check Audio Silence Metering
-    const currentMetering = status.metering ?? 0;
-    
+    // 3. Check Audio Silence (Auto-stop)
     if (currentMetering < SILENCE_THRESHOLD) {
-      // User is too quiet, start the silence timer
       if (silenceStartRef.current === null) {
         silenceStartRef.current = status.durationMillis;
       } else {
-        // Calculate how long it's been silent
         const silentDuration = status.durationMillis - silenceStartRef.current;
         if (silentDuration >= SILENCE_TIMEOUT) {
           console.log("Auto-stopping due to prolonged silence.");
@@ -306,8 +319,7 @@ export const EventsScreen = () => {
         }
       }
     } else {
-      // User spoke! Reset the silence tracker
-      silenceStartRef.current = null;
+      silenceStartRef.current = null; // Reset silence tracker if user speaks
     }
   }, []);
 
@@ -322,28 +334,23 @@ export const EventsScreen = () => {
         playsInSilentModeIOS: true,
       });
 
-      // MODIFIED: Merged default options with `isMeteringEnabled` needed for silence detection
       const recordingOptions = {
         ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
-        isMeteringEnabled: true,
+        isMeteringEnabled: true, // Required for waveform and silence detection
       };
 
       const { recording: newRecording } = await Audio.Recording.createAsync(
         recordingOptions
       );
 
-      // NEW: Apply progress updates to run checks for limits and silence every 200ms
-      newRecording.setProgressUpdateInterval(200);
+      // We set update interval to 150ms for smoother animation frames
+      newRecording.setProgressUpdateInterval(150);
       newRecording.setOnRecordingStatusUpdate(onRecordingStatusUpdate);
 
-      // Track active instances locally and globally
       setRecording(newRecording);
       recordingRef.current = newRecording;
       isStoppingRef.current = false;
       silenceStartRef.current = null;
-
-      // Launch the visual feedback wave
-      startWaveAnimation();
     } catch (err) {
       console.error("Failed to start recording", err);
       Toast.show({
@@ -500,17 +507,15 @@ export const EventsScreen = () => {
               event={item}
               isSelectionMode={isSelectionMode}
               isSelected={selectedEventIds.includes(item._id)}
-              // 1. Long press enters selection mode
               onLongPress={() => {
                 if (!isSelectionMode) {
                   setIsSelectionMode(true);
                   setSelectedEventIds([item._id]);
                   if (Platform.OS === "android")
-                    Vibration.vibrate(40); // Slightly stronger vibration for long press
+                    Vibration.vibrate(40);
                   else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
                 }
               }}
-              // 2. Regular press handles toggling (only if already in selection mode)
               onPress={() => {
                 if (isSelectionMode) {
                   setSelectedEventIds((prev) =>
@@ -568,31 +573,13 @@ export const EventsScreen = () => {
 
       {!isSelectionMode && (
         <>
-          {/* MODIFIED: Grouped Audio Record Button with its background Animation Container */}
+          {/* Audio Record & Waveform Button */}
           <View className="absolute bottom-60 right-6 z-10 justify-center items-center">
-            {/* NEW: Wavy pulsing animation rendered behind the mic when recording */}
-            {recording && (
-              <Animated.View
-                style={{
-                  position: "absolute",
-                  width: 56, // Same dimension as the mic button (w-14)
-                  height: 56, // Same dimension as the mic button (h-14)
-                  borderRadius: 28,
-                  backgroundColor: "#EF4444", // Tailwind red-500
-                  transform: [{ scale: waveAnim }],
-                  opacity: waveAnim.interpolate({
-                    inputRange: [1, 2],
-                    outputRange: [0.6, 0], // Fades out completely as it expands
-                  }),
-                }}
-              />
-            )}
-
             <TouchableOpacity
               activeOpacity={0.9}
               className={`w-14 h-14 rounded-full justify-center items-center shadow-lg ${
                 recording
-                  ? "bg-red-500 shadow-red-300 dark:shadow-none"
+                  ? "bg-slate-800 shadow-slate-900/50 dark:shadow-none" // Dark pill background while listening
                   : "bg-indigo-500 shadow-indigo-300 dark:shadow-none"
               }`}
               onPress={recording ? stopRecordingAndSubmit : startRecording}
@@ -601,7 +588,27 @@ export const EventsScreen = () => {
               {isUploadingAudio ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : recording ? (
-                <MaterialIcons name="stop" size={28} color="#ffffff" />
+                // NEW: Dynamic Waveforms replacing the mic icon
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                  {meteringAnims.current.map((anim, i) => (
+                    <Animated.View
+                      key={i}
+                      style={{
+                        width: 3.5,
+                        height: 12,
+                        // Mix of blues and purples to mimic AI listening
+                        backgroundColor: i % 2 === 0 ? '#60A5FA' : '#A855F7', 
+                        borderRadius: 2,
+                        transform: [{
+                          scaleY: anim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [1, 3] // Scale up to 3x based on voice volume
+                          })
+                        }]
+                      }}
+                    />
+                  ))}
+                </View>
               ) : (
                 <MaterialIcons name="mic" size={28} color="#ffffff" />
               )}
