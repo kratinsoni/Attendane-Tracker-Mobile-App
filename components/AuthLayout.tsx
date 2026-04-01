@@ -1,12 +1,12 @@
 // components/AuthLayout.tsx
-import { isBiometricEnabled } from "@/utils/biometric";
-import { getToken } from "@/utils/token";
+import { authenticate, isBiometricEnabled } from "@/utils/biometric";
 import { useMe } from "@/hooks/useMe";
+import { getToken } from "@/utils/token";
+import { isAxiosError } from "axios";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import LoadingScreen from "./Loading";
-import { authenticate} from "@/utils/biometric";
 
 export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   const [hasToken, setHasToken] = useState<boolean | null>(null);
@@ -15,7 +15,7 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   );
   const [biometricPassed, setBiometricPassed] = useState(false);
 
-  const { data, isLoading, isError } = useMe();
+  const { data, isLoading, isError, error } = useMe();
 
   useEffect(() => {
     Promise.all([
@@ -28,14 +28,12 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // Trigger biometric prompt as soon as we know it's required
-  // The native dialog appears on top of the loading screen automatically
   useEffect(() => {
     if (biometricRequired === true && !biometricPassed) {
       authenticate().then((success) => {
         if (success) {
           setBiometricPassed(true);
         } else {
-          // Auth failed or cancelled — log them out
           router.replace("/(auth)/login");
         }
       });
@@ -43,16 +41,33 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   }, [biometricRequired]);
 
   useEffect(() => {
-    if (hasToken === false || (!isLoading && (isError || !data))) {
+    // Redirect if no token in storage
+    if (hasToken === false) {
       router.replace("/(auth)/login");
+      return;
     }
-  }, [hasToken, isLoading, isError, data]);
+
+    if (!isLoading && isError) {
+      const is401 = isAxiosError(error) && error.response?.status === 401;
+      const isNetworkError = isAxiosError(error) && !error.response;
+
+      // Keep user logged in on network errors (offline, slow wifi, etc.)
+      if (isNetworkError) return;
+
+      // Only redirect on actual auth failures
+      if (is401) router.replace("/(auth)/login");
+    }
+  }, [hasToken, isLoading, isError, error]);
 
   if (hasToken === null || biometricRequired === null || isLoading) {
     return <LoadingScreen />;
   }
 
-  if (isError || !data) return null;
+  // Don't kick out on network errors — just render children with stale cache
+  if (isError) {
+    const isNetworkError = isAxiosError(error) && !error.response;
+    if (!isNetworkError) return null;
+  }
 
   // Block rendering until biometric passes
   if (biometricRequired && !biometricPassed) {

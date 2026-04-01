@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1, // was 3 by default — cuts retry delay dramatically
-      staleTime: 5 * 60 * 1000,
+      gcTime: 24 * 60 * 60 * 1000,
     },
   },
 });
