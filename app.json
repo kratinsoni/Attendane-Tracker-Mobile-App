@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["instagram", "linkedin"] // allows canOpenURL checks
+        "LSApplicationQueriesSchemes": ["instagram", "linkedin"]
       },
       "icon": {
         "dark": "./assets/icons/ios-dark.png",
@@ -31,7 +31,7 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "attendancetracker" // ← only your own app's scheme
+              "scheme": "attendancetracker" 
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -131,9 +131,23 @@ const TeamMemberCard: React.FC<TeamMemberData> = ({
   </View>
 );
 
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
 export default function KGPPresence(): React.JSX.Element {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  // Shuffle the team data when the component mounts
+  const shuffledTeam = useMemo(() => {
+    return shuffleArray(TEAM_DATA);
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
@@ -186,7 +200,8 @@ export default function KGPPresence(): React.JSX.Element {
             </Text>
           </View>
 
-          {TEAM_DATA.map((member) => (
+          {/* Map over the shuffled array instead of TEAM_DATA */}
+          {shuffledTeam.map((member) => (
             <TeamMemberCard key={member.id} {...member} />
           ))}
         </View>
