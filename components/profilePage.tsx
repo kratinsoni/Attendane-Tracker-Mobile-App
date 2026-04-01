@@ -18,6 +18,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useColorScheme } from "nativewind";
 import { ChevronLeft, Edit } from "lucide-react-native";
+import { Switch } from "react-native";
+import {
+  isBiometricAvailable,
+  isBiometricEnabled,
+  setBiometricEnabled,
+  authenticate,
+  getBiometricType,
+} from "@/utils/biometric";
 
 export default function UserProfile() {
   const { data, refetch } = useMe(); // Added refetch if your hook supports it
@@ -29,6 +37,10 @@ export default function UserProfile() {
 
   // Refresh Control State
   const [refreshing, setRefreshing] = React.useState(false);
+  const [biometricAvailable, setBiometricAvailable] = React.useState(false);
+  const [biometricEnabled, setBiometricEnabledState] = React.useState(false);
+  const [biometricType, setBiometricType] = React.useState("Biometrics");
+
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -44,6 +56,28 @@ export default function UserProfile() {
     }
   }, [refetch]);
 
+  React.useEffect(() => {
+    Promise.all([
+      isBiometricAvailable(),
+      isBiometricEnabled(),
+      getBiometricType(),
+    ]).then(([avail, enabled, type]) => {
+      setBiometricAvailable(avail);
+      setBiometricEnabledState(enabled);
+      setBiometricType(type);
+    });
+  }, []);
+
+  const handleBiometricToggle = async (value: boolean) => {
+    if (value) {
+      // Require auth before enabling — prevent someone else turning it on
+      const success = await authenticate();
+      if (!success) return;
+    }
+    await setBiometricEnabled(value);
+    setBiometricEnabledState(value);
+  };
+
   const handleLogout = () =>{
     if(Platform.OS === "android") {
       // Forces the motor to spin up and stop in exactly 20 milliseconds.
@@ -58,9 +92,9 @@ export default function UserProfile() {
   return (
     <SafeAreaView className="flex-1 bg-[#f6f6f8] dark:bg-[#101622]">
       <StatusBar
-              barStyle={isDark ? "light-content" : "dark-content"}
-              backgroundColor={isDark ? "#101622" : "#f6f6f8"}
-            />
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#101622" : "#f6f6f8"}
+      />
 
       {/* Top App Bar - Sticky Effect by placing outside ScrollView */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-[#f6f6f8]/90 dark:bg-[#101622]/90 border-b border-transparent z-50">
@@ -75,7 +109,8 @@ export default function UserProfile() {
               // iOS handles impacts much better natively, so stick to Expo here
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
-            router.back()}}
+            router.back();
+          }}
         >
           <ChevronLeft size={28} color={isDark ? "#e5e7eb" : "#111318"} />
         </TouchableOpacity>
@@ -84,17 +119,20 @@ export default function UserProfile() {
           Profile
         </Text>
 
-        <TouchableOpacity className="flex h-10 w-10 items-center justify-center rounded-full" onPress={() => {
-          if (Platform.OS === "android") {
-            // Forces the motor to spin up and stop in exactly 20 milliseconds.
-            // This creates a sharp "tick" rather than a soft buzz.
-            Vibration.vibrate(20);
-          } else {
-            // iOS handles impacts much better natively, so stick to Expo here
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
-          router.push("/profile/EditProfile");
-        }}>
+        <TouchableOpacity
+          className="flex h-10 w-10 items-center justify-center rounded-full"
+          onPress={() => {
+            if (Platform.OS === "android") {
+              // Forces the motor to spin up and stop in exactly 20 milliseconds.
+              // This creates a sharp "tick" rather than a soft buzz.
+              Vibration.vibrate(20);
+            } else {
+              // iOS handles impacts much better natively, so stick to Expo here
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+            router.push("/profile/EditProfile");
+          }}
+        >
           <Edit size={24} color={isDark ? "#e5e7eb" : "#111318"} />
         </TouchableOpacity>
       </View>
@@ -146,7 +184,6 @@ export default function UserProfile() {
 
           <View className="bg-white dark:bg-[#1a2230] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             <View className="flex-col">
-              
               {/* Row 1: Institute ID (Full Width for maximum space) */}
               <View className="w-full p-4 border-b border-gray-100 dark:border-gray-700">
                 <View className="flex-row items-center gap-2 mb-1">
@@ -189,7 +226,11 @@ export default function UserProfile() {
 
                 <View className="w-1/2 p-4">
                   <View className="flex-row items-center gap-2 mb-1">
-                    <MaterialIcons name="history-edu" size={20} color="#135bec" />
+                    <MaterialIcons
+                      name="history-edu"
+                      size={20}
+                      color="#135bec"
+                    />
                     <Text className="text-[#616f89] dark:text-gray-400 text-xs font-medium">
                       Graduation Year
                     </Text>
@@ -199,7 +240,6 @@ export default function UserProfile() {
                   </Text>
                 </View>
               </View>
-
             </View>
           </View>
         </View>
@@ -267,20 +307,16 @@ export default function UserProfile() {
             Account Security
           </Text>
           <View className="bg-white dark:bg-[#1a2230] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <TouchableOpacity 
-              className="flex-row items-center w-full p-4 active:bg-gray-50 dark:active:bg-gray-800"
+            {/* Change Password */}
+            <TouchableOpacity
+              className="flex-row items-center w-full p-4 border-b border-gray-100 dark:border-gray-700 active:bg-gray-50 dark:active:bg-gray-800"
               onPress={() => {
                 Vibration.vibrate(20);
                 router.push("/password/changePassword");
               }}
             >
               <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 mr-4">
-                <MaterialIcons
-                  name="lock"
-                  size={20}
-                  className="text-gray-600 dark:text-gray-400"
-                  color="#4b5563"
-                />
+                <MaterialIcons name="lock" size={20} color="#4b5563" />
               </View>
               <View className="flex-1">
                 <Text className="text-[#111318] dark:text-white text-base font-medium">
@@ -289,6 +325,29 @@ export default function UserProfile() {
               </View>
               <MaterialIcons name="chevron-right" size={24} color="#9ca3af" />
             </TouchableOpacity>
+
+            {/* Biometric Lock — only shown if device supports it */}
+            {biometricAvailable && (
+              <View className="flex-row items-center w-full p-4">
+                <View className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 mr-4">
+                  <MaterialIcons name="fingerprint" size={20} color="#4b5563" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-[#111318] dark:text-white text-base font-medium">
+                    {biometricType} Lock
+                  </Text>
+                  <Text className="text-[#616f89] dark:text-gray-400 text-xs mt-0.5">
+                    Require {biometricType} on app open
+                  </Text>
+                </View>
+                <Switch
+                  value={biometricEnabled}
+                  onValueChange={handleBiometricToggle}
+                  trackColor={{ false: "#d1d5db", true: "#135bec" }}
+                  thumbColor={biometricEnabled ? "#ffffff" : "#f3f4f6"}
+                />
+              </View>
+            )}
           </View>
         </View>
 

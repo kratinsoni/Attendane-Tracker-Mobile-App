@@ -7,12 +7,11 @@
     "icon": "./assets/icons/splash-icon-light.png",
     "scheme": "attendancetracker",
     "userInterfaceStyle": "automatic",
-    "notification": {
-      "icon": "./assets/icons/notification-icon.png",
-      "color": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["instagram", "linkedin"] // allows canOpenURL checks
+      },
       "icon": {
         "dark": "./assets/icons/ios-dark.png",
         "light": "./assets/icons/ios-light.png",
@@ -32,16 +31,10 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "https"
-            },
-            {
-              "scheme": "mailto"
+              "scheme": "attendancetracker" // ← only your own app's scheme
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -62,6 +55,15 @@
             "image": "./assets/icons/splash-icon-light.png",
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icons/notification-icon.png",
+          "color": "#135bec",
+          "androidMode": "default",
+          "androidCollapsedTitle": "KGP Presence"
         }
       ],
       "expo-secure-store",
