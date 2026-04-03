@@ -183,11 +183,7 @@ export default function KGPPresence(): React.JSX.Element {
             About KGP Presence
           </Text>
           <Text className="text-slate-600 dark:text-slate-400 leading-6 text-lg">
-            The Attendance-Tracker is built exclusively for IIT Kharagpur
-            students to Keep Track of Their Classes in Our academic curriculum.
-            We make it easy to stay above mandatory ERP attendance thresholds by
-            helping you log daily classes, calculate safe margins, and monitor
-            your standing in real-time so you can focus on what matters.
+            The Attendance-Tracker is built exclusively for IIT Kharagpur students to keep Track of their Classes in our academic curriculum. We make it easy to stay above mandatory ERP attendance thresholds by helping you log daily classes, calculate safe margins, and monitor your standing in real-time so you can focus on what matters.
           </Text>
         </View>
 
@@ -237,12 +233,8 @@ export default function KGPPresence(): React.JSX.Element {
 
         {/* Footer */}
         <View className="pb-12 items-center">
-          <Text className="text-slate-400 text-sm">
-            © 2024 KGP Presence Attendance Tracker
-          </Text>
-          <Text className="text-slate-400 text-xs mt-1">
-            Made for the academic excellence of the campus
-          </Text>
+          <Text className="text-slate-400 text-sm">© 2026 KGP Presence Attendance Tracker</Text>
+          <Text className="text-slate-400 text-xs mt-1">Made for the academic excellence of the campus</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

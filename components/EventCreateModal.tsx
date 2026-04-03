@@ -38,8 +38,8 @@ export const EventCreateModal = ({
 
   // Form State
   const [name, setName] = useState("");
-  const [location, setLocation] = useState("");
-  const [type, setType] = useState("");
+  const [location, setLocation] = useState("kgp");
+  const [type, setType] = useState("Other");
   const [description, setDescription] = useState("");
 
   // Date & Time State
@@ -114,8 +114,8 @@ export const EventCreateModal = ({
   const resetForm = () => {
     const nextDate = new Date();
     setName("");
-    setLocation("");
-    setType("");
+    setLocation("kgp");
+    setType("Other");
     setDescription("");
     setDate(nextDate);
     setInitialDateMs(nextDate.getTime());
@@ -129,8 +129,8 @@ export const EventCreateModal = ({
   const hasUnsavedChanges = () => {
     return (
       name.trim().length > 0 ||
-      location.trim().length > 0 ||
-      type.trim().length > 0 ||
+      location.trim() !== "kgp" ||
+      type.trim() !== "Other" ||
       description.trim().length > 0 ||
       Math.abs(date.getTime() - initialDateMs) > 1000
     );

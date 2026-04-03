@@ -11,7 +11,7 @@ A scalable, cross-platform mobile application for seamless attendance tracking. 
 ## 🚀 Live Interactive Demo
 
 👉 **Try the app instantly on your browser (no installation required):**
-[🔗 Run on Appetize.io](https://appetize.io/app/b_344r4swhq2aru3fl6enwpgrpee)
+[🔗 Run on Appetize.io](https://appetize.io/app/b_udvy47sip3l7ybn7leys5gn34e)
 
 > 💡 Click **"Tap to Play"** inside the emulator to start interacting with the app.
 
