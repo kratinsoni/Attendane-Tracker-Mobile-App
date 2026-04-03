@@ -22,6 +22,7 @@ import {
   View,
   useColorScheme,
   Animated,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { EmptyState } from "../components/EmptyState";
@@ -203,6 +204,26 @@ export const EventsScreen = () => {
     );
   };
 
+  const ensureAudioPermission = async () => {
+    const permissionResponse = await Audio.requestPermissionsAsync();
+    
+    if (permissionResponse.status !== 'granted') {
+      Alert.alert(
+        "Microphone Required",
+        "Microphone access is mandatory to create events. Please enable it in your device settings to continue.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Open Settings", 
+            onPress: () => Linking.openSettings() // Forces them to the OS settings
+          }
+        ]
+      );
+      return false; // Denied
+    }
+    return true; // Granted
+  };
+
   const stopRecordingAndSubmit = async () => {
     if (isStoppingRef.current || !recordingRef.current) return;
     
@@ -328,6 +349,10 @@ export const EventsScreen = () => {
       if (Platform.OS === "android") Vibration.vibrate(20);
       else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
+      // 🛑 The Hard Gate
+      const hasPermission = await ensureAudioPermission();
+      if (!hasPermission) return;
+      
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
