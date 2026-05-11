@@ -25,7 +25,8 @@
         "monochromeImage": "./assets/icons/adaptive-icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.kratinsoni.attendancetracker",
+      "package": "com.kgppresence.app",
+      "permissions": ["CAMERA"],
       "intentFilters": [
         {
           "action": "VIEW",
