@@ -2,7 +2,7 @@
   "expo": {
     "name": "KGP Presence",
     "slug": "attendance-tracker",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icons/splash-icon-light.png",
     "scheme": "attendancetracker",
